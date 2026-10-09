@@ -40,7 +40,7 @@
       </div>
       <div class="top-actions">
         <div class="searchbox">⌕ <input id="globalSearch" placeholder="Tìm SKU, phiếu, đơn..."></div>
-        <button class="btn" id="refresh">Làm mới</button>
+        <button class="btn refresh-btn" id="refresh"><span class="refresh-icon">↻</span><span class="refresh-label">Làm mới</span></button>
       </div>
     </header>
 
@@ -156,6 +156,24 @@
     </main>
   </section>
 </div>
-<script src="/app.js" defer></script>
+<nav class="mobile-tabbar" aria-label="Điều hướng chính">
+    <button class="mobile-tab active" data-mobile-page="dashboard" aria-label="Trang chủ">
+      <span class="mobile-tab-icon">⌂</span><span>Home</span>
+    </button>
+    <button class="mobile-tab" data-mobile-page="operations" aria-label="Operations">
+      <span class="mobile-tab-icon">◉</span><span>Ops</span>
+    </button>
+    <button class="mobile-tab scan-tab" data-mobile-page="stocktake" aria-label="Quét kiểm kho">
+      <span class="scan-orb">⌁</span><span>Scan</span>
+    </button>
+    <button class="mobile-tab" data-mobile-page="inventory" aria-label="Tồn kho">
+      <span class="mobile-tab-icon">▦</span><span>Stock</span>
+    </button>
+    <button class="mobile-tab" id="mobileMore" aria-label="Thêm chức năng">
+      <span class="mobile-tab-icon">⋯</span><span>More</span>
+    </button>
+  </nav>
+  <div class="mobile-backdrop" id="mobileBackdrop" aria-hidden="true"></div>
+  <script src="/app.js" defer></script>
 </body>
 </html>

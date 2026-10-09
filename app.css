@@ -761,3 +761,610 @@ button{cursor:pointer}
   .table{min-width:720px}
   .banner{padding:11px 12px}
 }
+
+
+/* =========================================================
+   WHOSE ATELIER UI 2.0 — interaction, typography, mobile UX
+   ========================================================= */
+:root{
+  --ease-standard:cubic-bezier(.2,.8,.2,1);
+  --ease-enter:cubic-bezier(.16,1,.3,1);
+  --tap-scale:.985;
+  --mobile-nav-h:74px;
+  --focus:0 0 0 3px rgba(92,84,71,.14);
+}
+
+/* Better baseline readability */
+body{font-size:13px;line-height:1.45}
+.page-title h1{font-size:22px}
+.page-title p{font-size:11px}
+.nav-text{font-size:12px}
+.btn{
+  min-height:40px;
+  padding:9px 14px;
+  font-size:11px;
+  border-radius:12px;
+  transition:
+    transform 90ms var(--ease-standard),
+    background-color 140ms var(--ease-standard),
+    border-color 140ms var(--ease-standard),
+    box-shadow 140ms var(--ease-standard),
+    color 140ms var(--ease-standard);
+  -webkit-tap-highlight-color:transparent;
+}
+.btn:active:not(:disabled){transform:scale(var(--tap-scale))}
+.btn:focus-visible,
+.nav-item:focus-visible,
+.mobile-tab:focus-visible,
+.send:focus-visible,
+.composer .plus:focus-visible,
+.draft button:focus-visible,
+.ops-tabs button:focus-visible{
+  outline:none;
+  box-shadow:var(--focus)
+}
+.searchbox{min-height:42px}
+.searchbox input{font-size:12px}
+.metric-label{font-size:10px}
+.metric-sub{font-size:10px}
+.section-head h2{font-size:15px}
+.section-head p{font-size:10px}
+.banner strong{font-size:12px}
+.banner p{font-size:10px}
+.status{font-size:10px}
+.table th{font-size:9px;padding:12px 14px}
+.table td{font-size:12px;padding:14px}
+.chip{font-size:10px}
+.empty b{font-size:13px}
+.empty span{font-size:11px}
+.module-card h3{font-size:15px}
+.module-card p{font-size:11px}
+.setting-row b{font-size:11px}
+.setting-row small{font-size:10px}
+.thread b{font-size:11px}
+.thread small{font-size:10px}
+.chat-head b{font-size:14px}
+.chat-head small{font-size:10px}
+.composer textarea{font-size:13px}
+.send{
+  min-width:84px;
+  height:40px;
+  font-size:10px;
+  transition:
+    transform 90ms var(--ease-standard),
+    opacity 140ms var(--ease-standard),
+    background-color 140ms var(--ease-standard);
+}
+.send:active:not(:disabled){transform:scale(var(--tap-scale))}
+.composer .plus{
+  width:40px;
+  height:40px;
+  transition:transform 90ms var(--ease-standard),background-color 140ms var(--ease-standard)
+}
+.composer .plus:active{transform:scale(.96)}
+.ops-tabs button{
+  min-height:36px;
+  transition:background-color 140ms var(--ease-standard),color 140ms var(--ease-standard),transform 90ms var(--ease-standard)
+}
+.ops-tabs button:active{transform:scale(.98)}
+.srow{
+  min-height:58px;
+  transition:background-color 120ms var(--ease-standard),transform 90ms var(--ease-standard)
+}
+.srow:active{transform:scale(.996)}
+.srow b{font-size:11px}
+.srow small{font-size:10px}
+.field{font-size:11px;min-height:40px}
+
+/* Motion vocabulary: short, purposeful, no bounce */
+.page.active{animation:atelierPageIn 160ms var(--ease-enter)}
+@keyframes atelierPageIn{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:none}
+}
+.suggestions.show{animation:atelierPopoverIn 150ms var(--ease-enter)}
+@keyframes atelierPopoverIn{
+  from{opacity:0;transform:translateY(7px) scale(.995)}
+  to{opacity:1;transform:none}
+}
+.toast{
+  transition:opacity 150ms var(--ease-standard),transform 150ms var(--ease-enter)
+}
+.nav-item{
+  transition:
+    background-color 130ms var(--ease-standard),
+    color 130ms var(--ease-standard)
+}
+.card{
+  transition:border-color 140ms var(--ease-standard),box-shadow 180ms var(--ease-standard)
+}
+@media(hover:hover) and (pointer:fine){
+  .card:hover{border-color:#d6d0c5}
+  .module-card:hover{box-shadow:0 14px 34px rgba(34,31,26,.06)}
+}
+
+/* Explicit press state for custom controls */
+.nav-item:active{background:rgba(255,255,255,.085)}
+.draft button:active{transform:scale(.92)}
+.refresh-icon{
+  display:inline-block;
+  margin-right:4px;
+  transform-origin:50% 50%
+}
+.refresh-btn:disabled .refresh-icon{animation:atelierSpin .8s linear infinite}
+@keyframes atelierSpin{to{transform:rotate(360deg)}}
+
+/* Mobile navigation is a separate composition, not a shrunken sidebar */
+.mobile-tabbar,.mobile-backdrop{display:none}
+
+@media(pointer:coarse){
+  .btn,.nav-item,.mobile-tab,.send,.composer .plus,.ops-tabs button,.draft button{touch-action:manipulation}
+  .nav-item:hover,.card:hover,.module-card:hover{box-shadow:none}
+}
+
+/* Large phone / tablet bridge */
+@media(max-width:839px){
+  .workspace{grid-template-rows:68px 1fr}
+  .topbar{padding:0 14px}
+  .page-title h1{font-size:20px}
+  .page-title p{font-size:10px}
+  .content{padding:14px}
+  .grid{gap:12px}
+  .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .metric{min-height:112px;padding:16px}
+  .metric-value{font-size:30px}
+}
+
+/* True mobile composition */
+@media(max-width:599px){
+  :root{--mobile-nav-h:78px}
+  html,body{height:100%;background:var(--bg)}
+  body{
+    overflow:hidden;
+    font-size:15px;
+    line-height:1.45;
+    overscroll-behavior:none;
+  }
+  .app{
+    height:100dvh;
+    min-height:100dvh;
+    display:block
+  }
+  .workspace{
+    height:100dvh;
+    min-height:100dvh;
+    display:grid;
+    grid-template-rows:68px minmax(0,1fr);
+    overflow:hidden
+  }
+
+  /* Mobile top app bar */
+  .topbar{
+    position:relative;
+    z-index:25;
+    height:68px;
+    padding:0 12px;
+    background:rgba(243,240,233,.94);
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px)
+  }
+  .top-left{gap:10px;min-width:0}
+  .mobile-menu{
+    display:inline-flex;
+    width:44px;
+    min-width:44px;
+    height:44px;
+    min-height:44px;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border-radius:50%;
+    font-size:17px;
+    background:#ebe6dc
+  }
+  .page-title{min-width:0}
+  .page-title h1{
+    font-size:22px;
+    line-height:1.08;
+    letter-spacing:-.035em;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+  }
+  .page-title p{
+    font-size:12px;
+    max-width:230px;
+    line-height:1.2;
+    margin-top:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+  }
+  .top-actions{gap:6px}
+  .searchbox{display:none}
+  .refresh-btn{
+    width:44px;
+    min-width:44px;
+    height:44px;
+    min-height:44px;
+    border-radius:50%;
+    padding:0;
+    display:grid;
+    place-items:center
+  }
+  .refresh-icon{font-size:18px;margin:0}
+  .refresh-label{display:none}
+
+  /* Scrollable content ends above bottom navigation */
+  .content{
+    min-height:0;
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:14px 12px calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 18px);
+    scroll-padding-bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 18px);
+    background:
+      radial-gradient(circle at 100% 0%,rgba(255,255,255,.45),transparent 23%),
+      var(--bg)
+  }
+  .page.active{animation:atelierMobilePageIn 150ms var(--ease-enter)}
+  @keyframes atelierMobilePageIn{
+    from{opacity:.25;transform:translateY(6px)}
+    to{opacity:1;transform:none}
+  }
+
+  /* Sidebar becomes a proper drawer */
+  .sidebar{
+    display:flex;
+    position:fixed;
+    z-index:80;
+    left:0;top:0;bottom:0;
+    width:min(86vw,320px);
+    max-width:320px;
+    padding:18px 14px calc(18px + env(safe-area-inset-bottom));
+    transform:translateX(-102%);
+    transition:transform 190ms var(--ease-enter);
+    box-shadow:24px 0 60px rgba(0,0,0,.22)
+  }
+  .sidebar.open{transform:translateX(0)}
+  .brand{padding-top:max(2px,env(safe-area-inset-top))}
+  .nav-title{font-size:10px;margin-top:2px}
+  .nav-item{
+    min-height:48px;
+    padding:12px 12px 12px 14px;
+    border-radius:12px
+  }
+  .nav-text{font-size:15px}
+  .ico{font-size:15px;width:20px}
+  .user b{font-size:13px}
+  .user small{font-size:11px}
+
+  .mobile-backdrop{
+    display:block;
+    position:fixed;
+    z-index:70;
+    inset:0;
+    background:rgba(19,19,17,.32);
+    backdrop-filter:blur(1px);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 170ms var(--ease-standard)
+  }
+  .mobile-backdrop.show{opacity:1;pointer-events:auto}
+
+  /* Bottom navigation */
+  .mobile-tabbar{
+    position:fixed;
+    z-index:60;
+    left:8px;
+    right:8px;
+    bottom:max(8px,env(safe-area-inset-bottom));
+    height:70px;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    align-items:center;
+    padding:5px 7px;
+    border:1px solid rgba(115,105,90,.18);
+    border-radius:22px;
+    background:rgba(249,247,242,.94);
+    box-shadow:0 18px 50px rgba(33,29,24,.15);
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px)
+  }
+  .mobile-tab{
+    position:relative;
+    min-width:0;
+    min-height:58px;
+    border:0;
+    border-radius:16px;
+    background:transparent;
+    color:#7d7870;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    padding:4px 2px;
+    font-size:11px;
+    font-weight:650;
+    -webkit-tap-highlight-color:transparent;
+    transition:
+      background-color 140ms var(--ease-standard),
+      color 140ms var(--ease-standard),
+      transform 90ms var(--ease-standard)
+  }
+  .mobile-tab:active{transform:scale(.96)}
+  .mobile-tab-icon{font-size:19px;line-height:1}
+  .mobile-tab.active{
+    color:#191a17;
+    background:#ece7dd
+  }
+  .mobile-tab.active:after{
+    content:"";
+    position:absolute;
+    bottom:3px;
+    width:14px;
+    height:2px;
+    border-radius:999px;
+    background:#1b1c19
+  }
+  .scan-tab{overflow:visible}
+  .scan-orb{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    margin-top:-14px;
+    background:#1a1b18;
+    color:#f6f2e9;
+    font-size:18px;
+    box-shadow:0 8px 20px rgba(25,25,22,.2);
+    transition:transform 90ms var(--ease-standard),background-color 140ms var(--ease-standard)
+  }
+  .scan-tab:active .scan-orb{transform:scale(.94)}
+  .scan-tab.active{background:transparent}
+  .scan-tab.active .scan-orb{background:#34362f}
+  .scan-tab.active:after{bottom:3px}
+
+  /* Mobile typography and controls */
+  .btn{
+    min-height:46px;
+    border-radius:13px;
+    padding:11px 15px;
+    font-size:14px
+  }
+  .field,
+  .ops-filter input,
+  .composer textarea,
+  .searchbox input{
+    font-size:16px; /* prevents iOS input auto zoom */
+  }
+  .field{min-height:46px}
+  .metric-label{font-size:12px}
+  .metric-sub{font-size:12px}
+  .metric-value{font-size:32px}
+  .section-head h2{font-size:18px}
+  .section-head p{font-size:12px}
+  .banner{border-radius:16px;padding:13px 14px;gap:10px}
+  .banner strong{font-size:14px;line-height:1.3}
+  .banner p{font-size:12px;line-height:1.5}
+  .status{font-size:12px;gap:7px}
+  .status:before{width:7px;height:7px}
+  .chip{font-size:12px;padding:8px 10px}
+  .empty{padding:34px 18px}
+  .empty b{font-size:16px}
+  .empty span{font-size:13px;line-height:1.55}
+  .module-card{min-height:168px;padding:18px}
+  .module-card h3{font-size:18px}
+  .module-card p{font-size:14px;line-height:1.55}
+  .setting-row{padding:15px 0}
+  .setting-row b{font-size:14px}
+  .setting-row small{font-size:12px;line-height:1.45}
+  .sku-img{width:44px;height:44px;border-radius:12px;font-size:10px}
+
+  /* Dashboard: compact but readable 2-up KPIs */
+  .grid{gap:12px}
+  .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-3,.grid-2,.module-grid,#stocktake .module-grid{grid-template-columns:1fr}
+  .card{border-radius:18px}
+  .card-pad{padding:16px}
+  .metric{
+    min-height:122px;
+    padding:16px;
+    border-radius:18px
+  }
+  .metric:after{left:16px;right:16px}
+  #dashboard .grid-2{gap:12px}
+
+  /* Mobile tables become stacked information cards */
+  .table-wrap{
+    overflow:visible;
+    border:0;
+    background:transparent;
+    box-shadow:none
+  }
+  .table{
+    min-width:0!important;
+    width:100%;
+    display:block
+  }
+  .table thead{display:none}
+  .table tbody{display:grid;gap:10px}
+  .table tr{
+    display:block;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#fbfaf7;
+    overflow:hidden;
+    box-shadow:none
+  }
+  .table td{
+    display:grid;
+    grid-template-columns:minmax(94px,38%) 1fr;
+    gap:12px;
+    align-items:start;
+    width:100%;
+    padding:11px 13px;
+    border-bottom:1px solid #ebe7df;
+    font-size:14px;
+    line-height:1.4;
+    text-align:right
+  }
+  .table td:last-child{border-bottom:0}
+  .table td:before{
+    content:attr(data-label);
+    color:#8b867d;
+    font-size:11px;
+    font-weight:750;
+    text-transform:uppercase;
+    letter-spacing:.055em;
+    text-align:left
+  }
+  .table td[colspan]{
+    display:block;
+    text-align:center;
+    padding:0;
+    border-bottom:0
+  }
+  .table td[colspan]:before{display:none}
+  .table td .sku{text-align:left}
+  .table td .status{justify-self:end}
+  .table td .muted{font-size:13px}
+  .table tbody tr:hover td{background:transparent}
+
+  /* Operations becomes full-screen mobile messenger */
+  #operations{
+    margin:-2px -2px 0
+  }
+  .ops-layout{
+    height:calc(100dvh - 68px - var(--mobile-nav-h) - env(safe-area-inset-bottom) - 20px);
+    min-height:520px;
+    grid-template-columns:1fr;
+    border-radius:20px;
+    box-shadow:none;
+    border-color:#dcd6cb
+  }
+  .ops-list{display:none}
+  .chat{height:100%;min-height:0}
+  .chat-head{padding:14px 15px}
+  .chat-head b{font-size:17px}
+  .chat-head small{font-size:12px}
+  .chat-body{padding:18px 14px}
+  .composer-area{
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+    background:#f4efe7
+  }
+  .composer{
+    grid-template-columns:44px 1fr auto;
+    min-height:58px;
+    gap:6px;
+    border-radius:17px;
+    padding:7px;
+    box-shadow:0 8px 24px rgba(33,29,24,.06)
+  }
+  .composer .plus{
+    width:44px;
+    height:44px;
+    border-radius:12px;
+    font-size:20px
+  }
+  .composer textarea{
+    min-height:44px;
+    max-height:112px;
+    padding:11px 5px 7px;
+    line-height:1.35
+  }
+  .send{
+    min-width:64px;
+    height:44px;
+    border-radius:12px;
+    padding:0 12px;
+    font-size:12px
+  }
+  .suggestions{
+    left:10px;
+    right:10px;
+    bottom:76px;
+    max-height:min(54dvh,430px);
+    overflow:auto;
+    border-radius:18px
+  }
+  .srow{
+    min-height:72px;
+    grid-template-columns:46px 1fr auto;
+    padding:12px
+  }
+  .srow b{font-size:14px}
+  .srow small{font-size:12px}
+  .draft{font-size:12px;padding:7px 9px}
+  .draft button{width:28px;height:28px;font-size:14px}
+
+  /* Stocktake reads like a scanning tool, not admin cards */
+  #stocktake .module-grid{gap:12px}
+  #stocktake .module-card:first-child{
+    min-height:260px;
+    border-radius:22px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    padding:22px
+  }
+  #stocktake .module-card:first-child h3{font-size:22px}
+  #stocktake .module-card:first-child p{font-size:14px;max-width:86%}
+  #stocktake .module-card:first-child:after{
+    left:22px;
+    bottom:22px;
+    font-size:12px;
+    letter-spacing:.15em
+  }
+
+  /* Toolbar becomes comfortable stacked filters */
+  .toolbar{align-items:stretch;gap:10px}
+  .tool-left,.tool-right{width:100%;gap:8px}
+  .tool-left .field{flex:1;min-width:0}
+  .tool-right .btn{flex:1}
+
+  /* Toast moves above mobile tabbar */
+  .toast{
+    left:12px;
+    right:12px;
+    top:auto;
+    bottom:calc(var(--mobile-nav-h) + env(safe-area-inset-bottom) + 14px);
+    border-radius:14px;
+    padding:12px 14px;
+    font-size:13px;
+    text-align:center;
+    transform:translateY(8px)
+  }
+  .toast.show{transform:none}
+}
+
+/* Very compact phones */
+@media(max-width:374px){
+  .page-title p{max-width:180px}
+  .grid-4{grid-template-columns:1fr}
+  .metric{min-height:104px}
+  .mobile-tab{font-size:10px}
+  .mobile-tab-icon{font-size:18px}
+  .content{padding-left:10px;padding-right:10px}
+}
+
+/* Landscape phone: keep actions reachable */
+@media(max-height:520px) and (max-width:900px) and (orientation:landscape){
+  .mobile-tabbar{height:60px}
+  :root{--mobile-nav-h:66px}
+  .mobile-tab{min-height:48px}
+  .mobile-tab span:last-child{display:none}
+  .scan-orb{margin-top:0;width:38px;height:38px}
+}
+
+/* Respect accessibility setting */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.001ms!important;
+    scroll-behavior:auto!important
+  }
+}
