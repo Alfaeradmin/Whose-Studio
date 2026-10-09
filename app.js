@@ -114,6 +114,8 @@ function renderDashboard() {
   document.getElementById('metricReturns').textContent = fmt(totals.returns);
   document.getElementById('metricInventory').textContent = fmt(totals.productOnHands ?? inv.inventoryRows);
   document.getElementById('metricNegative').textContent = fmt(inv.negative);
+  const dbMetric = document.getElementById('metricDatabase');
+  if (dbMetric) dbMetric.textContent = state.system?.integrations?.supabase?.ready ? 'Schema ready' : 'Pending';
 
   const connectivity = d.connectivity || {};
   const err = errorSummary(connectivity);
@@ -187,10 +189,11 @@ function renderReturns() {
 function renderOperations() {
   const ready = Boolean(state.system?.integrations?.supabase?.ready);
   const badge = document.getElementById('operationsState');
-  badge.innerHTML = ready ? status('Backend connected', 'green') : status('Chờ Supabase', 'amber');
-  document.getElementById('sendRequest').disabled = !ready || state.draft.length === 0;
+  badge.innerHTML = ready ? status('Backend · chờ đăng nhập', 'blue') : status('Chờ Supabase', 'amber');
+  // Do not enable writes until user sign-in and branch membership are wired into UI.
+  document.getElementById('sendRequest').disabled = true;
   document.getElementById('opsEmpty').innerHTML = ready
-    ? '<b>Chưa có yêu cầu thật.</b><span>Khi nhân viên tạo yêu cầu, thread sẽ xuất hiện realtime tại đây.</span>'
+    ? '<b>Backend đã sẵn sàng.</b><span>Màn đăng nhập, phân quyền chi nhánh và realtime sẽ được kích hoạt sau khi khởi tạo người dùng.</span>'
     : '<b>Giao diện đã sẵn sàng, backend nghiệp vụ chưa kích hoạt.</b><span>Cần Supabase riêng để lưu user, role, request, message, assignment và realtime.</span>';
 }
 
