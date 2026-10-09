@@ -46,9 +46,9 @@ module.exports = async function handler(req, res) {
       transfersMirror: 'read-model-ready',
       returnsMirror: 'read-model-ready',
       productsMirror: 'read-model-ready',
-      auth: db.ready ? 'schema-ready' : 'waiting-for-supabase',
+      auth: db.ready ? 'employee-signin-ready' : 'waiting-for-supabase',
       employeesAndRoles: db.ready ? 'schema-ready' : 'waiting-for-supabase',
-      storeWarehouseOperations: db.ready ? 'api-ready-ui-pending' : 'waiting-for-supabase',
+      storeWarehouseOperations: db.ready ? 'request-ui-ready-needs-staff' : 'waiting-for-supabase',
       stocktakeDeltaLedger: db.ready ? 'schema-only' : 'waiting-for-supabase',
       realtime: 'not-configured',
       kiotvietWrite: 'disabled'
