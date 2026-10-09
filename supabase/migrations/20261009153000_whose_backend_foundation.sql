@@ -199,7 +199,11 @@ for select to authenticated using (exists(
 ));
 
 -- Normal users can read scoped data. No direct table writes are exposed.
-revoke all on all tables in schema public from anon;
+revoke all on
+ public.whose_branches, public.whose_staff_profiles, public.whose_staff_memberships,
+ public.whose_products,public.whose_inventory_snapshots,public.whose_requests,
+ public.whose_request_lines,public.whose_request_events,public.whose_request_messages,
+ public.whose_stocktakes,public.whose_stocktake_scans from anon;
 grant select on
  public.whose_branches, public.whose_staff_profiles, public.whose_staff_memberships,
  public.whose_products,public.whose_inventory_snapshots,public.whose_requests,
@@ -216,8 +220,8 @@ create function public.whose_backend_health() returns jsonb
 language sql stable security invoker set search_path = '' as $$
  select jsonb_build_object('app','whose-studio','schema','20261009-foundation','kiotvietWriteEnabled',false);
 $$;
-revoke execute on function public.whose_backend_health() from public,anon;
-grant execute on function public.whose_backend_health() to authenticated;
+revoke execute on function public.whose_backend_health() from public;
+grant execute on function public.whose_backend_health() to anon,authenticated;
 
 -- Atomic request submission. Only this narrow function may insert operational requests.
 create function public.whose_submit_request(
@@ -240,6 +244,9 @@ begin
  end if;
  if not whose_private.branch_role(p_origin,array['admin','manager','warehouse','store']) then
   raise exception 'not authorized for origin branch' using errcode='42501';
+ end if;
+ if not exists(select 1 from public.whose_branches where id=p_origin and is_active) then
+  raise exception 'origin unavailable' using errcode='22023';
  end if;
  if not exists(select 1 from public.whose_branches where id=p_destination and is_active) then
   raise exception 'destination unavailable' using errcode='22023';
@@ -268,6 +275,7 @@ begin
   if jsonb_typeof(v_line->'qty') not in ('number','string') then
    raise exception 'invalid quantity' using errcode='22023';
   end if;
+  if char_length(v_line->>'qty') > 32 then raise exception 'invalid quantity' using errcode='22023'; end if;
   v_qty := (v_line->>'qty')::numeric;
   if v_qty<=0 or v_qty>1000000 or scale(v_qty)>3 then
    raise exception 'invalid quantity' using errcode='22023';
