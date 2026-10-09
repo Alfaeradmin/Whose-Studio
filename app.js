@@ -67,7 +67,7 @@ function navigate(page) {
   document.getElementById('pageSub').textContent = meta[page][1];
   setMobileNavState(page);
   closeSidebar();
-  requestAnimationFrame(() => document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'instant' }));
+  requestAnimationFrame(() => document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'auto' }));
 }
 
 function toggleSidebar() {
