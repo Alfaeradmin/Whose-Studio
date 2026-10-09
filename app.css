@@ -1427,3 +1427,28 @@ body{font-size:13px;line-height:1.45}
  .ops-ready{font-size:10px}
  .composer-area{max-height:48dvh;overflow-y:auto}
 }
+
+
+/* Real operational inbox is accessible on mobile, not hidden behind a desktop-only sidebar. */
+@media(max-width:900px){
+  #operations .ops-layout{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:144px minmax(0,1fr);
+    min-height:0;
+  }
+  #operations .ops-list{
+    display:grid;
+    grid-template-rows:38px minmax(0,1fr);
+    min-height:0;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+  }
+  #operations .ops-filter{display:none}
+  #operations .ops-tabs{height:38px;padding:3px 8px 4px}
+  #operations .ops-tabs button{font-size:12px;padding:6px 5px}
+  #operations .thread-list{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:5px 8px;scroll-snap-type:x proximity}
+  #operations .thread{flex:0 0 208px;max-width:240px;min-width:180px;padding:7px 10px;scroll-snap-align:start}
+  #operations .thread b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #operations .thread small{font-size:10px;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #operations .chat{min-height:0}
+}
