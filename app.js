@@ -45,17 +45,35 @@ function errorSummary(connectivity) {
   return unique.slice(0, 2).join(' · ');
 }
 
+function setMobileNavState(page) {
+  const primaryPages = new Set(['dashboard', 'operations', 'stocktake', 'inventory']);
+  document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
+    el.classList.toggle('active', el.dataset.mobilePage === page);
+  });
+  const more = document.getElementById('mobileMore');
+  if (more) more.classList.toggle('active', !primaryPages.has(page));
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobileBackdrop')?.classList.remove('show');
+}
+
 function navigate(page) {
   state.page = page;
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
   document.getElementById('pageTitle').textContent = meta[page][0];
   document.getElementById('pageSub').textContent = meta[page][1];
-  document.getElementById('sidebar').classList.remove('open');
+  setMobileNavState(page);
+  closeSidebar();
+  requestAnimationFrame(() => document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'instant' }));
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sidebar = document.getElementById('sidebar');
+  const isOpen = sidebar.classList.toggle('open');
+  document.getElementById('mobileBackdrop')?.classList.toggle('show', isOpen);
 }
 
 function renderSystemBanner() {
@@ -186,6 +204,17 @@ function renderModules() {
   });
 }
 
+function enhanceResponsiveTables() {
+  document.querySelectorAll('.table').forEach((table) => {
+    const labels = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    table.querySelectorAll('tbody tr').forEach((row) => {
+      [...row.children].forEach((cell, index) => {
+        if (cell.tagName === 'TD' && labels[index]) cell.dataset.label = labels[index];
+      });
+    });
+  });
+}
+
 function renderAll() {
   renderSystemBanner();
   renderDashboard();
@@ -195,6 +224,7 @@ function renderAll() {
   renderReturns();
   renderOperations();
   renderModules();
+  enhanceResponsiveTables();
 }
 
 async function loadData() {
@@ -262,6 +292,7 @@ function setupProductComposer() {
       input.value = '';
       suggestions.classList.remove('show');
       renderDraft();
+      if (navigator.vibrate) navigator.vibrate(10);
     });
   });
   document.addEventListener('click', (event) => {
@@ -270,6 +301,17 @@ function setupProductComposer() {
 }
 
 document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.onclick = () => navigate(el.dataset.page));
+document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
+  el.onclick = () => {
+    navigate(el.dataset.mobilePage);
+    if (navigator.vibrate) navigator.vibrate(7);
+  };
+});
+document.getElementById('mobileMore')?.addEventListener('click', () => {
+  toggleSidebar();
+  if (navigator.vibrate) navigator.vibrate(7);
+});
+document.getElementById('mobileBackdrop')?.addEventListener('click', closeSidebar);
 document.getElementById('refresh').onclick = loadData;
 document.getElementById('globalSearch').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
