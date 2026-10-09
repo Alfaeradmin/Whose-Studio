@@ -63,3 +63,22 @@ test('health stays unready without Whose-only Supabase configuration', async () 
     else process.env.SUPABASE_PUBLISHABLE_KEY = prevKey;
   }
 });
+
+test('Whose gateway refuses other Supabase project URLs', () => {
+  const oldUrl = process.env.SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  try {
+    process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test';
+    process.env.SUPABASE_URL = 'https://ifvakwlwmarhtmdlinnq.supabase.co';
+    assert.equal(gateway.environment(), null, 'must never connect to ALFAER WMS');
+    process.env.SUPABASE_URL = 'https://fjauxxunyxxboduyxjyr.supabase.co';
+    assert.equal(gateway.environment()?.url, 'https://fjauxxunyxxboduyxjyr.supabase.co');
+    process.env.SUPABASE_URL = 'https://fjauxxunyxxboduyxjyr.supabase.co.evil.example';
+    assert.equal(gateway.environment(), null);
+  } finally {
+    if (oldUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
+    else process.env.SUPABASE_PUBLISHABLE_KEY = oldKey;
+  }
+});
