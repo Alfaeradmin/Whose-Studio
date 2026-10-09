@@ -68,178 +68,7 @@ function closeSidebar() {
 function navigate(page) {
   state.page = page;
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === page));
-  const AUTH_SESSION_KEY = 'whose-studio-auth-v1';
-
-function setAuthenticated(session) {
-  state.session = session;
-  sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-  document.getElementById('authScreen').classList.add('is-hidden');
-  document.getElementById('appRoot').classList.remove('is-locked');
-  document.getElementById('staffName').textContent = session.user?.email || 'Nhân viên';
-  document.getElementById('staffRole').textContent = (session.memberships || [])
-    .map(m => m.role).filter((x, i, arr) => arr.indexOf(x) === i).join(', ') || 'Whose staff';
-  state.selectedRequest = null;
-  renderBranchChoices();
-  renderDraft();
-}
-function lockApp(message = '') {
-  state.session = null;
-  state.overview = null;
-  state.requests = [];
-  state.draft = [];
-  state.selectedRequest = null;
-  state.pendingKey = null;
-  sessionStorage.removeItem(AUTH_SESSION_KEY);
-  document.getElementById('appRoot').classList.add('is-locked');
-  document.getElementById('authScreen').classList.remove('is-hidden');
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('loginError').textContent = message;
-}
-async function refreshAuth() {
-  if (!state.session?.refresh_token) throw new Error('No session');
-  const res = await fetch('/api/auth', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'refresh', refresh_token: state.session.refresh_token }),
-    cache: 'no-store'
-  });
-  if (!res.ok) { lockApp('Phiên đăng nhập đã hết hạn.'); throw new Error('Refresh failed'); }
-  setAuthenticated(await res.json());
-}
-async function authorizedFetch(url, init = {}) {
-  if (!state.session?.access_token) throw new Error('Authentication required');
-  if (Number(state.session.expires_at || 0) * 1000 < Date.now() + 45000) await refreshAuth();
-  const headers = new Headers(init.headers || {});
-  headers.set('Authorization', 'Bearer ' + state.session.access_token);
-  return fetch(url, { ...init, headers });
-}
-async function restoreAuth() {
-  let stored = null;
-  try { stored = JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch {}
-  if (!stored?.access_token || !stored?.refresh_token) { lockApp(); return; }
-  state.session = stored;
-  try {
-    const r = await authorizedFetch('/api/auth', { cache: 'no-store' });
-    if (!r.ok) throw new Error('Invalid staff session');
-    const staff = await r.json();
-    setAuthenticated({ ...state.session, ...staff });
-    await loadData();
-  } catch { lockApp('Phiên đăng nhập cũ không còn hợp lệ.'); }
-}
-async function sendWhoseRequest() {
-  if (state.submitting || !state.session) return;
-  const origin = document.getElementById('originBranch').value;
-  const destination = document.getElementById('destinationBranch').value;
-  if (!origin || !destination || origin === destination || !state.draft.length) {
-    toast('Chọn kho gửi, kho nhận và ít nhất một SKU');
-    return;
-  }
-  const payload = {
-    origin_branch_id: origin,
-    destination_branch_id: destination,
-    idempotency_key: state.pendingKey || crypto.randomUUID(),
-    note: document.getElementById('requestNote').value.trim(),
-    lines: state.draft.map(d => ({ sku: String(d.code || d.sku || '').trim(), qty: d.qty }))
-  };
-  if (payload.lines.some(x => !x.sku)) { toast('SKU không hợp lệ'); return; }
-  state.pendingKey = payload.idempotency_key;
-  state.submitting = true;
-  renderOperations();
-  try {
-    const response = await authorizedFetch('/api/backend?resource=requests', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      cache: 'no-store'
-    });
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        lockApp('Bạn không có quyền gửi yêu cầu trên kho đã chọn.');
-      } else toast('Không thể gửi yêu cầu. Thử lại sẽ không tạo trùng.');
-      return;
-    }
-    const { id } = await response.json();
-    state.draft = [];
-    state.pendingKey = null;
-    document.getElementById('requestNote').value = '';
-    renderDraft();
-    toast('Đã gửi yêu cầu · ' + String(id).slice(0,8).toUpperCase());
-    const list = await authorizedFetch('/api/backend?resource=requests&limit=100');
-    if (list.ok) state.requests = ((await list.json()).rows || []);
-    state.opsTab = 'open';
-    state.selectedRequest = null;
-    document.querySelectorAll('#opsTabs button').forEach(el => el.classList.toggle('active',el.dataset.opsTab === 'open'));
-    renderOperations();
-    if (state.requests.some(x => x.id === id)) await openRequest(id);
-  } catch { toast('Mất kết nối. Có thể thử lại mà không tạo phiếu trùng.'); }
-  finally { state.submitting = false; renderOperations(); }
-}
-
-document.getElementById('loginForm').onsubmit = async ev => {
-  ev.preventDefault();
-  const button = document.getElementById('loginSubmit');
-  button.disabled = true;
-  const error = document.getElementById('loginError');
-  error.textContent = '';
-  try {
-    const r = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'login',
-        email: document.getElementById('loginEmail').value,
-        password: document.getElementById('loginPassword').value
-      }), cache: 'no-store'
-    });
-    const data = await r.json();
-    if (!r.ok) {
-      error.textContent = data.error === 'STAFF_NOT_ONBOARDED'
-        ? 'Tài khoản chưa được quản trị viên gán chi nhánh và quyền truy cập.'
-        : 'Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu và quyền nhân viên.';
-      return;
-    }
-    setAuthenticated(data);
-    document.getElementById('loginPassword').value = '';
-    await loadData();
-  } catch { error.textContent = 'Không kết nối được hệ thống. Vui lòng thử lại.'; }
-  finally { button.disabled = false; }
-};
-document.getElementById('logoutBtn').onclick = async () => {
-  const bearer = state.session?.access_token;
-  lockApp();
-  if (!bearer) return;
-  try {
-    await fetch('/api/auth', {
-      method: 'POST', headers: { Authorization: 'Bearer ' + bearer, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'logout' }), cache: 'no-store'
-    });
-  } catch {}
-};
-document.getElementById('addSku').onclick = () => {
-  const input = document.getElementById('productInput');
-  const sku = input.value.trim();
-  if (!/^[A-Za-z0-9_.-]{2,100}$/.test(sku)) {
-    toast('Nhập mã SKU hợp lệ hoặc chọn trong danh sách gợi ý');
-    return;
-  }
-  const found = state.draft.find(x => String(x.code || x.sku).toLowerCase() === sku.toLowerCase());
-  if (found) found.qty += 1;
-  else state.draft.push({ sku, code: sku, qty: 1 });
-  state.pendingKey = null;
-  input.value = '';
-  document.getElementById('suggestions').classList.remove('show');
-  renderDraft();
-};
-document.getElementById('originBranch').onchange = renderOperations;
-document.getElementById('destinationBranch').onchange = renderOperations;
-document.getElementById('requestSearch').oninput = renderRequestList;
-document.querySelectorAll('#opsTabs button').forEach(el => el.onclick = () => {
-  state.opsTab = el.dataset.opsTab;
-  state.selectedRequest = null;
-  document.querySelectorAll('#opsTabs button').forEach(b => b.classList.toggle('active', b === el));
-  renderOperations();
-});
-
-document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
+  document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
   document.getElementById('pageTitle').textContent = meta[page][0];
   document.getElementById('pageSub').textContent = meta[page][1];
   setMobileNavState(page);
@@ -569,6 +398,178 @@ function setupProductComposer() {
   });
 }
 
+const AUTH_SESSION_KEY = 'whose-studio-auth-v1';
+
+function setAuthenticated(session) {
+  state.session = session;
+  sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  document.getElementById('authScreen').classList.add('is-hidden');
+  document.getElementById('appRoot').classList.remove('is-locked');
+  document.getElementById('staffName').textContent = session.user?.email || 'Nhân viên';
+  document.getElementById('staffRole').textContent = (session.memberships || [])
+    .map(m => m.role).filter((x, i, arr) => arr.indexOf(x) === i).join(', ') || 'Whose staff';
+  state.selectedRequest = null;
+  renderBranchChoices();
+  renderDraft();
+}
+function lockApp(message = '') {
+  state.session = null;
+  state.overview = null;
+  state.requests = [];
+  state.draft = [];
+  state.selectedRequest = null;
+  state.pendingKey = null;
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  document.getElementById('appRoot').classList.add('is-locked');
+  document.getElementById('authScreen').classList.remove('is-hidden');
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = message;
+}
+async function refreshAuth() {
+  if (!state.session?.refresh_token) throw new Error('No session');
+  const res = await fetch('/api/auth', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'refresh', refresh_token: state.session.refresh_token }),
+    cache: 'no-store'
+  });
+  if (!res.ok) { lockApp('Phiên đăng nhập đã hết hạn.'); throw new Error('Refresh failed'); }
+  setAuthenticated(await res.json());
+}
+async function authorizedFetch(url, init = {}) {
+  if (!state.session?.access_token) throw new Error('Authentication required');
+  if (Number(state.session.expires_at || 0) * 1000 < Date.now() + 45000) await refreshAuth();
+  const headers = new Headers(init.headers || {});
+  headers.set('Authorization', 'Bearer ' + state.session.access_token);
+  return fetch(url, { ...init, headers });
+}
+async function restoreAuth() {
+  let stored = null;
+  try { stored = JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch {}
+  if (!stored?.access_token || !stored?.refresh_token) { lockApp(); return; }
+  state.session = stored;
+  try {
+    const r = await authorizedFetch('/api/auth', { cache: 'no-store' });
+    if (!r.ok) throw new Error('Invalid staff session');
+    const staff = await r.json();
+    setAuthenticated({ ...state.session, ...staff });
+    await loadData();
+  } catch { lockApp('Phiên đăng nhập cũ không còn hợp lệ.'); }
+}
+async function sendWhoseRequest() {
+  if (state.submitting || !state.session) return;
+  const origin = document.getElementById('originBranch').value;
+  const destination = document.getElementById('destinationBranch').value;
+  if (!origin || !destination || origin === destination || !state.draft.length) {
+    toast('Chọn kho gửi, kho nhận và ít nhất một SKU');
+    return;
+  }
+  const payload = {
+    origin_branch_id: origin,
+    destination_branch_id: destination,
+    idempotency_key: state.pendingKey || crypto.randomUUID(),
+    note: document.getElementById('requestNote').value.trim(),
+    lines: state.draft.map(d => ({ sku: String(d.code || d.sku || '').trim(), qty: d.qty }))
+  };
+  if (payload.lines.some(x => !x.sku)) { toast('SKU không hợp lệ'); return; }
+  state.pendingKey = payload.idempotency_key;
+  state.submitting = true;
+  renderOperations();
+  try {
+    const response = await authorizedFetch('/api/backend?resource=requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store'
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        lockApp('Bạn không có quyền gửi yêu cầu trên kho đã chọn.');
+      } else toast('Không thể gửi yêu cầu. Thử lại sẽ không tạo trùng.');
+      return;
+    }
+    const { id } = await response.json();
+    state.draft = [];
+    state.pendingKey = null;
+    document.getElementById('requestNote').value = '';
+    renderDraft();
+    toast('Đã gửi yêu cầu · ' + String(id).slice(0,8).toUpperCase());
+    const list = await authorizedFetch('/api/backend?resource=requests&limit=100');
+    if (list.ok) state.requests = ((await list.json()).rows || []);
+    state.opsTab = 'open';
+    state.selectedRequest = null;
+    document.querySelectorAll('#opsTabs button').forEach(el => el.classList.toggle('active',el.dataset.opsTab === 'open'));
+    renderOperations();
+    if (state.requests.some(x => x.id === id)) await openRequest(id);
+  } catch { toast('Mất kết nối. Có thể thử lại mà không tạo phiếu trùng.'); }
+  finally { state.submitting = false; renderOperations(); }
+}
+
+document.getElementById('loginForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const button = document.getElementById('loginSubmit');
+  button.disabled = true;
+  const error = document.getElementById('loginError');
+  error.textContent = '';
+  try {
+    const r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'login',
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+      }), cache: 'no-store'
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      error.textContent = data.error === 'STAFF_NOT_ONBOARDED'
+        ? 'Tài khoản chưa được quản trị viên gán chi nhánh và quyền truy cập.'
+        : 'Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu và quyền nhân viên.';
+      return;
+    }
+    setAuthenticated(data);
+    document.getElementById('loginPassword').value = '';
+    await loadData();
+  } catch { error.textContent = 'Không kết nối được hệ thống. Vui lòng thử lại.'; }
+  finally { button.disabled = false; }
+};
+document.getElementById('logoutBtn').onclick = async () => {
+  const bearer = state.session?.access_token;
+  lockApp();
+  if (!bearer) return;
+  try {
+    await fetch('/api/auth', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + bearer, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout' }), cache: 'no-store'
+    });
+  } catch {}
+};
+document.getElementById('addSku').onclick = () => {
+  const input = document.getElementById('productInput');
+  const sku = input.value.trim();
+  if (!/^[A-Za-z0-9_.-]{2,100}$/.test(sku)) {
+    toast('Nhập mã SKU hợp lệ hoặc chọn trong danh sách gợi ý');
+    return;
+  }
+  const found = state.draft.find(x => String(x.code || x.sku).toLowerCase() === sku.toLowerCase());
+  if (found) found.qty += 1;
+  else state.draft.push({ sku, code: sku, qty: 1 });
+  state.pendingKey = null;
+  input.value = '';
+  document.getElementById('suggestions').classList.remove('show');
+  renderDraft();
+};
+document.getElementById('originBranch').onchange = renderOperations;
+document.getElementById('destinationBranch').onchange = renderOperations;
+document.getElementById('requestSearch').oninput = renderRequestList;
+document.querySelectorAll('#opsTabs button').forEach(el => el.onclick = () => {
+  state.opsTab = el.dataset.opsTab;
+  state.selectedRequest = null;
+  document.querySelectorAll('#opsTabs button').forEach(b => b.classList.toggle('active', b === el));
+  renderOperations();
+});
+
+
 document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.onclick = () => navigate(el.dataset.page));
 document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
   el.onclick = () => {
@@ -591,4 +592,4 @@ document.getElementById('globalSearch').addEventListener('keydown', (event) => {
 document.getElementById('sendRequest').onclick = sendWhoseRequest;
 setupProductComposer();
 navigate('dashboard');
-loadData();
+restoreAuth();
