@@ -1,6 +1,7 @@
 const {
   health, rest, accessToken, readResourceParams, validateSubmission
 } = require('../lib/whose-backend');
+const { verifyOrigin } = require('../lib/whose-auth');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
@@ -28,6 +29,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ rows: Array.isArray(result.data) ? result.data : [] });
   }
 
+  if (!verifyOrigin(req)) return res.status(403).json({ error: 'Invalid request origin' });
   if (req.query?.resource !== 'requests') {
     return res.status(404).json({ error: 'Unsupported operation' });
   }
