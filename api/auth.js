@@ -40,6 +40,12 @@ module.exports = async function handler(req, res) {
   }
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return fail(res, 400, 'Invalid payload');
   const mode = payload.action;
+  if (mode === 'logout') {
+    const bearer = accessToken(req);
+    if (!bearer) return fail(res, 401, 'Session not found');
+    await authFetch('logout?scope=local', { method: 'POST', bearer, body: {} });
+    return res.status(200).json({ signedOut: true });
+  }
   if (mode !== 'login' && mode !== 'refresh') return fail(res, 400, 'Unsupported authentication action');
   let tokens;
   if (mode === 'login') {
