@@ -408,7 +408,6 @@ function setAuthenticated(session) {
   document.getElementById('staffName').textContent = session.user?.email || 'Nhân viên';
   document.getElementById('staffRole').textContent = (session.memberships || [])
     .map(m => m.role).filter((x, i, arr) => arr.indexOf(x) === i).join(', ') || 'Whose staff';
-  state.selectedRequest = null;
   renderBranchChoices();
   renderDraft();
 }
@@ -425,15 +424,21 @@ function lockApp(message = '') {
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginError').textContent = message;
 }
+let refreshInFlight = null;
 async function refreshAuth() {
+  if (refreshInFlight) return refreshInFlight;
   if (!state.session?.refresh_token) throw new Error('No session');
-  const res = await fetch('/api/auth', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'refresh', refresh_token: state.session.refresh_token }),
-    cache: 'no-store'
-  });
-  if (!res.ok) { lockApp('Phiên đăng nhập đã hết hạn.'); throw new Error('Refresh failed'); }
-  setAuthenticated(await res.json());
+  refreshInFlight = (async () => {
+    const res = await fetch('/api/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'refresh', refresh_token: state.session.refresh_token }),
+      cache: 'no-store'
+    });
+    if (!res.ok) { lockApp('Phiên đăng nhập đã hết hạn.'); throw new Error('Refresh failed'); }
+    setAuthenticated(await res.json());
+  })();
+  try { return await refreshInFlight; }
+  finally { refreshInFlight = null; }
 }
 async function authorizedFetch(url, init = {}) {
   if (!state.session?.access_token) throw new Error('Authentication required');
@@ -559,8 +564,9 @@ document.getElementById('addSku').onclick = () => {
   document.getElementById('suggestions').classList.remove('show');
   renderDraft();
 };
-document.getElementById('originBranch').onchange = renderOperations;
-document.getElementById('destinationBranch').onchange = renderOperations;
+document.getElementById('originBranch').onchange = () => { state.pendingKey = null; renderOperations(); };
+document.getElementById('destinationBranch').onchange = () => { state.pendingKey = null; renderOperations(); };
+document.getElementById('requestNote').oninput = () => { state.pendingKey = null; };
 document.getElementById('requestSearch').oninput = renderRequestList;
 document.querySelectorAll('#opsTabs button').forEach(el => el.onclick = () => {
   state.opsTab = el.dataset.opsTab;
