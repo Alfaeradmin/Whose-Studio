@@ -1452,3 +1452,7 @@ body{font-size:13px;line-height:1.45}
   #operations .thread small{font-size:10px;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #operations .chat{min-height:0}
 }
+
+/* Keep the login screen keyboard-safe on iOS; never expose mobile navigation while signed out. */
+.auth-screen{height:100dvh;overflow-y:auto;overscroll-behavior:contain}
+body:not(.is-authenticated) .mobile-tabbar{display:none!important}
