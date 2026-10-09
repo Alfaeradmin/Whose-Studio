@@ -403,6 +403,7 @@ const AUTH_SESSION_KEY = 'whose-studio-auth-v1';
 function setAuthenticated(session) {
   state.session = session;
   sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  document.body.classList.add('is-authenticated');
   document.getElementById('authScreen').classList.add('is-hidden');
   document.getElementById('appRoot').classList.remove('is-locked');
   document.getElementById('staffName').textContent = session.user?.email || 'Nhân viên';
@@ -419,6 +420,7 @@ function lockApp(message = '') {
   state.selectedRequest = null;
   state.pendingKey = null;
   sessionStorage.removeItem(AUTH_SESSION_KEY);
+  document.body.classList.remove('is-authenticated');
   document.getElementById('appRoot').classList.add('is-locked');
   document.getElementById('authScreen').classList.remove('is-hidden');
   document.getElementById('loginPassword').value = '';
