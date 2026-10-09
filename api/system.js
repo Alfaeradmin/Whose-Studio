@@ -1,3 +1,5 @@
+const { health } = require('../lib/whose-backend');
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET only' });
 
@@ -12,6 +14,8 @@ module.exports = async function handler(req, res) {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     null;
+
+  const db = await health();
 
   res.status(200).json({
     app: 'Whose Studio',
@@ -31,7 +35,8 @@ module.exports = async function handler(req, res) {
       supabase: {
         urlConfigured: Boolean(supabaseUrl),
         publishableKeyConfigured: Boolean(publishableKey),
-        ready: Boolean(supabaseUrl && publishableKey)
+        ready: db.ready,
+        schemaVersion: db.ready ? '20261009-foundation' : null
       }
     },
     modules: {
@@ -41,11 +46,11 @@ module.exports = async function handler(req, res) {
       transfersMirror: 'read-model-ready',
       returnsMirror: 'read-model-ready',
       productsMirror: 'read-model-ready',
-      auth: supabaseUrl ? 'scaffolded' : 'waiting-for-supabase',
-      employeesAndRoles: supabaseUrl ? 'scaffolded' : 'waiting-for-supabase',
-      storeWarehouseOperations: supabaseUrl ? 'scaffolded' : 'waiting-for-supabase',
-      stocktakeDeltaLedger: supabaseUrl ? 'scaffolded' : 'waiting-for-supabase',
-      realtime: supabaseUrl ? 'scaffolded' : 'waiting-for-supabase',
+      auth: db.ready ? 'schema-ready' : 'waiting-for-supabase',
+      employeesAndRoles: db.ready ? 'schema-ready' : 'waiting-for-supabase',
+      storeWarehouseOperations: db.ready ? 'api-ready-ui-pending' : 'waiting-for-supabase',
+      stocktakeDeltaLedger: db.ready ? 'schema-only' : 'waiting-for-supabase',
+      realtime: 'not-configured',
       kiotvietWrite: 'disabled'
     }
   });
