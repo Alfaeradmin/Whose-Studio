@@ -122,7 +122,7 @@ async function restoreAuth() {
     if (!r.ok) throw new Error('Invalid staff session');
     const staff = await r.json();
     setAuthenticated({ ...state.session, ...staff });
-    await restoreAuth();
+    await loadData();
   } catch { lockApp('Phiên đăng nhập cũ không còn hợp lệ.'); }
 }
 async function sendWhoseRequest() {
