@@ -203,6 +203,9 @@ function renderBranchChoices() {
   const mine = new Set((state.session?.memberships || [])
     .filter(m => ['admin', 'manager', 'warehouse', 'store'].includes(m.role))
     .map(m => m.branch_id));
+  if (state.session?.is_global_admin === true) {
+    rows.filter(x => x.is_active !== false).forEach(x => mine.add(x.id));
+  }
   a.innerHTML = '<option value="">Chọn kho gửi</option>' +
     rows.filter(x => mine.has(x.id) && x.is_active !== false)
       .map(x => '<option value="' + esc(x.id) + '">' + esc(x.name) + '</option>').join('');
@@ -249,7 +252,9 @@ function renderOperations() {
   if (state.selectedRequest) return;
   const empty = document.getElementById('opsEmpty');
   empty.innerHTML = ready
-    ? '<b>Giao tiếp cửa hàng – kho</b><span>Chọn phiếu bên trái để xem chi tiết hoặc thêm SKU bên dưới và chọn tuyến để tạo yêu cầu.</span>'
+    ? ((state.session?.branches || []).length === 0
+      ? '<b>Admin đã được xác thực.</b><span>Chưa có chi nhánh Whose thực tế. Đồng bộ danh sách chi nhánh từ KiotViet trước khi tạo yêu cầu; hệ thống không tự sinh kho mẫu.</span>'
+      : '<b>Giao tiếp cửa hàng – kho</b><span>Chọn phiếu bên trái để xem chi tiết hoặc thêm SKU bên dưới và chọn tuyến để tạo yêu cầu.</span>')
     : '<b>Backend chưa sẵn sàng.</b><span>Kiểm tra cấu hình Supabase.</span>';
   renderRequestList();
 }
@@ -407,8 +412,10 @@ function setAuthenticated(session) {
   document.getElementById('authScreen').classList.add('is-hidden');
   document.getElementById('appRoot').classList.remove('is-locked');
   document.getElementById('staffName').textContent = session.user?.email || 'Nhân viên';
-  document.getElementById('staffRole').textContent = (session.memberships || [])
-    .map(m => m.role).filter((x, i, arr) => arr.indexOf(x) === i).join(', ') || 'Whose staff';
+  document.getElementById('staffRole').textContent = session.is_global_admin === true
+    ? 'Quản trị toàn hệ thống'
+    : ((session.memberships || [])
+      .map(m => m.role).filter((x, i, arr) => arr.indexOf(x) === i).join(', ') || 'Whose staff');
   renderBranchChoices();
   renderDraft();
 }
