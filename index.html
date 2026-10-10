@@ -9,7 +9,26 @@
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<div class="app">
+<div class="auth-screen" id="authScreen">
+  <div class="auth-panel">
+    <div class="auth-symbol">W</div>
+    <div class="auth-eyebrow">WHOSE · STUDIO OPERATIONS</div>
+    <h1>Chào mừng trở lại</h1>
+    <p class="auth-lede">Đăng nhập bằng tài khoản nhân viên đã được cấp quyền. Dữ liệu của Whose chỉ hiển thị sau khi xác thực.</p>
+    <form id="loginForm" autocomplete="on">
+      <label for="loginEmail">Email công việc</label>
+      <input id="loginEmail" type="email" inputmode="email" autocomplete="username" placeholder="ten@whose.vn" required maxlength="254">
+      <label for="loginPassword">Mật khẩu</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required minlength="8">
+      <p class="auth-error" id="loginError" role="alert" aria-live="polite"></p>
+      <button class="auth-submit" id="loginSubmit" type="submit">Đăng nhập <span>↗</span></button>
+    </form>
+    <a class="auth-recovery-link" href="/reset-password.html">Thiết lập mật khẩu lần đầu / Quên mật khẩu?</a>
+    <div class="auth-caption">Tài khoản được tạo và phân quyền bởi quản trị viên. Không tự mở đăng ký.</div>
+  </div>
+  <div class="auth-side"><div class="auth-side-label">WHOSE ATELIER</div><div class="auth-side-title">A better way<br>to operate.</div><div class="auth-side-footer">Kho · Cửa hàng · Sản phẩm · Con người</div></div>
+</div>
+<div class="app is-locked" id="appRoot">
   <aside class="sidebar" id="sidebar">
     <div class="brand"><div class="logo">W</div><div><b>WHOSE</b><small>STUDIO OPERATIONS</small></div></div>
 
@@ -29,7 +48,7 @@
     <div class="nav-item" data-page="kiot"><div class="nav-left"><span class="ico">↻</span><span class="nav-text">Đồng bộ KiotViet</span></div></div>
     <div class="nav-item" data-page="settings"><div class="nav-left"><span class="ico">⚙</span><span class="nav-text">Cài đặt</span></div></div>
 
-    <div class="sidebar-footer"><div class="user"><div class="avatar">W</div><div><b>Whose Studio</b><small>Nền tảng độc lập</small></div></div></div>
+    <div class="sidebar-footer"><div class="user"><div class="avatar">W</div><div><b id="staffName">Whose Studio</b><small id="staffRole">Đang xác thực</small></div></div></div>
   </aside>
 
   <section class="workspace">
@@ -38,7 +57,7 @@
         <button class="btn mobile-menu" onclick="toggleSidebar()">☰</button>
         <div class="page-title"><h1 id="pageTitle">Dashboard</h1><p id="pageSub">Tổng quan dữ liệu thật và trạng thái hệ thống</p></div>
       </div>
-      <div class="top-actions">
+      <div class="top-actions"><button class="btn logout-btn" id="logoutBtn" title="Đăng xuất tài khoản">Đăng xuất</button>
         <div class="searchbox">⌕ <input id="globalSearch" placeholder="Tìm SKU, phiếu, đơn..."></div>
         <button class="btn refresh-btn" id="refresh"><span class="refresh-icon">↻</span><span class="refresh-label">Làm mới</span></button>
       </div>
@@ -57,7 +76,7 @@
           <div class="card metric"><div class="metric-label">Phiếu trả</div><div class="metric-value" id="metricReturns">—</div><div class="metric-sub">KiotViet returns</div></div>
           <div class="card metric"><div class="metric-label">SKU tồn kho</div><div class="metric-value" id="metricInventory">—</div><div class="metric-sub">productOnHands</div></div>
           <div class="card metric"><div class="metric-label">Dòng âm tồn</div><div class="metric-value" id="metricNegative">—</div><div class="metric-sub">Trong mẫu tồn đã đọc</div></div>
-          <div class="card metric"><div class="metric-label">Whose database</div><div class="metric-value" style="font-size:17px">Pending</div><div class="metric-sub">Không dùng database ALFAER</div></div>
+          <div class="card metric"><div class="metric-label">Whose database</div><div class="metric-value" id="metricDatabase" style="font-size:17px">Pending</div><div class="metric-sub">Supabase dành riêng Whose</div></div>
         </div>
 
         <div class="grid grid-2" style="margin-top:14px">
@@ -75,17 +94,19 @@
       <section class="page" id="operations">
         <div class="ops-layout">
           <div class="ops-list">
-            <div class="ops-filter"><input placeholder="Tìm yêu cầu / cửa hàng / SKU"></div>
-            <div class="ops-tabs"><button class="active">Chờ nhận</button><button>Đang xử lý</button><button>Hoàn tất</button></div>
-            <div class="thread-list"><div class="thread placeholder"><b>Operational inbox</b><small id="operationsState"></small></div></div>
+            <div class="ops-filter"><input id="requestSearch" placeholder="Tìm phiếu / cửa hàng / SKU"></div>
+            <div class="ops-tabs" id="opsTabs"><button class="active" data-ops-tab="open">Đang chờ</button><button data-ops-tab="progress">Đang xử lý</button><button data-ops-tab="done">Hoàn tất</button></div>
+            <div class="thread-list" id="requestList"><div class="thread placeholder"><b>Operational inbox</b><small id="operationsState"></small></div></div>
           </div>
           <div class="chat">
-            <div class="chat-head"><div><b>Store ↔ Warehouse</b><small>UI realtime-first; transaction có cấu trúc</small></div></div>
+            <div class="chat-head"><div><b>Store ↔ Warehouse</b><small>Yêu cầu được lưu thật · không thay đổi tồn kho</small></div><span class="ops-ready" id="operationsState"></span></div>
             <div class="chat-body"><div class="empty" id="opsEmpty"></div></div>
             <div class="composer-area">
+              <div class="ops-branch-pair"><label>Kho gửi<select id="originBranch" aria-label="Kho gửi yêu cầu"></select></label><span class="ops-arrow">→</span><label>Kho nhận<select id="destinationBranch" aria-label="Kho nhận yêu cầu"></select></label></div>
+              <input class="ops-note" id="requestNote" maxlength="2000" placeholder="Ghi chú yêu cầu (không bắt buộc)">
               <div class="suggestions" id="suggestions"></div>
               <div class="drafts" id="drafts"></div>
-              <div class="composer"><button class="plus">＋</button><textarea id="productInput" rows="1" placeholder="Nhập mã hoặc tên sản phẩm…"></textarea><button class="send" id="sendRequest" disabled>Gửi yêu cầu</button></div>
+              <div class="composer"><button class="plus" id="addSku" type="button" title="Thêm SKU đã nhập">＋</button><textarea id="productInput" rows="1" placeholder="Tìm sản phẩm hoặc nhập SKU rồi bấm +"></textarea><button class="send" id="sendRequest" disabled>Gửi yêu cầu</button></div>
             </div>
           </div>
         </div>

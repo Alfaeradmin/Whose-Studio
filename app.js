@@ -2,7 +2,13 @@ const state = {
   overview: null,
   system: null,
   draft: [],
-  page: 'dashboard'
+  page: 'dashboard',
+  session: null,
+  requests: [],
+  selectedRequest: null,
+  opsTab: 'open',
+  pendingKey: null,
+  submitting: false
 };
 
 const meta = {
@@ -114,6 +120,8 @@ function renderDashboard() {
   document.getElementById('metricReturns').textContent = fmt(totals.returns);
   document.getElementById('metricInventory').textContent = fmt(totals.productOnHands ?? inv.inventoryRows);
   document.getElementById('metricNegative').textContent = fmt(inv.negative);
+  const dbMetric = document.getElementById('metricDatabase');
+  if (dbMetric) dbMetric.textContent = state.system?.integrations?.supabase?.ready ? 'Schema ready' : 'Pending';
 
   const connectivity = d.connectivity || {};
   const err = errorSummary(connectivity);
@@ -184,15 +192,97 @@ function renderReturns() {
     : '<tr><td colspan="5"><div class="empty"><b>Chưa có phiếu trả hàng</b><span>Whose đã tích hợp read-only GET /returns; chờ credential KiotViet hợp lệ.</span></div></td></tr>';
 }
 
+function branchName(id) {
+  return state.session?.branches?.find(x => x.id === id)?.name || 'Chi nhánh';
+}
+function renderBranchChoices() {
+  const a = document.getElementById('originBranch');
+  const b = document.getElementById('destinationBranch');
+  const oldA = a.value, oldB = b.value;
+  const rows = state.session?.branches || [];
+  const mine = new Set((state.session?.memberships || [])
+    .filter(m => ['admin', 'manager', 'warehouse', 'store'].includes(m.role))
+    .map(m => m.branch_id));
+  if (state.session?.is_global_admin === true) {
+    rows.filter(x => x.is_active !== false).forEach(x => mine.add(x.id));
+  }
+  a.innerHTML = '<option value="">Chọn kho gửi</option>' +
+    rows.filter(x => mine.has(x.id) && x.is_active !== false)
+      .map(x => '<option value="' + esc(x.id) + '">' + esc(x.name) + '</option>').join('');
+  b.innerHTML = '<option value="">Chọn kho nhận</option>' +
+    rows.filter(x => x.is_active !== false)
+      .map(x => '<option value="' + esc(x.id) + '">' + esc(x.name) + '</option>').join('');
+  if (mine.has(oldA)) a.value = oldA;
+  else if (mine.size === 1) a.value = [...mine][0];
+  if (rows.some(x => x.id === oldB)) b.value = oldB;
+}
+function renderRequestList() {
+  const host = document.getElementById('requestList');
+  const statuses = state.opsTab === 'open' ? ['submitted', 'assigned', 'rejected'] :
+    state.opsTab === 'progress' ? ['accepted', 'picking', 'handed_over'] :
+    ['completed', 'cancelled'];
+  const q = (document.getElementById('requestSearch')?.value || '').trim().toLowerCase();
+  const rows = state.requests.filter(x => statuses.includes(x.status) &&
+    [x.id, x.note, branchName(x.origin_branch_id), branchName(x.destination_branch_id)]
+      .some(s => String(s || '').toLowerCase().includes(q)));
+  host.innerHTML = rows.length ? rows.map(r =>
+    '<div class="thread ' + (state.selectedRequest?.id === r.id ? 'is-selected' : '') +
+    '" data-request-id="' + esc(r.id) + '" tabindex="0" role="button">' +
+    '<b>' + esc(branchName(r.origin_branch_id)) + ' → ' + esc(branchName(r.destination_branch_id)) +
+    '</b><small>' + esc(r.id.slice(0,8).toUpperCase()) + ' · ' + esc(r.status) +
+    ' · ' + esc(new Date(r.created_at).toLocaleString('vi-VN')) +
+    '</small><small>' + esc(r.note || 'Yêu cầu kho') + '</small></div>'
+  ).join('') :
+    '<div class="thread placeholder"><b>Chưa có yêu cầu</b><small>Danh sách sẽ hiển thị khi có giao dịch thật.</small></div>';
+  host.querySelectorAll('[data-request-id]').forEach(el => {
+    el.onclick = () => openRequest(el.dataset.requestId);
+    el.onkeydown = ev => { if (ev.key === 'Enter') openRequest(el.dataset.requestId); };
+  });
+}
 function renderOperations() {
   const ready = Boolean(state.system?.integrations?.supabase?.ready);
-  const badge = document.getElementById('operationsState');
-  badge.innerHTML = ready ? status('Backend connected', 'green') : status('Chờ Supabase', 'amber');
-  document.getElementById('sendRequest').disabled = !ready || state.draft.length === 0;
-  document.getElementById('opsEmpty').innerHTML = ready
-    ? '<b>Chưa có yêu cầu thật.</b><span>Khi nhân viên tạo yêu cầu, thread sẽ xuất hiện realtime tại đây.</span>'
-    : '<b>Giao diện đã sẵn sàng, backend nghiệp vụ chưa kích hoạt.</b><span>Cần Supabase riêng để lưu user, role, request, message, assignment và realtime.</span>';
+  document.getElementById('operationsState').innerHTML = ready ?
+    status('Backend kết nối', 'green') : status('Chờ kết nối', 'amber');
+  if (state.session) renderBranchChoices();
+  const source = document.getElementById('originBranch')?.value;
+  const dest = document.getElementById('destinationBranch')?.value;
+  const enabled = ready && state.session && state.draft.length > 0 &&
+    source && dest && source !== dest && !state.submitting;
+  document.getElementById('sendRequest').disabled = !enabled;
+  if (state.selectedRequest) return;
+  const empty = document.getElementById('opsEmpty');
+  empty.innerHTML = ready
+    ? ((state.session?.branches || []).length === 0
+      ? '<b>Admin đã được xác thực.</b><span>Chưa có chi nhánh Whose thực tế. Đồng bộ danh sách chi nhánh từ KiotViet trước khi tạo yêu cầu; hệ thống không tự sinh kho mẫu.</span>'
+      : '<b>Giao tiếp cửa hàng – kho</b><span>Chọn phiếu bên trái để xem chi tiết hoặc thêm SKU bên dưới và chọn tuyến để tạo yêu cầu.</span>')
+    : '<b>Backend chưa sẵn sàng.</b><span>Kiểm tra cấu hình Supabase.</span>';
+  renderRequestList();
 }
+async function openRequest(id) {
+  const found = state.requests.find(x => x.id === id);
+  if (!found) return;
+  state.selectedRequest = found;
+  renderRequestList();
+  const empty = document.getElementById('opsEmpty');
+  empty.innerHTML = '<b>Đang đọc nội dung yêu cầu…</b>';
+  try {
+    const res = await authorizedFetch('/api/backend?resource=request_lines&request_id=' +
+      encodeURIComponent(id));
+    if (!res.ok) throw new Error('request fetch failed');
+    const { rows } = await res.json();
+    if (state.selectedRequest?.id !== id) return;
+    empty.innerHTML = '<div class="request-detail"><div class="request-heading">' +
+      esc(branchName(found.origin_branch_id)) + ' → ' + esc(branchName(found.destination_branch_id)) +
+      '</div>' + (rows || []).map(x => '<div class="request-line"><b>' +
+        esc(x.sku) + '</b><span>SL: ' + esc(x.requested_qty) + '</span></div>').join('') +
+      '<div class="request-meta">Mã phiếu: ' + esc(found.id) + '<br>Trạng thái: ' +
+      esc(found.status) + '<br>Ghi chú: ' + esc(found.note || 'Không có') +
+      '</div></div>';
+  } catch {
+    empty.innerHTML = '<b>Không thể tải chi tiết yêu cầu.</b><span>Thử mở lại phiếu.</span>';
+  }
+}
+
 
 function renderModules() {
   const modules = state.system?.modules || {};
@@ -228,20 +318,31 @@ function renderAll() {
 }
 
 async function loadData() {
+  if (!state.session) return;
   const refresh = document.getElementById('refresh');
   refresh.disabled = true;
   try {
-    const [systemRes, overviewRes] = await Promise.all([
+    const [systemRes, overviewRes, requestRes] = await Promise.all([
       fetch('/api/system', { cache: 'no-store' }),
-      fetch('/api/overview', { cache: 'no-store' })
+      authorizedFetch('/api/overview', { cache: 'no-store' }),
+      authorizedFetch('/api/backend?resource=requests&limit=100', { cache: 'no-store' })
     ]);
-    state.system = await systemRes.json();
-    state.overview = await overviewRes.json();
-  } catch (error) {
-    toast('Không thể tải trạng thái hệ thống');
+    if (overviewRes.status === 401 || overviewRes.status === 403 ||
+        requestRes.status === 401 || requestRes.status === 403) {
+      lockApp('Phiên đăng nhập không còn quyền truy cập. Vui lòng đăng nhập lại.');
+      return;
+    }
+    state.system = systemRes.ok ? await systemRes.json() : null;
+    state.overview = overviewRes.ok ? await overviewRes.json() : null;
+    state.requests = requestRes.ok ? ((await requestRes.json()).rows || []) : [];
+    if (!overviewRes.ok) toast('Không thể tải dữ liệu KiotViet');
+    if (!requestRes.ok) toast('Không thể tải yêu cầu kho');
+    renderAll();
+  } catch {
+    toast('Không thể tải dữ liệu, vui lòng thử lại');
+    renderAll();
   } finally {
     refresh.disabled = false;
-    renderAll();
   }
 }
 
@@ -262,6 +363,7 @@ function renderDraft() {
     const item = state.draft.find((x) => String(x.id) === String(id));
     if (!item) return;
     item.qty += Number(button.dataset.delta);
+    state.pendingKey = null;
     if (item.qty <= 0) state.draft = state.draft.filter((x) => String(x.id) !== String(id));
     renderDraft();
     renderOperations();
@@ -287,6 +389,7 @@ function setupProductComposer() {
       const product = (state.overview?.samples?.products || []).find((p) => String(p.id) === row.dataset.id);
       if (!product) return;
       const existing = state.draft.find((x) => String(x.id) === String(product.id));
+      state.pendingKey = null;
       if (existing) existing.qty += 1;
       else state.draft.push({ ...product, qty: 1 });
       input.value = '';
@@ -299,6 +402,188 @@ function setupProductComposer() {
     if (!event.target.closest('.composer-area')) suggestions.classList.remove('show');
   });
 }
+
+const AUTH_SESSION_KEY = 'whose-studio-auth-v1';
+
+function setAuthenticated(session) {
+  state.session = session;
+  sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  document.body.classList.add('is-authenticated');
+  document.getElementById('authScreen').classList.add('is-hidden');
+  document.getElementById('appRoot').classList.remove('is-locked');
+  document.getElementById('staffName').textContent = session.user?.email || 'Nhân viên';
+  document.getElementById('staffRole').textContent = session.is_global_admin === true
+    ? 'Quản trị toàn hệ thống'
+    : ((session.memberships || [])
+      .map(m => m.role).filter((x, i, arr) => arr.indexOf(x) === i).join(', ') || 'Whose staff');
+  renderBranchChoices();
+  renderDraft();
+}
+function lockApp(message = '') {
+  state.session = null;
+  state.overview = null;
+  state.requests = [];
+  state.draft = [];
+  state.selectedRequest = null;
+  state.pendingKey = null;
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  document.body.classList.remove('is-authenticated');
+  document.getElementById('appRoot').classList.add('is-locked');
+  document.getElementById('authScreen').classList.remove('is-hidden');
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = message;
+}
+let refreshInFlight = null;
+async function refreshAuth() {
+  if (refreshInFlight) return refreshInFlight;
+  if (!state.session?.refresh_token) throw new Error('No session');
+  refreshInFlight = (async () => {
+    const res = await fetch('/api/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'refresh', refresh_token: state.session.refresh_token }),
+      cache: 'no-store'
+    });
+    if (!res.ok) { lockApp('Phiên đăng nhập đã hết hạn.'); throw new Error('Refresh failed'); }
+    setAuthenticated(await res.json());
+  })();
+  try { return await refreshInFlight; }
+  finally { refreshInFlight = null; }
+}
+async function authorizedFetch(url, init = {}) {
+  if (!state.session?.access_token) throw new Error('Authentication required');
+  if (Number(state.session.expires_at || 0) * 1000 < Date.now() + 45000) await refreshAuth();
+  const headers = new Headers(init.headers || {});
+  headers.set('Authorization', 'Bearer ' + state.session.access_token);
+  return fetch(url, { ...init, headers });
+}
+async function restoreAuth() {
+  let stored = null;
+  try { stored = JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY) || 'null'); } catch {}
+  if (!stored?.access_token || !stored?.refresh_token) { lockApp(); return; }
+  state.session = stored;
+  try {
+    const r = await authorizedFetch('/api/auth', { cache: 'no-store' });
+    if (!r.ok) throw new Error('Invalid staff session');
+    const staff = await r.json();
+    setAuthenticated({ ...state.session, ...staff });
+    await loadData();
+  } catch { lockApp('Phiên đăng nhập cũ không còn hợp lệ.'); }
+}
+async function sendWhoseRequest() {
+  if (state.submitting || !state.session) return;
+  const origin = document.getElementById('originBranch').value;
+  const destination = document.getElementById('destinationBranch').value;
+  if (!origin || !destination || origin === destination || !state.draft.length) {
+    toast('Chọn kho gửi, kho nhận và ít nhất một SKU');
+    return;
+  }
+  const payload = {
+    origin_branch_id: origin,
+    destination_branch_id: destination,
+    idempotency_key: state.pendingKey || crypto.randomUUID(),
+    note: document.getElementById('requestNote').value.trim(),
+    lines: state.draft.map(d => ({ sku: String(d.code || d.sku || '').trim(), qty: d.qty }))
+  };
+  if (payload.lines.some(x => !x.sku)) { toast('SKU không hợp lệ'); return; }
+  state.pendingKey = payload.idempotency_key;
+  state.submitting = true;
+  renderOperations();
+  try {
+    const response = await authorizedFetch('/api/backend?resource=requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store'
+    });
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        lockApp('Bạn không có quyền gửi yêu cầu trên kho đã chọn.');
+      } else toast('Không thể gửi yêu cầu. Thử lại sẽ không tạo trùng.');
+      return;
+    }
+    const { id } = await response.json();
+    state.draft = [];
+    state.pendingKey = null;
+    document.getElementById('requestNote').value = '';
+    renderDraft();
+    toast('Đã gửi yêu cầu · ' + String(id).slice(0,8).toUpperCase());
+    const list = await authorizedFetch('/api/backend?resource=requests&limit=100');
+    if (list.ok) state.requests = ((await list.json()).rows || []);
+    state.opsTab = 'open';
+    state.selectedRequest = null;
+    document.querySelectorAll('#opsTabs button').forEach(el => el.classList.toggle('active',el.dataset.opsTab === 'open'));
+    renderOperations();
+    if (state.requests.some(x => x.id === id)) await openRequest(id);
+  } catch { toast('Mất kết nối. Có thể thử lại mà không tạo phiếu trùng.'); }
+  finally { state.submitting = false; renderOperations(); }
+}
+
+document.getElementById('loginForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const button = document.getElementById('loginSubmit');
+  button.disabled = true;
+  const error = document.getElementById('loginError');
+  error.textContent = '';
+  try {
+    const r = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'login',
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+      }), cache: 'no-store'
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      error.textContent = data.error === 'STAFF_NOT_ONBOARDED'
+        ? 'Tài khoản chưa được quản trị viên gán chi nhánh và quyền truy cập.'
+        : 'Không thể đăng nhập. Kiểm tra tài khoản, mật khẩu và quyền nhân viên.';
+      return;
+    }
+    setAuthenticated(data);
+    document.getElementById('loginPassword').value = '';
+    await loadData();
+  } catch { error.textContent = 'Không kết nối được hệ thống. Vui lòng thử lại.'; }
+  finally { button.disabled = false; }
+};
+document.getElementById('logoutBtn').onclick = async () => {
+  const bearer = state.session?.access_token;
+  lockApp();
+  if (!bearer) return;
+  try {
+    await fetch('/api/auth', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + bearer, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout' }), cache: 'no-store'
+    });
+  } catch {}
+};
+document.getElementById('addSku').onclick = () => {
+  const input = document.getElementById('productInput');
+  const sku = input.value.trim();
+  if (!/^[A-Za-z0-9_.-]{2,100}$/.test(sku)) {
+    toast('Nhập mã SKU hợp lệ hoặc chọn trong danh sách gợi ý');
+    return;
+  }
+  const found = state.draft.find(x => String(x.code || x.sku).toLowerCase() === sku.toLowerCase());
+  if (found) found.qty += 1;
+  else state.draft.push({ sku, code: sku, qty: 1 });
+  state.pendingKey = null;
+  input.value = '';
+  document.getElementById('suggestions').classList.remove('show');
+  renderDraft();
+};
+document.getElementById('originBranch').onchange = () => { state.pendingKey = null; renderOperations(); };
+document.getElementById('destinationBranch').onchange = () => { state.pendingKey = null; renderOperations(); };
+document.getElementById('requestNote').oninput = () => { state.pendingKey = null; };
+document.getElementById('requestSearch').oninput = renderRequestList;
+document.querySelectorAll('#opsTabs button').forEach(el => el.onclick = () => {
+  state.opsTab = el.dataset.opsTab;
+  state.selectedRequest = null;
+  document.querySelectorAll('#opsTabs button').forEach(b => b.classList.toggle('active', b === el));
+  renderOperations();
+});
+
 
 document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.onclick = () => navigate(el.dataset.page));
 document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
@@ -319,13 +604,7 @@ document.getElementById('globalSearch').addEventListener('keydown', (event) => {
     toast('Search full catalog sẽ được nối với database mirror');
   }
 });
-document.getElementById('sendRequest').onclick = () => {
-  if (!state.system?.integrations?.supabase?.ready) {
-    toast('Cần Supabase trước khi gửi yêu cầu thật');
-    return;
-  }
-  toast('Chưa mở ghi production ở bước nền');
-};
+document.getElementById('sendRequest').onclick = sendWhoseRequest;
 setupProductComposer();
 navigate('dashboard');
-loadData();
+restoreAuth();

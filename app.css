@@ -1368,3 +1368,91 @@ body{font-size:13px;line-height:1.45}
     scroll-behavior:auto!important
   }
 }
+
+
+/* ===== Whose Atelier / verified employee access ===== */
+.app.is-locked{display:none!important}
+.auth-screen{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,36%);background:#f6f3ed}
+.auth-screen.is-hidden{display:none!important}
+.auth-panel{width:min(480px,calc(100% - 44px));margin:auto;display:flex;flex-direction:column;padding:28px 0;gap:0}
+.auth-symbol{width:53px;height:53px;border-radius:17px;background:#181a18;color:#f4f1e9;display:grid;place-items:center;font-weight:850;font-size:23px;letter-spacing:-.05em;margin-bottom:27px}
+.auth-eyebrow{font-size:11px;font-weight:820;letter-spacing:.19em;color:#817c72;margin-bottom:10px}
+.auth-panel h1{font-size:clamp(28px,3vw,42px);letter-spacing:-.05em;margin:0 0 11px;font-weight:730;line-height:1.13}
+.auth-lede{font-size:15px;line-height:1.65;color:#726d65;margin:0 0 27px;max-width:420px}
+#loginForm{display:flex;flex-direction:column;gap:9px}
+#loginForm label{font-size:13px;font-weight:710;color:#2f2d2a}
+#loginForm input{background:#fff;border:1px solid #d9d4c9;border-radius:13px;font-size:16px;min-height:54px;padding:12px 15px;outline:none;margin-bottom:9px;color:#242521}
+#loginForm input:focus,.ops-branch-pair select:focus,.ops-note:focus{border-color:#4c775d;box-shadow:0 0 0 3px #b7d5bd55}
+.auth-error{font-size:13px;line-height:1.5;color:#a14d43;min-height:19px;margin:0}
+.auth-submit{height:54px;border:0;border-radius:14px;background:#181a18;color:#f5f3ed;font-size:15px;font-weight:780;padding:0 17px;text-align:left;display:flex;align-items:center;justify-content:space-between}
+.auth-submit:disabled{opacity:.6;cursor:wait}
+.auth-submit span{font-size:21px}
+.auth-caption{font-size:12px;color:#8d877d;line-height:1.6;margin-top:22px}
+.auth-side{background:#1d201e;color:#efece5;display:flex;flex-direction:column;justify-content:space-between;padding:40px;position:relative;overflow:hidden}
+.auth-side:before{content:"W";position:absolute;right:-.17em;top:.12em;font-size:min(45vw,460px);font-weight:900;line-height:1;color:#ffffff09}
+.auth-side-label{z-index:1;font-size:12px;font-weight:820;letter-spacing:.24em}
+.auth-side-title{z-index:1;font-size:clamp(32px,4.3vw,66px);font-weight:610;line-height:1.05;letter-spacing:-.065em}
+.auth-side-footer{z-index:1;color:#a7ada7;font-size:12px;letter-spacing:.05em}
+.logout-btn{white-space:nowrap}
+.ops-branch-pair{display:grid;grid-template-columns:minmax(0,1fr) 25px minmax(0,1fr);gap:9px;align-items:end;padding:0 0 10px}
+.ops-branch-pair label{display:flex;flex-direction:column;gap:6px;font-weight:730;color:#474840;font-size:12px}
+.ops-branch-pair select{border:1px solid #d5d2ca;background:#fff;border-radius:10px;padding:11px 9px;min-width:0;font-size:14px;color:#292b29;height:44px}
+.ops-arrow{align-self:center;justify-self:center;color:#686f69;font-weight:700;font-size:17px}
+.ops-note{width:100%;height:39px;border:1px solid #d6d3c9;background:#fff;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:14px;color:#333}
+.ops-ready{font-size:12px;white-space:nowrap}
+#requestList .thread{cursor:pointer;display:flex;flex-direction:column;gap:6px}
+#requestList .thread.is-selected{box-shadow:inset 3px 0 0 #2f7458;background:#efede5}
+#requestList .thread b{font-size:13px}
+#requestList .thread small{font-size:11px;line-height:1.5}
+#opsEmpty .request-detail{text-align:left}
+.request-detail .request-heading{font-size:17px;font-weight:760;margin-bottom:13px}
+.request-detail .request-line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e2ded6;font-size:13px;gap:9px}
+.request-detail .request-line b{font-weight:780}
+.request-detail .request-meta{font-size:12px;color:#858078;line-height:1.6;margin-top:14px}
+#sendRequest:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:900px){
+ .auth-screen{grid-template-columns:1fr}
+ .auth-side{display:none}
+ .auth-panel{padding:25px 0 55px}
+ .auth-panel h1{font-size:34px}
+ .auth-lede{font-size:15px}
+ .logout-btn{padding:8px 10px;font-size:12px}
+ .ops-branch-pair{gap:5px;grid-template-columns:minmax(0,1fr) 17px minmax(0,1fr)}
+ .ops-branch-pair select{font-size:13px;padding:8px 6px;height:43px}
+ .ops-note{font-size:14px}
+}
+@media(max-width:600px){
+ .auth-screen{align-items:start}
+ .auth-panel{margin:0 auto;padding-top:max(70px,env(safe-area-inset-top))}
+ .ops-ready{font-size:10px}
+ .composer-area{max-height:48dvh;overflow-y:auto}
+}
+
+
+/* Real operational inbox is accessible on mobile, not hidden behind a desktop-only sidebar. */
+@media(max-width:900px){
+  #operations .ops-layout{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:144px minmax(0,1fr);
+    min-height:0;
+  }
+  #operations .ops-list{
+    display:grid;
+    grid-template-rows:38px minmax(0,1fr);
+    min-height:0;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+  }
+  #operations .ops-filter{display:none}
+  #operations .ops-tabs{height:38px;padding:3px 8px 4px}
+  #operations .ops-tabs button{font-size:12px;padding:6px 5px}
+  #operations .thread-list{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding:5px 8px;scroll-snap-type:x proximity}
+  #operations .thread{flex:0 0 208px;max-width:240px;min-width:180px;padding:7px 10px;scroll-snap-align:start}
+  #operations .thread b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #operations .thread small{font-size:10px;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #operations .chat{min-height:0}
+}
+
+/* Keep the login screen keyboard-safe on iOS; never expose mobile navigation while signed out. */
+.auth-screen{height:100dvh;overflow-y:auto;overscroll-behavior:contain}
+body:not(.is-authenticated) .mobile-tabbar{display:none!important}
