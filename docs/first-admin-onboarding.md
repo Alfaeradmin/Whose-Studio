@@ -1,5 +1,18 @@
 # Whose Studio – first real administrator
 
+## Current first-admin onboarding record (2026-10-10)
+
+- Approved admin email: `alfaeradmin@gmail.com`.
+- Private onboarding record: `whose_private.initial_admin_onboarding`.
+- Status: `pending_email_invite` (**not an invited, confirmed, or activated Auth user**).
+- Whose project: `fjauxxunyxxboduyxjyr`; no ALFAER WMS dependency.
+- Create the identity through Supabase Dashboard → Authentication → Users → Invite user; never insert rows directly into `auth.users` with SQL.
+- An admin must verify the email and choose a real Whose branch before any `whose_staff_memberships` admin membership is granted.
+- Do not try to add a dummy branch to satisfy foreign keys. The application currently requires an active branch membership for interactive login.
+- After the owner confirms invitation acceptance, inspect `auth.users.email_confirmed_at` and a real `whose_branches` row before activating the account.
+- Do not commit service-role keys or plaintext passwords.
+
+
 Status: UI and backend support password login with Supabase Auth. No user accounts, locations or inventory should be fabricated. Production remains gated until real admin and scoped workflows pass.
 
 ## 1. Create the real staff identity
