@@ -32,3 +32,17 @@ test('non-authenticated branch import is blocked before KiotViet fetch',async()=
  await handler({method:'POST',headers:{}},response);
  assert.equal(response.statusCode,401);
 });
+
+
+test('source-directory migrations block direct staff writes without granting anon import',()=>{
+ const fs=require('node:fs'),p=require('node:path');
+ const create=fs.readFileSync(p.join(__dirname,'../supabase/migrations/20261010194500_whose_kiot_branch_directory.sql'),'utf8');
+ const lock=fs.readFileSync(p.join(__dirname,'../supabase/migrations/20261010200000_whose_kiot_branch_write_lockdown.sql'),'utf8');
+ assert.match(create,/whose_private\.global_admin\(\)/);
+ assert.match(create,/KiotViet branches/);
+ assert.match(create,/ON CONFLICT\(kiot_branch_id\) DO UPDATE/);
+ assert.match(lock,/REVOKE INSERT, UPDATE, DELETE/);
+ assert.match(lock,/FROM authenticated/);
+ assert.match(lock,/REVOKE ALL ON FUNCTION public\.whose_import_kiot_branches\(jsonb\) FROM PUBLIC,anon/);
+ assert.doesNotMatch(create,/INSERT INTO public\.whose_branches/);
+});
