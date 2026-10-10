@@ -6,6 +6,6 @@
     "node": ">=20"
   },
   "scripts": {
-    "check": "node --check api/health.js && node --check api/overview.js && node --check api/system.js && node --check api/backend.js && node --check api/auth.js && node --check api/password.js && node --check reset-password.js && node --check lib/kiotviet.js && node --check lib/whose-backend.js && node --check lib/whose-auth.js && node --check app.js && node --test test/*.test.js"
+    "check": "node --check api/health.js && node --check api/kiot-branches.js && node --check lib/kiot-branches.js && node --check api/overview.js && node --check api/system.js && node --check api/backend.js && node --check api/auth.js && node --check api/password.js && node --check reset-password.js && node --check lib/kiotviet.js && node --check lib/whose-backend.js && node --check lib/whose-auth.js && node --check app.js && node --test test/*.test.js"
   }
 }
