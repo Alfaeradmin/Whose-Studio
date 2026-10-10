@@ -1,45 +1,31 @@
-# Whose Studio – first real administrator
+# Whose Studio — first administrator bootstrap
 
-## Current first-admin onboarding record (2026-10-10)
+## Verified Whose Auth identity (2026-10-10)
 
-- Approved admin email: `alfaeradmin@gmail.com`.
-- Private onboarding record: `whose_private.initial_admin_onboarding`.
-- Status: `pending_email_invite` (**not an invited, confirmed, or activated Auth user**).
-- Whose project: `fjauxxunyxxboduyxjyr`; no ALFAER WMS dependency.
-- Create the identity through Supabase Dashboard → Authentication → Users → Invite user; never insert rows directly into `auth.users` with SQL.
-- An admin must verify the email and choose a real Whose branch before any `whose_staff_memberships` admin membership is granted.
-- Do not try to add a dummy branch to satisfy foreign keys. The application currently requires an active branch membership for interactive login.
-- After the owner confirms invitation acceptance, inspect `auth.users.email_confirmed_at` and a real `whose_branches` row before activating the account.
-- Do not commit service-role keys or plaintext passwords.
+- Owner-approved login email: `alfaeradmin@gmail.com`.
+- Supabase project: `fjauxxunyxxboduyxjyr` (Whose Studio ONLY).
+- Actual Supabase Auth user was invited, email confirmed, and has an observed sign-in.
+- Initial private onboarding intent: `whose_private.initial_admin_onboarding`.
+- Global admin migration: `20261010120000_whose_verified_global_admin.sql`.
+- Scope: global administration across real Whose branches when they exist. No fake branch, stock, or bill.
+- The DB predicate `whose_private.global_admin()` verifies current Auth UID, enabled profile, global-admin flag, owner-approved onboarding record, matching confirmed email and an un-deleted Auth user.
+- The user's browser is not trusted to claim Admin; API checks `rpc/whose_my_global_admin` using the signed-in bearer, and RLS applies the same DB predicate.
+- A regular user with no active branch membership and no global admin verification remains blocked.
 
+## Bootstrap procedure
 
-Status: UI and backend support password login with Supabase Auth. No user accounts, locations or inventory should be fabricated. Production remains gated until real admin and scoped workflows pass.
+1. Confirm the approved Auth user ID belongs to the exact confirmed email in Whose Supabase.
+2. Apply the global admin migration ONLY to the Whose Supabase project; migration fails closed if verification or owner-approved intent is missing.
+3. Verify `whose_staff_profiles.is_global_admin=true`, matching `activated_user_id` and the private onboarding state `activated`.
+4. Verify the Whose Auth API allows the approved Admin to sign in even with zero real branches.
+5. Verify unapproved users remain unable to see any protected KiotViet data or requests.
+6. When real locations are available, import KiotViet branches with their verified IDs and test actual warehouse permissions.
 
-## 1. Create the real staff identity
+## Remaining release gates
 
-1. Open Whose Studio Supabase project fjauxxunyxxboduyxjyr, never ALFAER WMS.
-2. Dashboard → Authentication → Users → Add user or Invite user; use the actual work email of the intended Whose administrator.
-3. Have employee activate their account and securely set a password. Do not paste passwords, temporary credentials or access tokens into chat or source code.
-4. Copy that employee's actual Auth user UUID from the Dashboard.
-5. Consider disabling public Auth signup; the Whose UI has intentionally no self-registration.
-
-## 2. Register a real Whose branch
-
-Table Editor → whose_branches. Add a real business location verified with KiotViet or the business owner:
-- name: real branch or warehouse name
-- kind: store or warehouse
-- kiot_branch_id: verified KiotViet branch ID, if available
-- code: unique branch code if available
-
-Do not invent branch identifiers or seed a fictional warehouse. This project is independent from ALFAER WMS.
-
-## 3. Assign staff to an actual branch
-
-In the Whose Studio Table Editor with owner privileges:
-- whose_staff_profiles: user_id = real Auth UUID; display_name = verified staff name; is_active = true.
-- whose_staff_memberships: user_id = same real Auth UUID; branch_id = actual Whose branch UUID; role = admin; is_active = true.
-
-Auth users without a staff profile and active membership must NOT obtain operational access.
+- No employee account password or secret is stored in source control.
+- Production is not promoted until end-to-end login and branch-scoped workflow tests succeed.
+- KiotViet remains read-only; no fictitious inventory rows, sample branches, or transactions are allowed.
 
 ## 4. Verify Vercel Preview
 
