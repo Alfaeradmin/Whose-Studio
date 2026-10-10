@@ -3,7 +3,7 @@
 const { environment, accessToken } = require('../lib/whose-backend');
 const { authFetch, validateStaffBearer, verifyOrigin } = require('../lib/whose-auth');
 
-const APPROVED_ADMIN_EMAIL = 'alfaeradmin@gmail.com';
+const APPROVED_ADMIN_EMAILS = new Set(['alfaeradmin@gmail.com', 'nguyenducnguyen743@gmail.com']);
 const ALLOWED_PREVIEW_HOST = /^whose-studio-[a-z0-9]+-alfaer-peace-club\.vercel\.app$/;
 const ALLOWED_HOSTS = new Set([
   'whose-studio-eight.vercel.app',
@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
     const redirect = recoveryRedirect(req);
     if (!redirect) return fail(res, 403, 'Unrecognized Whose website');
     const email = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : '';
-    if (email !== APPROVED_ADMIN_EMAIL)
+    if (!APPROVED_ADMIN_EMAILS.has(email))
       return fail(res, 400, 'Initial setup is limited to the approved Whose administrator');
     const result = await authFetch('recover?redirect_to=' + encodeURIComponent(redirect), {
       method: 'POST', body: { email }
@@ -59,7 +59,7 @@ module.exports = async function handler(req, res) {
       return fail(res, 400, 'Password must be 12 to 128 characters');
     const staff = await validateStaffBearer(bearer);
     if (!staff.ok || staff.is_global_admin !== true ||
-        staff.user.email?.toLowerCase() !== APPROVED_ADMIN_EMAIL)
+        !APPROVED_ADMIN_EMAILS.has(staff.user.email?.toLowerCase()))
       return fail(res, staff.ok ? 403 : staff.status, 'Verified administrator required');
     const result = await authFetch('user', {
       method: 'PUT', bearer, body: { password }
