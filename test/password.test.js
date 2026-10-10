@@ -80,7 +80,7 @@ test('Supabase rejection of redirect does not falsely claim recovery email was s
       method: 'POST',
       headers: { host: validHost, origin: 'https://' + validHost,
         'sec-fetch-site': 'same-origin' },
-      body: { action: 'request', email: 'alfaeradmin@gmail.com' }
+      body: { action: 'request', email: 'nguyenducnguyen743@gmail.com' }
     }, res);
     assert.equal(res.statusCode, 422);
     assert.equal(res.payload.requested, undefined);
@@ -121,5 +121,28 @@ test('approved incoming Whose admin is accepted for recovery without sending a r
     else process.env.SUPABASE_URL = oldUrl;
     if (oldKey === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
     else process.env.SUPABASE_PUBLISHABLE_KEY = oldKey;
+  }
+});
+
+
+test('retired Whose administrator cannot start password recovery', async () => {
+  const priorUrl=process.env.SUPABASE_URL;
+  const priorKey=process.env.SUPABASE_PUBLISHABLE_KEY;
+  const priorFetch=global.fetch;
+  process.env.SUPABASE_URL='https://fjauxxunyxxboduyxjyr.supabase.co';
+  process.env.SUPABASE_PUBLISHABLE_KEY='sb_publishable_test_key';
+  global.fetch=async () => { throw new Error('Retired account should never reach Supabase'); };
+  try {
+    const res=response();
+    await handler({method:'POST',headers:{
+      host:validHost,origin:'https://'+validHost,'sec-fetch-site':'same-origin'
+    },body:{action:'request',email:'alfaeradmin@gmail.com'}},res);
+    assert.equal(res.statusCode,400);
+  } finally {
+    global.fetch=priorFetch;
+    if(priorUrl===undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL=priorUrl;
+    if(priorKey===undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
+    else process.env.SUPABASE_PUBLISHABLE_KEY=priorKey;
   }
 });
