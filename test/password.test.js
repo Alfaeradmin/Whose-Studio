@@ -92,3 +92,34 @@ test('Supabase rejection of redirect does not falsely claim recovery email was s
     else process.env.SUPABASE_PUBLISHABLE_KEY = oldKey;
   }
 });
+
+test('approved incoming Whose admin is accepted for recovery without sending a real email', async () => {
+  const oldUrl = process.env.SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const oldFetch = global.fetch;
+  process.env.SUPABASE_URL = 'https://fjauxxunyxxboduyxjyr.supabase.co';
+  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
+  try {
+    global.fetch = async (url, opts) => {
+      const parsed = new URL(url);
+      assert.equal(parsed.hostname, 'fjauxxunyxxboduyxjyr.supabase.co');
+      assert.equal(parsed.pathname, '/auth/v1/recover');
+      assert.equal(JSON.parse(opts.body).email, 'nguyenducnguyen743@gmail.com');
+      return new Response(JSON.stringify({}), { status: 200 });
+    };
+    const res = response();
+    await handler({
+      method: 'POST',
+      headers: { host: validHost, origin: 'https://' + validHost, 'sec-fetch-site': 'same-origin' },
+      body: { action: 'request', email: 'nguyenducnguyen743@gmail.com' }
+    }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.payload.requested, true);
+  } finally {
+    global.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
+    else process.env.SUPABASE_PUBLISHABLE_KEY = oldKey;
+  }
+});
