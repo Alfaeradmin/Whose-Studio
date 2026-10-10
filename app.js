@@ -633,13 +633,19 @@ async function inspectKiotBranches(){
   showKiotBranchMessage('Đang kiểm tra danh sách chi nhánh thực tế…');
   try{
     const r=await authorizedFetch('/api/kiot-branches',{cache:'no-store'});
-    if(!r.ok)throw new Error('Unable to verify KiotViet branch directory');
+    if(!r.ok) {
+      const issue=await r.json().catch(()=>({}));
+      const details=typeof issue.error==='string'?issue.error:'Không thể truy cập API chi nhánh Whose Studio.';
+      const code=typeof issue.code==='string'?' ['+issue.code+(issue.page?' – trang '+issue.page:'')+']':' [HTTP '+r.status+']';
+      throw new Error(details+code);
+    }
     const d=await r.json();
     if(!Array.isArray(d.branches)||d.total!==d.branches.length)throw new Error('KiotViet data incomplete');
     kiotBranchPreview=d;
     showKiotBranchMessage('Đã xác minh '+d.total+' chi nhánh thực từ KiotViet ('+d.pages+' trang). Bạn có thể ghi nhận danh mục nguồn vào Whose.');
-  }catch{
-    showKiotBranchMessage('Không thể lấy đầy đủ chi nhánh KiotViet. Không có dữ liệu nào được nhập.');
+  }catch(e){
+    const detail=e instanceof Error?e.message:'Lỗi không xác định';
+    showKiotBranchMessage(detail+' Chưa có dữ liệu nào được nhập.');
   }finally{renderKiotBranchPreview();setKiotBranchBusy(false);}
 }
 async function importKiotBranches(){
