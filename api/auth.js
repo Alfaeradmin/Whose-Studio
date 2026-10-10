@@ -11,6 +11,7 @@ function safeSession(tokens, staff) {
     expires_in: tokens.expires_in,
     expires_at: Math.floor(Date.now() / 1000) + Number(tokens.expires_in || 3600),
     user: staff.user,
+    is_global_admin: staff.is_global_admin,
     memberships: staff.memberships,
     branches: staff.branches
   };
@@ -24,6 +25,7 @@ module.exports = async function handler(req, res) {
     if (!staff.ok) return fail(res, staff.status, staff.reason || 'Session expired or access denied');
     return res.status(200).json({
       user: staff.user,
+      is_global_admin: staff.is_global_admin,
       memberships: staff.memberships,
       branches: staff.branches
     });
