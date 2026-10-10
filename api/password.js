@@ -3,7 +3,7 @@
 const { environment, accessToken } = require('../lib/whose-backend');
 const { authFetch, validateStaffBearer, verifyOrigin } = require('../lib/whose-auth');
 
-const APPROVED_ADMIN_EMAILS = new Set(['alfaeradmin@gmail.com', 'nguyenducnguyen743@gmail.com']);
+const APPROVED_ADMIN_EMAILS = new Set(['nguyenducnguyen743@gmail.com']);
 const ALLOWED_PREVIEW_HOST = /^whose-studio-[a-z0-9]+-alfaer-peace-club\.vercel\.app$/;
 const ALLOWED_HOSTS = new Set([
   'whose-studio-eight.vercel.app',
