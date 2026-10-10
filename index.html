@@ -149,6 +149,15 @@
       </section>
 
       <section class="page" id="kiot">
+        <div class="card card-pad" style="margin-bottom:18px">
+          <div class="section-head"><div><h2>Chi nhánh KiotViet thực tế</h2><p>Đọc trực tiếp KiotViet, kiểm tra toàn bộ danh sách trước khi ghi nhận nguồn vào Whose. Không tự phân loại kho/cửa hàng.</p></div></div>
+          <div class="toolbar" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px">
+            <button class="btn" id="kiotPreviewBranches" type="button">Kiểm tra chi nhánh từ KiotViet</button>
+            <button class="btn primary" id="kiotImportBranches" type="button" disabled>Ghi nhận danh mục nguồn vào Whose</button>
+          </div>
+          <p id="kiotBranchSyncStatus" class="muted" role="status" aria-live="polite">Chưa kiểm tra chi nhánh KiotViet.</p>
+          <div class="table-wrap"><table class="table"><thead><tr><th>Tên chi nhánh</th><th>Mã Kiot</th><th>ID Kiot</th><th>Địa chỉ</th><th>Trạng thái từ Kiot</th></tr></thead><tbody id="kiotDirectoryRows"></tbody></table></div>
+        </div>
         <div class="module-grid">
           <div class="card module-card"><h3>Kiot read model</h3><p>Branches, settings, products, productOnHands, orders, invoices, nhập hàng, chuyển hàng và trả hàng.</p><div class="module-meta"><span data-module="kiotvietReadModel"></span></div></div>
           <div class="card module-card"><h3>Write KiotViet</h3><p>Production hiện khóa toàn bộ ghi ngược để tránh thay đổi chứng từ/tồn ngoài kiểm soát.</p><div class="module-meta"><span data-module="kiotvietWrite"></span></div></div>
