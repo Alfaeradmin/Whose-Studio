@@ -56,3 +56,13 @@ Do **not** delete `nguyenducnguyen743@gmail.com` (UUID `6a1595c8-277d-4950-9d32-
 After deletion, verify in Supabase SQL (read only) that the old email has no Auth record and that the new user has confirmed email, active profile, global-admin flag and activated onboarding. Then mark the private handover `completed` with `completed_at=now()` in a guarded transaction. The ChatGPT-connected Supabase toolset does not provide an Auth Admin delete action; never modify `auth.users` directly with SQL.
 
 Last checked: GitHub CI for audit retention migration passed. The new global-admin account remains active. No Production merge and no ALFAER WMS changes were performed.
+
+## FINAL VERIFIED RESULT — 2026-10-10
+
+- The owner deleted the retired Whose Auth identity in the Supabase Dashboard.
+- Verified directly against `auth.users`: `alfaeradmin@gmail.com` has **0** matching records.
+- Verified `nguyenducnguyen743@gmail.com` is the only active global administrator, email-confirmed, with active staff profile and matching approved onboarding record.
+- Applied migration `whose_complete_admin_handover` after all safeguards passed.
+- `whose_private.admin_handover`: `state='completed'`, `completed_at` recorded, historic `previous_user_id_snapshot` retained.
+- Audit integrity preserved; no branch, inventory or order data altered.
+- App repository changes remain in the Whose feature branch / PR #4 until separately merged and released; database changes are live in the Whose Supabase project.
