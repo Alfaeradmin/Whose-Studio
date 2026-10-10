@@ -46,7 +46,8 @@ module.exports = async function handler(req, res) {
     if (result.status === 429) return fail(res, 429, 'Too many attempts. Wait before requesting another email');
     if (result.status === 503 || result.status === 502 || result.status >= 500)
       return fail(res, 503, 'Email service temporarily unavailable');
-    // Avoid exposing whether a recovery email was issued.
+    if (!result.ok) return fail(res, 422, 'Password setup could not be started. Check the allowed Whose redirect URL');
+    // The server never returns reset tokens or Supabase email response details.
     return res.status(200).json({ requested: true });
   }
 
