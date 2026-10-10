@@ -635,8 +635,8 @@ async function inspectKiotBranches(){
     const r=await authorizedFetch('/api/kiot-branches',{cache:'no-store'});
     if(!r.ok) {
       const issue=await r.json().catch(()=>({}));
-      const details=typeof issue.error==='string'?issue.error:'Không thể truy cập API chi nhánh Whose Studio.';
-      const code=typeof issue.code==='string'?' ['+issue.code+(issue.page?' – trang '+issue.page:'')+']':' [HTTP '+r.status+']';
+      const details=typeof issue.message==='string'?issue.message:typeof issue.error==='string'?issue.error:'Không thể truy cập API chi nhánh Whose Studio.';
+      const code=typeof issue.code==='string'?' ['+issue.code+(issue.upstreamStatus?' – Kiot HTTP '+issue.upstreamStatus:'')+(issue.page?' – trang '+issue.page:'')+']':' [Whose HTTP '+r.status+']';
       throw new Error(details+code);
     }
     const d=await r.json();
