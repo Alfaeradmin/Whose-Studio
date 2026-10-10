@@ -35,3 +35,12 @@ The owner signs in with the new email and password on Whose Studio Preview. Veri
 Only after Stage 4, revoke old global-admin privileges and change old onboarding approval to cancelled in one guarded transaction. Independently confirm the new Global Admin is still effective. Then remove the old Whose Studio Auth user using the Supabase Auth **Dashboard or Admin API**, never by raw SQL against `auth.users`; consider FK/audit retention before deletion. Do not delete the Gmail mailbox, other Supabase project accounts, audit history or any ALFAER WMS resource.
 
 Any failed stage: stop and leave the old Admin available for recovery. Production release remains gated to a tested login and reviewed code merge.
+
+## Actual verified status — 2026-10-10
+
+- New Auth user has a verified email and an observed successful sign-in AFTER Global Admin activation. The owner also confirmed an end-to-end successful Whose Studio login.
+- The new Admin has an active approved onboarding identity and is the **only** active Global Admin.
+- Former Whose Admin was revoked by migration `whose_retire_old_global_admin`: staff profile disabled, global-admin flag cleared, onboarding approval cancelled. Old Auth identity record is still retained; handover state is `old_admin_revoked`.
+- The old Auth identity **must not be removed yet**. The private table `whose_private.admin_handover.previous_user_id` currently has a non-nullable foreign key to `auth.users`, so removal may violate referential integrity. Before final removal, create a reviewed migration to retain the old UUID in an immutable audit snapshot and adjust only the live foreign-key reference. Recheck other request/audit FKs first.
+- Only after the referential integrity migration passes CI and has been verified in Whose Supabase should the owner remove the old identity through Authentication → Users. Finally independently confirm the old identity is gone, the new Admin still functions, and the handover can be marked `completed`.
+- Nothing has been merged to Production and no KiotViet or inventory mutations were made.
