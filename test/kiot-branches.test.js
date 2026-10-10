@@ -20,12 +20,12 @@ test('reads all KiotViet branch pages, preserving real data exactly once',async(
 test('rejects a partial or duplicate KiotViet response instead of importing truncated data',async()=>{
  await assert.rejects(()=>readAllBranches(async()=>({
    ok:true,data:{total:105,data:[{id:1,branchName:'One'}]}
- })),/incomplete page/);
+ })),/KIOT_BRANCH_PAGINATION/);
  await assert.rejects(()=>readAllBranches(async(_,q)=>({
    ok:true,data:{total:101,data:q.currentItem===0?
      Array.from({length:100},()=>({id:2,branchName:'Duplicate'})):
      [{id:101,branchName:'Last'}]}
- })),/Duplicate KiotViet/);
+ })),/KIOT_BRANCH_DATA/);
 });
 test('non-authenticated branch import is blocked before KiotViet fetch',async()=>{
  const response={statusCode:null,body:null,setHeader(){return this;},status(v){this.statusCode=v;return this;},json(v){this.body=v;return this;}};

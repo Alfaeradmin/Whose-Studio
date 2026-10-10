@@ -6,6 +6,7 @@ const { accessToken, rest } = require('../lib/whose-backend');
 const { validateStaffBearer, verifyOrigin } = require('../lib/whose-auth');
 const { safeRead } = require('../lib/kiotviet');
 const { readAllBranches } = require('../lib/kiot-branches');
+const {safeDetails}=require('../lib/kiot-branch-diagnostics');
 
 module.exports = async function handler(req,res) {
   res.setHeader('Cache-Control','no-store, max-age=0');
@@ -23,8 +24,10 @@ module.exports = async function handler(req,res) {
   let directory;
   try {
     directory=await readAllBranches(safeRead);
-  }catch {
-    return res.status(502).json({error:'Unable to read complete KiotViet branch list. No rows imported.'});
+  }catch(err) {
+    const details=safeDetails(err);
+    console.warn('[Whose/Kiot/branches]',details.code,'page',details.page);
+    return res.status(502).json({...details,notImported:true});
   }
   const {branches,total,pages}=directory;
   if(req.method==='GET'){
