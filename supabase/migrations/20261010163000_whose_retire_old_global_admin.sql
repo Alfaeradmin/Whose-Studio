@@ -1,6 +1,6 @@
 -- WHOSE STUDIO ONLY: Supabase fjauxxunyxxboduyxjyr.
 -- Guarded and atomic: record successful new sign-in, revoke old global Admin.
--- Do NOT delete auth.users, credentials, requests, audit or inventory in this migration.
+-- Preserve identity records, credentials, requests, audit and inventory.
 DO $handover_retire$
 DECLARE
   v_new uuid;
