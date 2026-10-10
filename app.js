@@ -604,6 +604,64 @@ document.getElementById('globalSearch').addEventListener('keydown', (event) => {
     toast('Search full catalog sẽ được nối với database mirror');
   }
 });
+
+let kiotBranchPreview=null;
+let kiotBranchBusy=false;
+function showKiotBranchMessage(message){
+  document.getElementById('kiotBranchSyncStatus').textContent=message;
+}
+function renderKiotBranchPreview(){
+  const rows=document.getElementById('kiotDirectoryRows');
+  const data=kiotBranchPreview?.branches||[];
+  rows.innerHTML=data.length ? data.map(b=>'<tr>'+
+    '<td><b>'+esc(b.name)+'</b></td>'+
+    '<td>'+esc(b.code||'—')+'</td>'+
+    '<td>'+esc(b.id)+'</td>'+
+    '<td>'+esc(b.address||'—')+'</td>'+
+    '<td>'+esc(b.isActive===true?'Đang hoạt động':b.isActive===false?'Ngừng hoạt động':'Chưa có thông tin')+'</td>'+
+    '</tr>').join('') : '<tr><td colspan="5" class="muted">Chưa có dữ liệu chi nhánh được xác minh.</td></tr>';
+}
+function setKiotBranchBusy(busy){
+  kiotBranchBusy=busy;
+  document.getElementById('kiotPreviewBranches').disabled=busy;
+  document.getElementById('kiotImportBranches').disabled=busy||!kiotBranchPreview?.branches?.length;
+}
+async function inspectKiotBranches(){
+  if(kiotBranchBusy || !state.session?.is_global_admin)return;
+  setKiotBranchBusy(true);
+  kiotBranchPreview=null;
+  showKiotBranchMessage('Đang kiểm tra danh sách chi nhánh thực tế…');
+  try{
+    const r=await authorizedFetch('/api/kiot-branches',{cache:'no-store'});
+    if(!r.ok)throw new Error('Unable to verify KiotViet branch directory');
+    const d=await r.json();
+    if(!Array.isArray(d.branches)||d.total!==d.branches.length)throw new Error('KiotViet data incomplete');
+    kiotBranchPreview=d;
+    showKiotBranchMessage('Đã xác minh '+d.total+' chi nhánh thực từ KiotViet ('+d.pages+' trang). Bạn có thể ghi nhận danh mục nguồn vào Whose.');
+  }catch{
+    showKiotBranchMessage('Không thể lấy đầy đủ chi nhánh KiotViet. Không có dữ liệu nào được nhập.');
+  }finally{renderKiotBranchPreview();setKiotBranchBusy(false);}
+}
+async function importKiotBranches(){
+  if(kiotBranchBusy||!state.session?.is_global_admin||!kiotBranchPreview?.branches?.length)return;
+  setKiotBranchBusy(true);
+  showKiotBranchMessage('Đang đối chiếu lại KiotViet và ghi nhận danh mục nguồn…');
+  try{
+    const r=await authorizedFetch('/api/kiot-branches',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'
+    });
+    if(!r.ok)throw new Error('Import unsuccessful');
+    const d=await r.json();
+    if(!Number.isInteger(d.imported)||d.imported<1||d.imported!==d.total)throw new Error('Unverified import');
+    showKiotBranchMessage('Đã ghi nhận '+d.imported+' chi nhánh KiotViet thực tế vào danh mục nguồn Whose. Chưa phân loại Store/Warehouse và không thay đổi tồn.');
+  }catch{
+    showKiotBranchMessage('Không thể xác nhận việc ghi nhận danh mục. Vui lòng kiểm tra lại trước khi thử.');
+  }finally{setKiotBranchBusy(false);}
+}
+document.getElementById('kiotPreviewBranches').onclick=inspectKiotBranches;
+document.getElementById('kiotImportBranches').onclick=importKiotBranches;
+renderKiotBranchPreview();
+
 document.getElementById('sendRequest').onclick = sendWhoseRequest;
 setupProductComposer();
 navigate('dashboard');
