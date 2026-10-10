@@ -58,3 +58,37 @@ test('callback scrubs URL fragments and hides password form until verified', () 
   assert.match(code, /history\.replaceState/);
   assert.match(code, /fragment\.get\('type'\) === 'recovery'/);
 });
+
+test('Supabase rejection of redirect does not falsely claim recovery email was sent', async () => {
+  const oldUrl = process.env.SUPABASE_URL;
+  const oldKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const oldFetch = global.fetch;
+  process.env.SUPABASE_URL = 'https://fjauxxunyxxboduyxjyr.supabase.co';
+  process.env.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_test_key';
+  try {
+    global.fetch = async (url, opts) => {
+      const parsed = new URL(url);
+      assert.equal(parsed.hostname, 'fjauxxunyxxboduyxjyr.supabase.co');
+      assert.equal(parsed.pathname, '/auth/v1/recover');
+      assert.equal(parsed.searchParams.get('redirect_to'),
+        'https://' + validHost + '/reset-password.html');
+      assert.equal(opts.method, 'POST');
+      return new Response(JSON.stringify({ error: 'redirect not allowed' }), { status: 400 });
+    };
+    const res = response();
+    await handler({
+      method: 'POST',
+      headers: { host: validHost, origin: 'https://' + validHost,
+        'sec-fetch-site': 'same-origin' },
+      body: { action: 'request', email: 'alfaeradmin@gmail.com' }
+    }, res);
+    assert.equal(res.statusCode, 422);
+    assert.equal(res.payload.requested, undefined);
+  } finally {
+    global.fetch = oldFetch;
+    if (oldUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = oldUrl;
+    if (oldKey === undefined) delete process.env.SUPABASE_PUBLISHABLE_KEY;
+    else process.env.SUPABASE_PUBLISHABLE_KEY = oldKey;
+  }
+});
