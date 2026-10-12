@@ -4,10 +4,10 @@
 
 | Gate | Required evidence | Current |
 |---|---|---|
-| 8.1 Connector worker | Dedicated server-only service credential configured in the proper preview environment; least privilege; no browser leak | BLOCKED: credential absent in Vercel inventory |
-| 8.2 Provider OAuth | Token response and successful GET branches + products, with secrets redacted | NOT VERIFIED |
-| 8.3 Initial catalog | Complete bounded pagination, persisted rows, image and price mappings, readback counts, replay no duplicates | NOT RUN |
-| 8.4 Inbox worker | 1 real signed event, durable ingest, claim, canonical persisted, finish; failure/retry tested | UNIT TEST ONLY |
+| 8.1 Connector worker | Dedicated server-only service credential configured in the proper preview environment; least privilege; no browser leak | PREVIEW KEY CONFIGURED; one-shot worker reported success; signed event pending |
+| 8.2 Provider OAuth | Token response and successful GET branches + products, with secrets redacted | VERIFIED VIA GLOBAL ADMIN UI: branches and products OK |
+| 8.3 Initial catalog | Complete bounded pagination, persisted rows, image and price mappings, readback counts, replay no duplicates | 1967 stored; 1967 unique provider IDs and SKUs; independent provider total snapshot pending |
+| 8.4 Inbox worker | 1 real signed event, durable ingest, claim, canonical persisted, finish; failure/retry tested | MANUAL EMPTY-INBOX RUN OK; real signed event NOT VERIFIED |
 | 8.5 Automatic sync | Valid signature from provider; supervised cron + fallback reconciliation; replay | DISABLED |
 | 8.6 Outbox | Per-domain business mapping, approval, idempotency, readback, conflict resolution; signed-off dry-run | DENY-ALL DRY RUN |
 | 8.7 Health | Admin-only read access, alerting threshold, reconciler and runbooks | HEALTH RPC PRESENT; ALERTING NOT SET |
@@ -37,3 +37,21 @@
 - Automatic webhook registration before signed payload samples and replay verification.
 - Cron while service key is absent or worker has no functioning persistence.
 - Outbound mutation transport, especially inventory updates, on the basis of CI alone.
+
+## Webhook ingress safety gate — 2026-10-12
+
+- Provider GET /webhooks returned **0 subscriptions**; no subscription was created.
+- Preview signing secret is configured server-side. Never print or store it in this repository.
+- Vercel SSO protects preview deployment URLs. Provider-to-preview callbacks cannot be assumed reachable without a separate deliberate ingress strategy.
+- Do **not** disable SSO for all preview pages and do **not** register a per-deployment URL: that URL changes on redeploy.
+- Required architecture: a dedicated **stable HTTPS ingress** accessible to the provider, with HMAC verification over the raw request body; reject unsigned/incorrect signatures; durable inbox insert before 2xx; no service-role key in client code; no Kiot write operations.
+- Recommended isolation: separate webhook-only project or isolated server/edge ingress with a fixed domain. This project remains a proposal until its access controls and deployment/secret scopes are verified.
+- Validate the final URL with an **unauthenticated external POST with an invalid signature**; expected response must come from the application (401), not Vercel SSO. Do not send production-like event payloads during this probe.
+- Then validate one authentic provider-signed test event end-to-end, duplicate delivery and failure retry, and only then register/enable provider notifications and worker scheduling.
+- Never assume secret existence alone means KiotViet registration or a working event pipeline.
+
+## Deployment discipline
+
+- Keep changes on `feat/kiot-bidirectional-foundation`; run tests before preview release; batch related changes.
+- Prefer one reviewable fixed staging URL over pasting each immutable deployment URL to operators.
+- Every Vercel deployment is immutable by design; only deploy when integration testing against server environment is required. No production merge without approval.
