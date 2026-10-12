@@ -63,6 +63,7 @@ function setMobileNavState(page) {
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mobileBackdrop')?.classList.remove('show');
+  document.querySelector('.mobile-menu')?.setAttribute('aria-expanded', 'false');
 }
 
 function navigate(page) {
@@ -85,6 +86,7 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const isOpen = sidebar.classList.toggle('open');
   document.getElementById('mobileBackdrop')?.classList.toggle('show', isOpen);
+  document.querySelector('.mobile-menu')?.setAttribute('aria-expanded', String(isOpen));
 }
 
 function renderSystemBanner() {
@@ -583,6 +585,8 @@ document.getElementById('logoutBtn').onclick = async () => {
     });
   } catch {}
 };
+// Keep logout accessible when the mobile header hides its duplicate action.
+document.getElementById('drawerLogoutBtn').onclick = () => document.getElementById('logoutBtn').click();
 document.getElementById('addSku').onclick = () => {
   const input = document.getElementById('productInput');
   const sku = input.value.trim();
