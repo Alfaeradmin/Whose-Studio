@@ -12,8 +12,8 @@ const state = {
 };
 
 const meta = {
-  dashboard: ['Dashboard', 'Tổng quan dữ liệu thật và trạng thái hệ thống'],
-  operations: ['Store ↔ Warehouse', 'Giao tiếp vận hành giữa cửa hàng và kho'],
+  dashboard: ['Tổng quan', 'Dữ liệu vận hành, trạng thái đồng bộ và các tác vụ nhanh'],
+  operations: ['Điều phối cửa hàng', 'Yêu cầu và phối hợp hàng hóa giữa các chi nhánh'],
   inventory: ['Tồn kho', 'Tồn KiotViet theo chi nhánh'],
   transfers: ['Chuyển kho', 'Phiếu chuyển đọc trực tiếp từ KiotViet'],
   stocktake: ['Kiểm kho', 'Delta ledger và quy trình cân bằng tồn'],
@@ -63,12 +63,18 @@ function setMobileNavState(page) {
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mobileBackdrop')?.classList.remove('show');
+  document.querySelector('.mobile-menu')?.setAttribute('aria-expanded', 'false');
 }
 
 function navigate(page) {
   state.page = page;
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === page));
-  document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
+  document.querySelectorAll('.nav-item[data-page]').forEach((el) => {
+    const current = el.dataset.page === page;
+    el.classList.toggle('active', current);
+    if (current) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
+  });
   document.getElementById('pageTitle').textContent = meta[page][0];
   document.getElementById('pageSub').textContent = meta[page][1];
   setMobileNavState(page);
@@ -80,6 +86,7 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const isOpen = sidebar.classList.toggle('open');
   document.getElementById('mobileBackdrop')?.classList.toggle('show', isOpen);
+  document.querySelector('.mobile-menu')?.setAttribute('aria-expanded', String(isOpen));
 }
 
 function renderSystemBanner() {
@@ -578,6 +585,8 @@ document.getElementById('logoutBtn').onclick = async () => {
     });
   } catch {}
 };
+// Keep logout accessible when the mobile header hides its duplicate action.
+document.getElementById('drawerLogoutBtn').onclick = () => document.getElementById('logoutBtn').click();
 document.getElementById('addSku').onclick = () => {
   const input = document.getElementById('productInput');
   const sku = input.value.trim();
@@ -606,6 +615,11 @@ document.querySelectorAll('#opsTabs button').forEach(el => el.onclick = () => {
 
 
 document.querySelectorAll('.nav-item[data-page]').forEach((el) => el.onclick = () => navigate(el.dataset.page));
+document.querySelectorAll('[data-jump-to]').forEach((el) => {
+  el.addEventListener('click', () => {
+    if (state.session && meta[el.dataset.jumpTo]) navigate(el.dataset.jumpTo);
+  });
+});
 document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
   el.onclick = () => {
     navigate(el.dataset.mobilePage);
@@ -621,7 +635,7 @@ document.getElementById('refresh').onclick = loadData;
 document.getElementById('globalSearch').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
     navigate('products');
-    toast('Search full catalog sẽ được nối với database mirror');
+    toast('Đã mở danh mục sản phẩm. Tìm kiếm toàn bộ đang được phát triển.');
   }
 });
 
