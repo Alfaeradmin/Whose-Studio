@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Whose Studio</title>
 <meta name="description" content="Whose Studio operations platform">
+<meta name="theme-color" content="#171e31">
 <link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/ui-enterprise-v2.css?v=20261012">
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -33,20 +35,20 @@
     <div class="brand"><div class="logo">W</div><div><b>WHOSE</b><small>STUDIO OPERATIONS</small></div></div>
 
     <div class="nav-title">Tổng quan</div>
-    <div class="nav-item active" data-page="dashboard"><div class="nav-left"><span class="ico">⌂</span><span class="nav-text">Dashboard</span></div></div>
-    <div class="nav-item" data-page="operations"><div class="nav-left"><span class="ico">◉</span><span class="nav-text">Store ↔ Warehouse</span></div></div>
+    <button type="button" class="nav-item active" data-page="dashboard"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="nav-text">Tổng quan</span></div></button>
+    <button type="button" class="nav-item" data-page="operations"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"/><path d="M8 11h8M8 14h5"/></svg></span><span class="nav-text">Điều phối cửa hàng</span></div></button>
 
     <div class="nav-title">Kho vận</div>
-    <div class="nav-item" data-page="inventory"><div class="nav-left"><span class="ico">▦</span><span class="nav-text">Tồn kho</span></div></div>
-    <div class="nav-item" data-page="transfers"><div class="nav-left"><span class="ico">⇄</span><span class="nav-text">Chuyển kho</span></div></div>
-    <div class="nav-item" data-page="stocktake"><div class="nav-left"><span class="ico">⌁</span><span class="nav-text">Kiểm kho</span></div></div>
-    <div class="nav-item" data-page="returns"><div class="nav-left"><span class="ico">↺</span><span class="nav-text">Đổi / Trả</span></div></div>
+    <button type="button" class="nav-item" data-page="inventory"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="M3 7v10l9 5 9-5V7M12 12v10"/></svg></span><span class="nav-text">Tồn kho</span></div></button>
+    <button type="button" class="nav-item" data-page="transfers"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7h14m-4-4 4 4-4 4M17 17H3m4-4-4 4 4 4"/></svg></span><span class="nav-text">Chuyển kho</span></div></button>
+    <button type="button" class="nav-item" data-page="stocktake"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4M4 12h16"/></svg></span><span class="nav-text">Kiểm kho</span></div></button>
+    <button type="button" class="nav-item" data-page="returns"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11a9 9 0 1 1 2.7 6.5M3 16v-5h5"/><path d="M12 7v5l3 2"/></svg></span><span class="nav-text">Đổi / Trả</span></div></button>
 
     <div class="nav-title">Danh mục & hệ thống</div>
-    <div class="nav-item" data-page="products"><div class="nav-left"><span class="ico">◇</span><span class="nav-text">Sản phẩm</span></div></div>
-    <div class="nav-item" data-page="employees"><div class="nav-left"><span class="ico">♙</span><span class="nav-text">Nhân viên & quyền</span></div></div>
-    <div class="nav-item" data-page="kiot"><div class="nav-left"><span class="ico">↻</span><span class="nav-text">Đồng bộ KiotViet</span></div></div>
-    <div class="nav-item" data-page="settings"><div class="nav-left"><span class="ico">⚙</span><span class="nav-text">Cài đặt</span></div></div>
+    <button type="button" class="nav-item" data-page="products"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.7" cy="7.7" r="1"/></svg></span><span class="nav-text">Sản phẩm</span></div></button>
+    <button type="button" class="nav-item" data-page="employees"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M15 3.3a4 4 0 0 1 0 7.4M22 21v-2a4 4 0 0 0-3-3.9"/><circle cx="9" cy="7" r="4"/></svg></span><span class="nav-text">Nhân viên & quyền</span></div></button>
+    <button type="button" class="nav-item" data-page="kiot"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6v5h-5M4 18v-5h5"/><path d="M5.7 9A7 7 0 0 1 18.5 6L20 11M4 13l1.5 5A7 7 0 0 0 18.3 15"/></svg></span><span class="nav-text">Đồng bộ KiotViet</span></div></button>
+    <button type="button" class="nav-item" data-page="settings"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M10.3 2h3.4l.6 2.4 1.8.8 2.1-1.3 2.4 2.4-1.3 2.1.8 1.8 2.4.6v3.4l-2.4.6-.8 1.8 1.3 2.1-2.4 2.4-2.1-1.3-1.8.8-.6 2.4h-3.4l-.6-2.4-1.8-.8-2.1 1.3-2.4-2.4 1.3-2.1-.8-1.8L2 13.7v-3.4l2.4-.6.8-1.8-1.3-2.1 2.4-2.4 2.1 1.3 1.8-.8.1-.3"/></svg></span><span class="nav-text">Cài đặt</span></div></button>
 
     <div class="sidebar-footer"><div class="user"><div class="avatar">W</div><div><b id="staffName">Whose Studio</b><small id="staffRole">Đang xác thực</small></div></div></div>
   </aside>
@@ -55,7 +57,7 @@
     <header class="topbar">
       <div class="top-left">
         <button class="btn mobile-menu" onclick="toggleSidebar()">☰</button>
-        <div class="page-title"><h1 id="pageTitle">Dashboard</h1><p id="pageSub">Tổng quan dữ liệu thật và trạng thái hệ thống</p></div>
+        <div class="page-title"><h1 id="pageTitle">Tổng quan</h1><p id="pageSub">Tổng quan dữ liệu thật và trạng thái hệ thống</p></div>
       </div>
       <div class="top-actions"><button class="btn logout-btn" id="logoutBtn" title="Đăng xuất tài khoản">Đăng xuất</button>
         <div class="searchbox">⌕ <input id="globalSearch" placeholder="Tìm SKU, phiếu, đơn..."></div>
@@ -67,7 +69,9 @@
       <div class="banner warn" id="systemBanner"><div><strong>Đang đọc trạng thái hệ thống…</strong><p>Kiểm tra Vercel, KiotViet và Supabase.</p></div></div>
 
       <section class="page active" id="dashboard">
+        <div class="dashboard-hero"><div><div class="hero-kicker">WHOSE CONTROL CENTER</div><h2>Vận hành tinh gọn.<br>Quyết định rõ ràng.</h2><p>Thông tin từ các nguồn đang kết nối, minh bạch trạng thái và không ghi ngược dữ liệu KiotViet.</p></div><div class="hero-actions"><button class="hero-action primary" type="button" data-jump-to="operations">Mở điều phối ↗</button><button class="hero-action" type="button" data-jump-to="kiot">Kiểm tra kết nối</button></div></div>
         <div class="banner warn" id="kiotBanner"><div><strong>Đang kết nối KiotViet…</strong><p>Dữ liệu chưa sẵn sàng.</p></div></div>
+        <div class="page-heading-strip"><div><h2>Chỉ số vận hành</h2><p>Giữ nguyên số liệu thực; chưa có dữ liệu sẽ hiển thị dấu gạch ngang</p></div><span class="page-heading-tag">Dữ liệu KiotViet</span></div>
         <div class="grid grid-4">
           <div class="card metric"><div class="metric-label">Sản phẩm</div><div class="metric-value" id="metricProducts">—</div><div class="metric-sub">KiotViet products</div></div>
           <div class="card metric"><div class="metric-label">Đặt hàng</div><div class="metric-value" id="metricOrders">—</div><div class="metric-sub">KiotViet orders</div></div>
@@ -193,19 +197,19 @@
 </div>
 <nav class="mobile-tabbar" aria-label="Điều hướng chính">
     <button class="mobile-tab active" data-mobile-page="dashboard" aria-label="Trang chủ">
-      <span class="mobile-tab-icon">⌂</span><span>Home</span>
+      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span>Tổng quan</span>
     </button>
     <button class="mobile-tab" data-mobile-page="operations" aria-label="Operations">
-      <span class="mobile-tab-icon">◉</span><span>Ops</span>
+      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"/><path d="M8 11h8M8 14h5"/></svg></span><span>Điều phối</span>
     </button>
     <button class="mobile-tab scan-tab" data-mobile-page="stocktake" aria-label="Quét kiểm kho">
-      <span class="scan-orb">⌁</span><span>Scan</span>
+      <span class="scan-orb"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4M4 12h16"/></svg></span><span>Kiểm</span>
     </button>
     <button class="mobile-tab" data-mobile-page="inventory" aria-label="Tồn kho">
-      <span class="mobile-tab-icon">▦</span><span>Stock</span>
+      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="M3 7v10l9 5 9-5V7M12 12v10"/></svg></span><span>Tồn kho</span>
     </button>
     <button class="mobile-tab" id="mobileMore" aria-label="Thêm chức năng">
-      <span class="mobile-tab-icon">⋯</span><span>More</span>
+      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Khác</span>
     </button>
   </nav>
   <div class="mobile-backdrop" id="mobileBackdrop" aria-hidden="true"></div>
