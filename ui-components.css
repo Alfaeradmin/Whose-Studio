@@ -44,6 +44,22 @@
 .table .mono{white-space:nowrap;font-variant-numeric:tabular-nums}
 .table td:has(.sku){min-width:190px}
 
+/* Reusable icon control: shape and text each own their hit area. */
+.ws-inline-icon{
+  width:var(--ws-icon-md);height:var(--ws-icon-md);
+  min-width:var(--ws-icon-md);display:inline-grid;place-items:center;
+  flex-shrink:0;pointer-events:none;color:inherit;vertical-align:middle
+}
+.ws-inline-icon svg{
+  width:100%;height:100%;display:block;stroke:currentColor;fill:none;
+  stroke-linecap:round;stroke-linejoin:round
+}
+.searchbox .ws-inline-icon{color:#8693aa}
+.refresh-icon.ws-inline-icon{font-size:0}
+.composer .plus{display:grid;place-items:center}
+.composer .plus .ws-inline-icon{width:20px;height:20px}
+.drawer-logout .ws-inline-icon{color:#beb6ff}
+
 /* Typography, controls, icon geometry: text must never overlap icons. */
 .nav-item,.mobile-tab,.btn,.hero-action{
   -webkit-tap-highlight-color:transparent;
