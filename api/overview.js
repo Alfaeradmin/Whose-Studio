@@ -2,6 +2,7 @@ const { validateStaffBearer } = require('../lib/whose-auth');
 const { accessToken } = require('../lib/whose-backend');
 const { safeRead } = require('../lib/kiotviet');
 const { overviewConnectionStatus } = require('../lib/kiot-overview-status');
+const { overviewReadParams } = require('../lib/kiot-overview-requests');
 
 function listPayload(result) {
   if (!result?.ok) return null;
@@ -96,14 +97,14 @@ module.exports = async function handler(req, res) {
     transfersR,
     returnsR
   ] = await Promise.all([
-    safeRead('branches', { pageSize: 100, currentItem: 0, orderBy: 'name', orderDirection: 'Asc' }),
+    safeRead('branches', overviewReadParams('branches')),
     safeRead('settings', {}),
     safeRead('products', { pageSize: 100, currentItem: 0, includeInventory: true, orderDirection: 'Desc' }),
     safeRead('productOnHands', { pageSize: 100, currentItem: 0, orderBy: 'Code', orderDirection: 'Asc' }),
     safeRead('orders', recentParams),
     safeRead('invoices', recentParams),
     safeRead('purchaseorders', recentParams),
-    safeRead('ordersuppliers', { pageSize: 100, currentItem: 0 }),
+    safeRead('ordersuppliers', overviewReadParams('ordersuppliers')),
     safeRead('transfers', { pageSize: 100, currentItem: 0 }),
     safeRead('returns', { ...recentParams, includePayment: true })
   ]);
