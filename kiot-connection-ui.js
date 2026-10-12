@@ -38,4 +38,36 @@
      message.textContent=err instanceof Error?err.message:'Không thể kết nối công cụ kiểm tra.';
    }finally{button.disabled=false;}
  });
+ const workerCheck=document.getElementById('kiotWorkerCheck');
+ const workerRun=document.getElementById('kiotWorkerRun');
+ const workerResult=document.getElementById('kiotWorkerResult');
+ if(workerCheck&&workerRun&&workerResult){
+   workerCheck.addEventListener('click',async()=>{
+     workerCheck.disabled=true;workerRun.disabled=true;
+     workerResult.textContent='Đang xác minh cấu hình Worker…';
+     try{
+       const res=await authorizedFetch('/api/connector-worker',{cache:'no-store'});
+       const data=await res.json().catch(()=>({}));
+       if(!res.ok)throw new Error('Worker chưa thể xác minh (HTTP '+res.status+').');
+       workerRun.disabled=data.workerConfigured!==true;
+       workerResult.textContent=data.workerConfigured
+         ?'Worker đã có cấu hình máy chủ. Inbox chưa được tự động xử lý; có thể thử một lượt thủ công.'
+         :'Thiếu cấu hình Worker ở môi trường đang mở.';
+     }catch(e){workerResult.textContent=e.message||'Không thể kiểm tra Worker.';}
+     finally{workerCheck.disabled=false;}
+   });
+   workerRun.addEventListener('click',async()=>{
+     if(workerRun.disabled)return;
+     workerRun.disabled=true;workerResult.textContent='Đang thực hiện một lượt Inbox…';
+     try{
+       const res=await authorizedFetch('/api/connector-worker',{method:'POST',cache:'no-store'});
+       const data=await res.json().catch(()=>({}));
+       if(!res.ok)throw new Error('Worker không hoàn tất (HTTP '+res.status+').');
+       workerResult.textContent='Đã kiểm tra hàng đợi: '+Number(data.claimed||0)
+         +' sự kiện, '+Number(data.processed||0)+' hoàn tất, '+Number(data.retry||0)
+         +' cần thử lại. Không ghi sang KiotViet.';
+     }catch(e){workerResult.textContent=e.message||'Worker gặp lỗi.';}
+     finally{workerRun.disabled=false;}
+   });
+ }
 })();
