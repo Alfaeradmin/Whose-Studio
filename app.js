@@ -13,14 +13,16 @@ const state = {
 
 const meta = {
   dashboard: ['Tổng quan', 'Dữ liệu vận hành, trạng thái đồng bộ và các tác vụ nhanh'],
-  operations: ['Điều phối cửa hàng', 'Yêu cầu và phối hợp hàng hóa giữa các chi nhánh'],
+  operations: ['Công việc', 'Gọi hàng và các công việc vận hành'],
+  orders: ['Đơn hàng', 'Đơn hàng và hóa đơn từ KiotViet — đang phát triển'],
+  warehouse: ['Thao tác kho', 'Nhập hàng, xuất hàng và kiểm kho'],
   inventory: ['Tồn kho', 'Tồn KiotViet theo chi nhánh'],
   transfers: ['Chuyển kho', 'Phiếu chuyển đọc trực tiếp từ KiotViet'],
   stocktake: ['Kiểm kho', 'Delta ledger và quy trình cân bằng tồn'],
   returns: ['Đổi / Trả', 'Phiếu trả hàng và lineage bán hàng'],
   products: ['Sản phẩm', 'Danh mục sản phẩm từ KiotViet'],
-  productSync: ['Đồng bộ sản phẩm', 'Xem trước ảnh KiotViet và cập nhật danh mục Whose'],
-  employees: ['Nhân viên & quyền', 'Tài khoản, chức vụ, vị trí và phạm vi thao tác'],
+  productSync: ['Sản phẩm', 'Danh mục sản phẩm Whose và dữ liệu từ KiotViet'],
+  employees: ['Nhân viên & Tài khoản', 'Tài khoản, chức vụ, vị trí và phạm vi thao tác'],
   kiot: ['Đồng bộ KiotViet', 'Kết nối read-only, độ trễ và reconciliation'],
   settings: ['Cài đặt', 'Trạng thái nền tảng và các nguyên tắc vận hành']
 };
@@ -53,9 +55,9 @@ function errorSummary(connectivity) {
 }
 
 function setMobileNavState(page) {
-  const primaryPages = new Set(['dashboard', 'operations', 'stocktake', 'inventory']);
+  const primaryPages = new Set(['dashboard', 'operations', 'warehouse', 'inventory']);
   document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
-    el.classList.toggle('active', el.dataset.mobilePage === page);
+    el.classList.toggle('active', el.dataset.mobilePage === page || (page==='stocktake'&&el.dataset.mobilePage==='warehouse'));
   });
   const more = document.getElementById('mobileMore');
   if (more) more.classList.toggle('active', !primaryPages.has(page));
@@ -71,7 +73,7 @@ function navigate(page) {
   state.page = page;
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-item[data-page]').forEach((el) => {
-    const current = el.dataset.page === page;
+    const current = el.dataset.page === page || (page==='stocktake'||page==='transfers'||page==='returns')&&el.dataset.page==='warehouse' || page==='kiot'&&el.dataset.page==='settings';
     el.classList.toggle('active', current);
     if (current) el.setAttribute('aria-current', 'page');
     else el.removeAttribute('aria-current');
