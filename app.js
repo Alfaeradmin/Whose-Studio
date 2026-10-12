@@ -82,6 +82,7 @@ function navigate(page) {
   document.getElementById('pageSub').textContent = meta[page][1];
   setMobileNavState(page);
   closeSidebar();
+  if(page==='inventory')void loadInventorySnapshots();
   requestAnimationFrame(() => document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'auto' }));
 }
 
@@ -195,21 +196,43 @@ function renderProducts() {
 }
 
 let inventoryOffset=0;
+let inventoryFilters={query:'',branch:''};
+let inventoryRequestSeq=0;
 async function loadInventorySnapshots(){
  const tbody=document.getElementById('inventoryRows');
  if(!tbody||!state.session)return;
- tbody.innerHTML='<tr><td colspan="5">Đang đọc snapshot tồn Whose…</td></tr>';
- try {
-  const r=await authorizedFetch('/api/kiot-inventory-sync?view=stored&offset='+inventoryOffset,{cache:'no-store'});
-  if(!r.ok)throw Error('Không thể đọc dữ liệu tồn Whose.');
-  const data=await r.json(),rows=Array.isArray(data.rows)?data.rows:[];
-  document.getElementById('inventorySource').textContent='KiotViet → Whose';
-  tbody.innerHTML=rows.length?rows.map(p=>'<tr><td><b>'+esc(p.sku)+'</b><div class="muted">'+esc(p.name)+'</div></td><td>'+esc(p.branch_name)+'</td><td>'+fmt(p.on_hand)+'</td><td>'+fmt(p.reserved)+'</td><td>'+fmt(Number(p.on_hand)-Number(p.reserved))+'</td></tr>').join(''):
-   '<tr><td colspan="5">Chưa có snapshot tồn kho đã đồng bộ cho trang này.</td></tr>';
-  document.getElementById('inventoryPaging').textContent=fmt(data.total)+' dòng · Trang '+(Math.floor(inventoryOffset/100)+1);
+ const seq=++inventoryRequestSeq;
+ tbody.innerHTML='<tr><td colspan="6">Đang đọc tồn kho Whose…</td></tr>';
+ try{
+  const params=new URLSearchParams({view:'stored',offset:String(inventoryOffset),
+   q:inventoryFilters.query,branch:inventoryFilters.branch});
+  const r=await authorizedFetch('/api/kiot-inventory-sync?'+params,{cache:'no-store'});
+  if(seq!==inventoryRequestSeq)return;
+  if(!r.ok)throw Error(r.status===403?'Không có quyền xem báo cáo tồn kho.':'Không thể đọc snapshot tồn Whose.');
+  const data=await r.json();
+  if(seq!==inventoryRequestSeq)return;
+  if(!Array.isArray(data.rows)||!Number.isSafeInteger(Number(data.total)))
+   throw Error('Dữ liệu tồn trả về không hợp lệ.');
+  const rows=data.rows,total=Number(data.total);
+  document.getElementById('inventorySource').textContent='Snapshot KiotViet → Whose';
+  tbody.innerHTML=rows.length?rows.map(p=>{
+   const t=Date.parse(p.synced_at||'');
+   const fresh=Number.isFinite(t)&&Date.now()-t<=86400000;
+   const updated=Number.isFinite(t)?new Date(t).toLocaleString('vi-VN'):'Chưa có';
+   return '<tr><td><b>'+esc(p.sku)+'</b><div class="muted">'+esc(p.name)+'</div></td><td>'+
+    esc(p.branch_name)+'</td><td>'+fmt(p.on_hand)+'</td><td>'+fmt(p.reserved)+'</td><td>'+
+    fmt(Number(p.on_hand)-Number(p.reserved))+'</td><td class="'+(fresh?'muted':'ws-stale')+'">'+
+    esc(updated)+(fresh?'':' · Cần cập nhật')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6">Không tìm thấy tồn phù hợp trên toàn bộ dữ liệu Whose.</td></tr>';
+  document.getElementById('inventoryPaging').textContent=fmt(total)+' kết quả · Trang '+(Math.floor(inventoryOffset/100)+1);
   document.getElementById('inventoryPrevBtn').disabled=inventoryOffset===0;
-  document.getElementById('inventoryNextBtn').disabled=inventoryOffset+100>=data.total;
- }catch(e){tbody.innerHTML='<tr><td colspan="5">'+esc(e.message)+'</td></tr>';}
+  document.getElementById('inventoryNextBtn').disabled=inventoryOffset+100>=total;
+  window.dispatchEvent(new CustomEvent('whose:inventory-data',{
+   detail:{total,branches:data.branches||[]}
+  }));
+ }catch(e){
+  if(seq===inventoryRequestSeq)tbody.innerHTML='<tr><td colspan="6">'+esc(e.message)+'</td></tr>';
+ }
 }
 function renderInventory(){
  const button=document.getElementById('inventorySyncBtn');
@@ -831,3 +854,12 @@ document.getElementById('inventorySyncBtn')?.addEventListener('click',syncKiotIn
 document.getElementById('inventoryPrevBtn')?.addEventListener('click',()=>{inventoryOffset=Math.max(0,inventoryOffset-100);loadInventorySnapshots();});
 document.getElementById('inventoryNextBtn')?.addEventListener('click',()=>{inventoryOffset+=100;loadInventorySnapshots();});
 document.querySelector('[data-page="inventory"]')?.addEventListener('click',loadInventorySnapshots);
+
+window.addEventListener('whose:inventory-filter',event=>{
+ const query=String(event.detail?.query||'').trim().slice(0,80);
+ const branch=String(event.detail?.branch||'').trim().slice(0,128);
+ if(query===inventoryFilters.query&&branch===inventoryFilters.branch)return;
+ inventoryFilters={query,branch};
+ inventoryOffset=0;
+ void loadInventorySnapshots();
+});
