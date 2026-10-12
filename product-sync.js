@@ -6,7 +6,7 @@ const el=id=>document.getElementById(id);
 const ui={
   mode:'whose',page:0,query:'',filter:'all',rows:[],hasMore:false,
   total:null,stats:null,admin:false,busy:false,syncing:false,stop:false,
-  resumePage:0,seen:false,requestId:0
+  resumePage:0,seen:false,requestId:0,sessionUser:null
 };
 const api='/api/kiot-products';
 const escDate=value=>{
@@ -250,8 +250,18 @@ const previousNavigate=navigate;
 navigate=function(page){
   previousNavigate(page);
   if(page==='productSync'){
+    const user=state.session?.user?.id||state.session?.user?.email||null;
+    if(ui.sessionUser!==user){
+      ui.sessionUser=user;
+      ui.mode='whose';ui.page=0;ui.query='';ui.filter='all';
+      ui.rows=[];ui.hasMore=false;ui.total=null;ui.stats=null;
+      ui.resumePage=0;ui.seen=false;ui.requestId++;
+      el('psSearch').value='';el('psImageFilter').value='all';
+      el('psProgress').hidden=true;
+      for(const id of ['psTotal','psWithImages','psLastSync'])el(id).textContent='—';
+    }
     ui.admin=state.session?.is_global_admin===true;
-    if(!ui.seen){ui.seen=true;void load();}
+    if(!ui.seen){ui.seen=true;render();void load();}
     else render();
   }
 };
