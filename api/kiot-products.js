@@ -39,6 +39,8 @@ module.exports=async function handler(req,res){
     params.set('offset',String(page*48));
     params.set('limit','49');
     if(cleanQuery)params.set('or','(sku.ilike.*'+cleanQuery+'*,name.ilike.*'+cleanQuery+'*)');
+    if(q.images==='with')params.set('attributes->kiotviet->>thumbnail','not.is.null');
+    else if(q.images==='without')params.set('attributes->kiotviet->>thumbnail','is.null');
     const [rows,stats]=await Promise.all([
       rest('whose_products?'+params,{bearer}),
       rest('rpc/whose_kiot_product_catalog_stats',{method:'POST',bearer,body:{}})
