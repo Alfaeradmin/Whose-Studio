@@ -216,6 +216,11 @@
           <p class="muted" id="kiotWebhookRegisterResult" role="status" aria-live="polite">Chỉ Global Admin; thao tác tạo đăng ký product.update, không sửa sản phẩm hoặc tồn kho.</p>
         </div>
         <div class="card card-pad" style="margin-bottom:18px">
+          <div class="section-head"><div><h2>Đơn hàng & tồn kho KiotViet · chỉ đọc</h2><p>Kiểm tra quyền đọc dữ liệu nguồn mà không thay đổi đơn, tồn hoặc tạo bản ghi nghiệp vụ. Chưa bật tự động.</p></div></div>
+          <button class="btn" id="kiotOperationalProbe" type="button">Kiểm tra API đơn hàng và tồn kho</button>
+          <p class="muted" id="kiotOperationalResult" role="status" aria-live="polite">Chưa kiểm tra.</p>
+        </div>
+        <div class="card card-pad" style="margin-bottom:18px">
           <div class="section-head"><div><h2>Đối chiếu bảo mật kết nối KiotViet</h2><p>So sánh Client ID trên máy chủ với bộ khóa mới bạn đã tạo ngày 12/10 và kiểm tra lỗi sao chép cấu hình. Không hiển thị Client ID, Secret hoặc giá trị môi trường.</p></div></div>
           <button class="btn" id="kiotCredentialCheck" type="button">Đối chiếu bộ khóa hiện tại</button>
           <p id="kiotCredentialCheckResult" role="status" aria-live="polite" class="muted" style="margin-top:12px;white-space:pre-line">Chưa thực hiện đối chiếu.</p>
