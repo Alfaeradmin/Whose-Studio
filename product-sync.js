@@ -36,6 +36,61 @@ function node(tag,cls,content){
   if(content!==undefined)n.textContent=String(content);
   return n;
 }
+function details(p){
+ const overlay=node('div','ps-detail-overlay');
+ overlay.setAttribute('role','presentation');
+ const panel=node('section','ps-detail-panel');
+ panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
+ panel.setAttribute('aria-label','Thông tin sản phẩm '+String(p.sku||''));
+ const top=node('div','ps-detail-top');
+ const heading=node('div');
+ heading.append(node('span','ps-product-sku',p.sku||'Chưa có SKU'));
+ heading.append(node('h2','ps-detail-heading',p.name||'Sản phẩm'));
+ const close=node('button','ps-detail-close','Đóng ×');
+ close.type='button';close.setAttribute('aria-label','Đóng chi tiết sản phẩm');
+ top.append(heading,close);panel.append(top);
+ const content=node('div','ps-detail-body');
+ const imageUrl=p.imageUrl||p.metadata?.thumbnail;
+ const picture=node('div','ps-detail-picture');
+ if(typeof imageUrl==='string'&&/^https:\/\//i.test(imageUrl)){
+  const img=node('img');img.src=imageUrl;img.alt='Hình sản phẩm '+(p.sku||'');
+  img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+  img.onerror=()=>{img.remove();picture.append(node('span','','Chưa tải được ảnh'));};
+  picture.append(img);
+ }else picture.append(node('span','','Chưa có ảnh KiotViet'));
+ content.append(picture);
+ const properties=node('dl','ps-detail-properties');
+ const add=(label,value)=>{
+  const item=node('div','ps-detail-property');
+  item.append(node('dt','',label),node('dd','',value??'Chưa có dữ liệu'));
+  properties.append(item);
+ };
+ const meta=p.metadata||{};
+ add('SKU',p.sku||null);add('Barcode',p.barcode||meta.barcode||null);
+ add('Danh mục',p.category||meta.category||null);add('Nhãn hàng',p.brand||meta.brand||null);
+ add('Đơn vị',p.unit||meta.unit||null);
+ const price=p.basePrice??meta.basePrice;
+ add('Giá cơ bản',Number.isFinite(price)?fmt(price)+' ₫':null);
+ const active=p.active??meta.sourceActive;
+ add('Trạng thái KiotViet',active===true?'Đang sử dụng':active===false?'Ngừng sử dụng':'Chưa rõ');
+ add('Nguồn','KiotViet — chỉ đọc');
+ if(p.syncedAt)add('Lưu vào Whose lúc',escDate(p.syncedAt));
+ const attrs=Array.isArray(meta.attributes)?meta.attributes:[];
+ for(const attr of attrs.slice(0,20)){
+  if(typeof attr.name==='string'&&typeof attr.value==='string')add(attr.name,attr.value);
+ }
+ content.append(properties);panel.append(content);
+ const foot=node('p','ps-detail-foot','Thông tin tham chiếu; không làm thay đổi sản phẩm, tồn kho hoặc chứng từ KiotViet.');
+ panel.append(foot);overlay.append(panel);document.body.append(overlay);
+ const prior=document.activeElement;
+ const dismiss=()=>{document.removeEventListener('keydown',onKey);overlay.remove();if(prior?.isConnected)prior.focus();};
+ const onKey=e=>{if(e.key==='Escape')dismiss();if(e.key==='Tab'){
+  e.preventDefault();close.focus();
+ }};
+ close.addEventListener('click',dismiss);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)dismiss();});
+ document.addEventListener('keydown',onKey);close.focus();
+}
 function makeCard(p){
   const card=node('article','ps-product');
   const pic=node('div','ps-product-image');
@@ -53,6 +108,10 @@ function makeCard(p){
     image.onerror=()=>{image.remove();pic.append(fallback);};
     pic.append(image);
   }else pic.append(fallback);
+  card.tabIndex=0;card.setAttribute('role','button');
+  card.setAttribute('aria-label','Xem chi tiết '+String(p.sku||p.name));
+  card.addEventListener('click',()=>details(p));
+  card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();details(p);}});
   card.append(pic);
   const info=node('div','ps-product-info');
   info.append(node('div','ps-product-sku',p.sku||'—'));
