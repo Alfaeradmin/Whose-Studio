@@ -7,6 +7,12 @@ module.exports=async function handler(req,res){
  if(req.method!=='GET')return res.status(405).json({error:'GET_ONLY'});
  const bearer=accessToken(req),staff=await validateStaffBearer(bearer);
  if(!staff.ok)return res.status(staff.status).json({error:'STAFF_AUTH_REQUIRED'});
+ if(req.query?.type==='health'){
+  if(staff.is_global_admin!==true)return res.status(403).json({error:'ADMIN_REQUIRED'});
+  const r=await rest('rpc/whose_kiot_audit_health',{method:'POST',bearer,body:{}});
+  if(!r.ok||!r.data)return res.status(503).json({error:'AUDIT_HEALTH_UNAVAILABLE'});
+  return res.status(200).json({...r.data,sourceAttribution:'document_correlation_not_verified'});
+ }
  const type=req.query?.type||'stock';
  const page=Number(req.query?.page??0);
  const query=typeof req.query?.q==='string'?req.query.q.trim():'';
