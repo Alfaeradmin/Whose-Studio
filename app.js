@@ -492,12 +492,28 @@ async function restoreAuth() {
   if (!stored?.access_token || !stored?.refresh_token) { lockApp(); return; }
   state.session = stored;
   try {
-    const r = await authorizedFetch('/api/auth', { cache: 'no-store' });
-    if (!r.ok) throw new Error('Invalid staff session');
+    let r = await authorizedFetch('/api/auth', { cache: 'no-store' });
+    // Expired access tokens are expected; renew with the existing refresh token.
+    if (r.status === 401) {
+      await refreshAuth();
+      r = await authorizedFetch('/api/auth', { cache: 'no-store' });
+    }
+    if (r.status === 401 || r.status === 403) {
+      lockApp('Phiên đăng nhập không còn hợp lệ.');
+      return;
+    }
+    if (!r.ok) throw new Error('SESSION_CHECK_UNAVAILABLE');
     const staff = await r.json();
     setAuthenticated({ ...state.session, ...staff });
     await loadData();
-  } catch { lockApp('Phiên đăng nhập cũ không còn hợp lệ.'); }
+  } catch {
+    // Keep valid cached credentials during temporary network/server failures.
+    // Never delete a session simply because a request timed out during F5.
+    if (state.session?.access_token && state.session?.refresh_token) {
+      setAuthenticated(state.session);
+      toast('Kết nối tạm gián đoạn. Có thể bấm Làm mới để thử lại.');
+    } else lockApp('Vui lòng đăng nhập lại.');
+  }
 }
 async function sendWhoseRequest() {
   if (state.submitting || !state.session) return;
