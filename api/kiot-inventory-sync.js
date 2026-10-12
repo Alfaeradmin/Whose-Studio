@@ -62,6 +62,7 @@ module.exports=async function handler(req,res){
  if(!Number.isSafeInteger(page)||page<0||page>999)return res.status(400).json({error:'INVALID_PAGE'});
  if(req.method==='POST'&&req.body?.confirm!=='IMPORT_KIOT_INVENTORY')return res.status(400).json({error:'CONFIRM_REQUIRED'});
  try{
+  const observedAt=new Date().toISOString();
   let r,lastStatus=null;
   for(let attempt=0;attempt<3;attempt++){
    r=await safeRead('products',{pageSize:100,currentItem:page*100,includeInventory:true});
@@ -89,7 +90,7 @@ module.exports=async function handler(req,res){
   // Preserve unmapped records as a diagnostic; never silently assign them.
   const unmapped=rows.length-mapped.length;
   if(req.method==='GET')return res.status(200).json({page,total,productRows:r.data.data.length,inventoryRows:mapped.length,unmappedBranchRows:unmapped,mode:'preview'});
-  const result=mapped.length?await service('rpc/whose_sync_kiot_inventory_page','POST',{p_rows:mapped}):{stored:0};
+  const result=mapped.length?await service('rpc/whose_sync_kiot_inventory_page_v2','POST',{p_rows:mapped,p_observed_at:observedAt,p_run_key:require('node:crypto').randomUUID()}):{stored:0};
   if(result.stored!==mapped.length)throw Error('INCOMPLETE_SAVE');
   return res.status(200).json({page,total,productRows:r.data.data.length,stored:result.stored,unmappedBranchRows:unmapped,hasMore:(page+1)*100<total});
  }catch(e){
