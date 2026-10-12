@@ -14,7 +14,7 @@ module.exports=async function handler(req,res){
  if(req.method==='GET'){
    const key=process.env.WHOSE_CONNECTOR_SERVICE_ROLE_KEY||'';
    const keyType=key.startsWith('sb_secret_')?'secret':key.startsWith('eyJ')?'legacy_jwt':key.startsWith('sb_publishable_')?'publishable_invalid':'unknown';
-   return res.status(200).json({workerConfigured:configured,keyType,keyHasSurroundingWhitespace:key!==key.trim(),keyHasQuotes:/^[\"']|[\"']$/.test(key),keyLengthValid:keyType==='secret'?key.length>=40:keyType==='legacy_jwt'?key.split('.').length===3:false,scheduled:false,kiotWritesEnabled:false});
+   return res.status(200).json({workerConfigured:configured,webhookConfigured:Boolean(process.env.KIOTVIET_WEBHOOK_SECRET_BASE64),webhookRegistrationVerified:false,keyType,keyHasSurroundingWhitespace:key!==key.trim(),keyHasQuotes:/^[\"']|[\"']$/.test(key),keyLengthValid:keyType==='secret'?key.length>=40:keyType==='legacy_jwt'?key.split('.').length===3:false,scheduled:false,kiotWritesEnabled:false});
  }
  if(!verifyOrigin(req))return res.status(403).json({error:'INVALID_ORIGIN'});
  if(!configured)return res.status(503).json({error:'WORKER_NOT_CONFIGURED'});
