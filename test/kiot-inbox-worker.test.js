@@ -10,7 +10,9 @@ test('acknowledges only after validated product is persisted',async()=>{
   const name=url.split('/').pop();const body=JSON.parse(opt.body);calls.push({name,body});
   return {ok:true,json:async()=>name==='whose_connector_claim_inbox'?[job]:name==='whose_connector_store_product'?true:true};
  };
- const result=await handleOnce({env,fetchImpl,providerRead:async()=>({ok:true,data:{id:3,code:'SKU3',name:'Product 3'}})});
+ const reads=[];
+ const result=await handleOnce({env,fetchImpl,providerRead:async(path)=>{reads.push(path);return {ok:true,data:{id:3,code:'SKU3',name:'Product 3'}};}});
+ assert.deepEqual(reads,['products/3']);
  assert.deepEqual(result,{claimed:1,processed:1,retry:0});
  assert.deepEqual(calls.map(x=>x.name),['whose_connector_claim_inbox','whose_connector_store_product','whose_connector_finish_inbox']);
  assert.equal(calls.at(-1).body.p_success,true);
