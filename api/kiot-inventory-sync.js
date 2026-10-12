@@ -36,7 +36,8 @@ module.exports=async function handler(req,res){
  if(!['GET','POST'].includes(req.method))return res.status(405).json({error:'METHOD_NOT_ALLOWED'});
  const staff=await validateStaffBearer(accessToken(req));
  if(!staff.ok)return res.status(staff.status).json({error:'STAFF_AUTH_REQUIRED'});
- if(staff.is_global_admin!==true)return res.status(403).json({error:'ADMIN_REQUIRED'});
+ // Read-only inventory is scoped to active branch memberships by the database.
+ // Mutating imports and raw Kiot provider previews remain Global Admin-only.
  // Inventory reads are full-dataset, role-checked database functions.
  const branch=typeof req.query?.branch==='string'?req.query.branch.trim():'';
  if(req.method==='GET'&&['summary','stored'].includes(req.query?.view)){
@@ -55,6 +56,7 @@ module.exports=async function handler(req,res){
   if(!found.ok||!found.data)return res.status(502).json({error:'SNAPSHOT_READ_FAILED'});
   return res.status(200).json(found.data);
  }
+ if(staff.is_global_admin!==true)return res.status(403).json({error:'ADMIN_REQUIRED'});
  if(req.method==='POST'&&!verifyOrigin(req))return res.status(403).json({error:'INVALID_ORIGIN'});
  const page=Number(req.method==='GET'?req.query?.page:req.body?.page);
  if(!Number.isSafeInteger(page)||page<0||page>999)return res.status(400).json({error:'INVALID_PAGE'});
