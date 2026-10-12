@@ -37,16 +37,22 @@ module.exports=async function handler(req,res){
  const staff=await validateStaffBearer(accessToken(req));
  if(!staff.ok)return res.status(staff.status).json({error:'STAFF_AUTH_REQUIRED'});
  if(staff.is_global_admin!==true)return res.status(403).json({error:'ADMIN_REQUIRED'});
- if(req.method==='GET'&&req.query?.view==='summary'){
-  const found=await rest('rpc/whose_inventory_operational_summary',{method:'POST',bearer:accessToken(req),body:{}});
-  if(!found.ok||!found.data)return res.status(502).json({error:'INVENTORY_SUMMARY_UNAVAILABLE'});
-  return res.status(200).json(found.data);
- }
- if(req.method==='GET'&&req.query?.view==='stored'){
+ // Inventory reads are full-dataset, role-checked database functions.
+ const branch=typeof req.query?.branch==='string'?req.query.branch.trim():'';
+ if(req.method==='GET'&&['summary','stored'].includes(req.query?.view)){
+  if(branch.length>128)return res.status(400).json({error:'INVALID_BRANCH'});
+  if(req.query.view==='summary'){
+   const found=await rest('rpc/whose_inventory_summary_filtered',{method:'POST',bearer:accessToken(req),body:{p_branch:branch}});
+   if(!found.ok||!found.data)return res.status(502).json({error:'INVENTORY_SUMMARY_UNAVAILABLE'});
+   return res.status(200).json(found.data);
+  }
   const offset=Number(req.query?.offset??0);
-  if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return res.status(400).json({error:'INVALID_OFFSET'});
-  const found=await rest('rpc/whose_inventory_snapshot_page',{method:'POST',bearer:accessToken(req),body:{p_limit:100,p_offset:offset}});
-  if(!found.ok)return res.status(502).json({error:'SNAPSHOT_READ_FAILED'});
+  const query=typeof req.query?.q==='string'?req.query.q.normalize('NFC').trim():'';
+  if(!Number.isSafeInteger(offset)||offset<0||offset>100000||query.length>80)
+   return res.status(400).json({error:'INVALID_INVENTORY_FILTER'});
+  const found=await rest('rpc/whose_inventory_search_page',{method:'POST',bearer:accessToken(req),
+   body:{p_limit:100,p_offset:offset,p_query:query,p_branch:branch}});
+  if(!found.ok||!found.data)return res.status(502).json({error:'SNAPSHOT_READ_FAILED'});
   return res.status(200).json(found.data);
  }
  if(req.method==='POST'&&!verifyOrigin(req))return res.status(403).json({error:'INVALID_ORIGIN'});
