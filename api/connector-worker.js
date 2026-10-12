@@ -17,7 +17,13 @@ module.exports=async function handler(req,res){
  try{
    const result=await handleOnce();
    return res.status(200).json({...result,kiotWritesEnabled:false,scheduled:false});
- }catch{
-   return res.status(503).json({error:'WORKER_RUN_FAILED'});
+ }catch(err){
+   // Bounded diagnostics; never return credentials, URLs or provider payloads.
+   const msg=err instanceof Error?err.message:'';
+   const code=/^CONNECTOR_RPC_FAILED_(400|401|403|404|408|409|422|429|500|502|503|504)$/.test(msg)
+     ?msg:/^(CONNECTOR_STORAGE_NOT_CONFIGURED|INVALID_CLAIM_RESPONSE|LOST_INBOX_LEASE)$/.test(msg)
+     ?msg:err?.name==='TimeoutError'?'WORKER_TIMEOUT':'WORKER_RUN_FAILED';
+   console.warn('[Whose/connector-worker]',code);
+   return res.status(503).json({error:code});
  }
 };
