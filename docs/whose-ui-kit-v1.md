@@ -11,6 +11,7 @@ Trang Whose và trang khôi phục mật khẩu bắt buộc tải CSS theo đú
 2. `ui-foundation.css?v=1.0.0` — token nền tảng bất biến theo phiên bản.
 3. `ui-enterprise-v2.css?v=20261012` — giao diện Whose hiện hành, nhất quán 10 phân hệ.
 4. `ui-components.css?v=1.0.0` — hợp đồng cho controls, cuộn, responsive, layering, accessibility.
+5. `ui-icons.js?v=1.0.0` — bộ biểu tượng SVG duy nhất cho các nút; markup dùng `data-ws-icon="menu|search|refresh|plus|log-out|..."`. Script nạp trước `app.js`.
 
 Mọi module mới dùng **`--ws-*`**; không gõ mã màu/spacing/z-index tùy ý. Khi đổi token phá vỡ tương thích, tăng phiên bản UI Kit và cập nhật cả hai trang đồng thời. Không sao chép từng phần của UI Kit vào từng file nghiệp vụ.
 
@@ -28,7 +29,7 @@ Mọi module mới dùng **`--ws-*`**; không gõ mã màu/spacing/z-index tùy 
 - `--ws-font-xs` 11px cho chú thích, `--ws-font-sm` 12px cho metadata/bảng, `--ws-font-body` 14px cho nội dung, `--ws-font-lg` 16px cho tên thẻ, `--ws-font-heading` 22px.
 - Khoảng cách lấy từ `--ws-space-1/2/3/4/5/6/8/10` (4, 8, 12, 16, 20, 24, 32, 40px). Bán kính `--ws-radius-*`.
 - Input mobile tối thiểu **16px** tránh zoom ngoài ý muốn. Vùng chạm tối thiểu **44px**; text phải xuống dòng/cắt có dấu khi cần, không chồng lên biểu tượng.
-- Icons SVG stroke đồng bộ viewBox 24, kích cỡ `--ws-icon-md` 20px; dùng `aria-hidden` với icon trang trí và `aria-label` cho nút chỉ có icon. Không đặt icon bằng phông emoji lẫn lộn.
+- Icons SVG stroke đồng bộ viewBox 24, kích cỡ `--ws-icon-md` 20px; dùng registry `ui-icons.js`, `data-ws-icon` và API `window.WhoseUIIcons.mount(root)` cho nội dung mới được thêm sau. Icon trang trí có `aria-hidden`; nút chỉ có icon bắt buộc có `aria-label`. Không dùng phông emoji lẫn lộn. Không cho nhập SVG tùy ý từ người dùng.
 
 ## 4. Grid, cuộn chuột, lớp nổi
 
