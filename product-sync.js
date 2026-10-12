@@ -208,6 +208,14 @@ async function syncAll(){
   }finally{
     ui.syncing=false;el('psStopSync').disabled=false;
     render();
+    // Refresh persisted totals even when the user stays in Kiot preview.
+    try{
+      const latest=await request(api+'?view=catalog&page=0');
+      if(latest?.stats)setStats(latest.stats);
+    }catch{
+      // A catalog stats failure is not a false import success.
+      showStatus('Kết quả đồng bộ đã được báo phía trên. Chưa xác minh lại được thống kê Whose; hãy bấm Làm mới danh mục.','error');
+    }
   }
 }
 let searchTimer=null;
