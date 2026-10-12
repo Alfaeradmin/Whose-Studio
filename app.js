@@ -811,10 +811,12 @@ async function syncKiotInventory() {
       if(total===null)total=row.total;
       if(row.total!==total||row.productRows!==Math.min(100,Math.max(0,total-page*100)))
         throw new Error('Tổng sản phẩm nguồn thay đổi trong quá trình đồng bộ.');
-      done+=row.productRows;stored+=row.stored;unmapped+=row.unmappedBranchRows;\n      sessionStorage.setItem(checkpointKey,String(page+1));
+      done+=row.productRows;stored+=row.stored;unmapped+=row.unmappedBranchRows;
+      sessionStorage.setItem(checkpointKey,String(page+1));
       message.textContent='Đã đọc '+fmt(done)+' / '+fmt(total)+' sản phẩm, lưu '+fmt(stored)+' dòng tồn.';
       if(!row.hasMore){
-        sessionStorage.removeItem(checkpointKey);\n        message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
+        sessionStorage.removeItem(checkpointKey);
+        message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
         await loadData();
         await loadInventorySnapshots();
         return;
