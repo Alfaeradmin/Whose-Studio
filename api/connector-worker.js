@@ -11,7 +11,11 @@ module.exports=async function handler(req,res){
  if(!staff.ok)return res.status(staff.status).json({error:'STAFF_AUTH_REQUIRED'});
  if(staff.is_global_admin!==true)return res.status(403).json({error:'ADMIN_REQUIRED'});
  const configured=Boolean(getConfig());
- if(req.method==='GET')return res.status(200).json({workerConfigured:configured,scheduled:false,kiotWritesEnabled:false});
+ if(req.method==='GET'){
+   const key=process.env.WHOSE_CONNECTOR_SERVICE_ROLE_KEY||'';
+   const keyType=key.startsWith('sb_secret_')?'secret':key.startsWith('eyJ')?'legacy_jwt':key.startsWith('sb_publishable_')?'publishable_invalid':'unknown';
+   return res.status(200).json({workerConfigured:configured,keyType,keyHasSurroundingWhitespace:key!==key.trim(),keyHasQuotes:/^[\"']|[\"']$/.test(key),keyLengthValid:keyType==='secret'?key.length>=40:keyType==='legacy_jwt'?key.split('.').length===3:false,scheduled:false,kiotWritesEnabled:false});
+ }
  if(!verifyOrigin(req))return res.status(403).json({error:'INVALID_ORIGIN'});
  if(!configured)return res.status(503).json({error:'WORKER_NOT_CONFIGURED'});
  try{
