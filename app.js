@@ -784,24 +784,37 @@ async function syncKiotInventory() {
   const message=document.getElementById('inventorySyncStatus');
   if(!btn||!message||!state.session?.is_global_admin)return;
   if(!window.confirm('Đồng bộ tồn KiotViet về Whose cho các chi nhánh đã ánh xạ? Chỉ cập nhật snapshot Whose; không chỉnh tồn KiotViet.'))return;
+  // An interrupted run can continue from a known page; prior pages use idempotent upsert.
+  const checkpointKey='whose-kiot-inventory-next-page-v1';
+  const checkpoint=Number(sessionStorage.getItem(checkpointKey));
+  const suggested=Number.isSafeInteger(checkpoint)&&checkpoint>0?checkpoint+1:11;
+  const answer=window.prompt('Bắt đầu từ trang nào? Trang 11 đang cần thử lại; chọn 1 để đồng bộ toàn bộ.',String(suggested));
+  if(answer===null)return;
+  if(!/^[1-9][0-9]{0,3}$/.test(answer)||Number(answer)>1000){message.textContent='Số trang không hợp lệ.';return;}
+  const startPage=Number(answer)-1;
   btn.disabled=true;
-  let total=null,done=0,stored=0,unmapped=0;
+  let total=null,done=startPage*100,stored=0,unmapped=0;
   try {
-    for(let page=0;page<1000;page++){
+    for(let page=startPage;page<1000;page++){
       message.textContent='Đang nhập trang '+(page+1)+'…';
       const response=await authorizedFetch('/api/kiot-inventory-sync',{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({page,confirm:'IMPORT_KIOT_INVENTORY'}),cache:'no-store'
       });
-      if(!response.ok)throw new Error('Trang '+(page+1)+' chưa nhập thành công (HTTP '+response.status+').');
+      if(!response.ok){
+        const issue=await response.json().catch(()=>({}));
+        throw new Error('Trang '+(page+1)+' (HTTP '+response.status+'): '+(issue.error||'Không rõ lỗi')+
+          (issue.upstreamStatus?' · Kiot HTTP '+issue.upstreamStatus:'')+
+          (issue.received!=null?' · nhận '+issue.received+'/'+issue.expected:'')+'.');
+      }
       const row=await response.json();
       if(total===null)total=row.total;
       if(row.total!==total||row.productRows!==Math.min(100,Math.max(0,total-page*100)))
         throw new Error('Tổng sản phẩm nguồn thay đổi trong quá trình đồng bộ.');
-      done+=row.productRows;stored+=row.stored;unmapped+=row.unmappedBranchRows;
+      done+=row.productRows;stored+=row.stored;unmapped+=row.unmappedBranchRows;\n      sessionStorage.setItem(checkpointKey,String(page+1));
       message.textContent='Đã đọc '+fmt(done)+' / '+fmt(total)+' sản phẩm, lưu '+fmt(stored)+' dòng tồn.';
       if(!row.hasMore){
-        message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
+        sessionStorage.removeItem(checkpointKey);\n        message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
         await loadData();
         await loadInventorySnapshots();
         return;
