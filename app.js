@@ -611,7 +611,7 @@ document.getElementById('refresh').onclick = loadData;
 document.getElementById('globalSearch').addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
     navigate('products');
-    toast('Search full catalog sẽ được nối với database mirror');
+    toast('Đã mở danh mục sản phẩm. Tìm kiếm toàn bộ đang được phát triển.');
   }
 });
 
