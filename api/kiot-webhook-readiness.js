@@ -16,9 +16,9 @@ module.exports=async function handler(req,res){
  const shape=Array.isArray(r.data)?'array':r.data===null?'null':typeof r.data;
  const envelopeKeys=r.data&&typeof r.data==='object'&&!Array.isArray(r.data)?Object.keys(r.data).filter(k=>/^[A-Za-z][A-Za-z0-9]{0,40}$/.test(k)).slice(0,12):[];
  const innerShape=Array.isArray(r.data?.data)?'array':r.data?.data===null?'null':typeof r.data?.data;
- const ownHost=String(process.env.VERCEL_URL||'').toLowerCase();
+ const targetHost='whose-kiot-webhook-ingress.vercel.app';
  const matches=data.filter(x=>{
-  try {const u=new URL(x.url);return u.protocol==='https:'&&u.hostname.toLowerCase()===ownHost&&u.pathname==='/api/kiot-webhook';}
+  try {const u=new URL(x.url);return u.protocol==='https:'&&u.hostname.toLowerCase()===targetHost&&u.pathname==='/api/webhook';}
   catch{return false;}
  });
  return res.status(200).json({webhookSecretConfigured:configured,registeredListReadable:true,registeredTotal:/^[0-9]+$/.test(String(r.data?.total??''))?Number(r.data.total):data.length,listShapeValid:Array.isArray(r.data?.data),responseShape:shape,responseKeys:envelopeKeys,itemsShape:innerShape,totalReported:r.data?.total!=null,matchingCurrentDeployment:matches.length,activeMatchingCurrentDeployment:matches.filter(x=>x.isActive===true).length,kiotWritesEnabled:false});
