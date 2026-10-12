@@ -42,7 +42,7 @@ async function withFakes({validSignature=true,workerSuccess=true}={}){
    return {status:200,ok:true,json:async()=>({id:900,type:'product.update',isActive:true,url:'https://whose-kiot-webhook-ingress.vercel.app/api/webhook'})};
   throw Error('unexpected request');
  };
- const res={statusCode:200,status(n){this.statusCode=n;return this},json(payload){this.payload=payload;return this}};
+ const res={statusCode:200,setHeader(){return this},status(n){this.statusCode=n;return this},json(payload){this.payload=payload;return this}};
  try{await handler({method:'POST',body:{confirm:'REGISTER_PRODUCT_UPDATE'},headers:{}},res);}
  finally {
   global.fetch=previousFetch;
