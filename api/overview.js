@@ -133,9 +133,13 @@ module.exports = async function handler(req, res) {
   const connectionStatus = overviewConnectionStatus(connectivity);
   if (connectionStatus.failed) {
     // Structured, credential-free signal to investigate real endpoint failures.
-    const failures=Object.entries(connectivity).filter(([,v])=>!v.ok)
-      .map(([name,v])=>name+':'+(/^KiotViet GET \/[^ ]+ failed \((\d{3})\)$/.exec(v.error||'')?.[1]||
-        (/^KiotViet token failed \((\d{3})\):/.exec(v.error||'')?.[1]?'token-'+/^KiotViet token failed \((\d{3})\):/.exec(v.error||'')[1]:'unknown'));
+    const failures = Object.entries(connectivity).filter(([,v]) => !v.ok)
+      .map(([name,v]) => {
+        const message = v.error || '';
+        const http = /^KiotViet GET \/[^ ]+ failed \((\d{3})\)$/.exec(message);
+        const token = /^KiotViet token failed \((\d{3})\):/.exec(message);
+        return name + ':' + (http ? http[1] : token ? 'token-' + token[1] : 'unknown');
+      });
     console.warn('[Whose/Kiot/overview]',connectionStatus.state,'successful',connectionStatus.succeeded,'failed',failures.join(','));
   }
 
