@@ -52,7 +52,7 @@ async function fetchPage(silent=false){
    el('kiotHistoryHead').innerHTML='<tr><th>Thời điểm nhận</th><th>Chi nhánh / SKU</th><th>Trước → Sau</th><th>Chênh lệch</th><th>Chứng từ nguồn</th></tr>';
    body.innerHTML=rows.map(x=>'<tr><td>'+clean(asDate(x.recorded_at))+'</td><td><strong>'+clean(x.sku)+'</strong><div class="muted">'+clean(x.branch_name)+'</div></td>'+
     '<td>'+qty(x.before_on_hand)+' → '+qty(x.after_on_hand)+'</td><td>'+qty(x.delta_on_hand)+'</td>'+
-    '<td>'+clean(x.document_ref||'Chưa xác định trên API')+'</td></tr>').join('');
+    '<td>'+clean(x.document_ref||(Array.isArray(x.possible_documents)&&x.possible_documents.length?('Có thể liên quan: '+x.possible_documents.map(d=>d.code||d.kiot_document_id).join(', ')+' (chưa xác minh)'):'Chưa xác định trên API'))+'</td></tr>').join('');
   }else{
    el('kiotHistoryHead').innerHTML='<tr><th>Ghi nhận</th><th>Chi nhánh</th><th>Loại</th><th>Mã / ID chứng từ</th><th>Trạng thái</th></tr>';
    body.innerHTML=rows.map(x=>'<tr><td>'+clean(asDate(x.captured_at))+'</td><td>'+clean(x.branch_name||'Chưa ánh xạ')+'</td>'+
