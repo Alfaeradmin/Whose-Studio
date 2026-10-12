@@ -103,4 +103,19 @@
    finally{registerBtn.disabled=false;}
   });
  }
+ const operationalBtn=document.getElementById('kiotOperationalProbe');
+ const operationalResult=document.getElementById('kiotOperationalResult');
+ if(operationalBtn&&operationalResult)operationalBtn.addEventListener('click',async()=>{
+  operationalBtn.disabled=true;operationalResult.textContent='Đang kiểm tra API nguồn KiotViet (chỉ đọc)…';
+  try{
+   const response=await authorizedFetch('/api/kiot-operational-readiness',{cache:'no-store'});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   const data=await response.json();
+   const label=(key,title)=>title+': '+(data[key]?.readable?'đọc được':'chưa đọc được')+
+     ' · Tổng: '+(data[key]?.total??'chưa xác định');
+   operationalResult.textContent=[label('orders','Đơn hàng'),label('invoices','Hóa đơn'),
+     label('stock','Tồn kho')].join(' | ')+'. Chưa lưu dữ liệu và chưa bật tự động.';
+  }catch{operationalResult.textContent='Chưa thể xác minh API. Không có dữ liệu bị thay đổi.';}
+  finally{operationalBtn.disabled=false;}
+ });
 })();
