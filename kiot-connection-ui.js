@@ -62,7 +62,7 @@
      try{
        const res=await authorizedFetch('/api/connector-worker',{method:'POST',cache:'no-store'});
        const data=await res.json().catch(()=>({}));
-       if(!res.ok)throw new Error('Worker không hoàn tất (HTTP '+res.status+').');
+       if(!res.ok)throw new Error('Worker không hoàn tất ('+String(data.error||'HTTP '+res.status)+').');
        workerResult.textContent='Đã kiểm tra hàng đợi: '+Number(data.claimed||0)
          +' sự kiện, '+Number(data.processed||0)+' hoàn tất, '+Number(data.retry||0)
          +' cần thử lại. Không ghi sang KiotViet.';
