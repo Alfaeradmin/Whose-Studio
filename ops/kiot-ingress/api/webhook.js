@@ -55,15 +55,24 @@ function hints(payload,retailer){
    const entity=domain==='stock'?p+':'+b:String(p);
    const eid=String(payload.Id)+':'+idx+':'+(domain==='stock'?p+':'+b:p);
    const identity=[retailer,domain,entity,eid].map(x=>String(x).length+':'+x).join('|');
+   const onHand=domain==='stock'?row?.OnHand??row?.onHand:null;
+   const reserved=domain==='stock'?row?.Reserved??row?.reserved:null;
+   if(domain==='stock'){
+    const valid=x=>x!==null&&x!==undefined&&
+     /^-?[0-9]{1,10}(?:[.][0-9]{1,4})?$/.test(String(x));
+    if(!valid(onHand)||!valid(reserved))throw Error('INVALID_SIGNED_STOCK_QUANTITY');
+   }
+   const version=domain==='stock'?String(onHand)+':'+String(reserved):null;
    rows.push({retailer,domain,entity_key:entity,event_key:hash(identity),
-    payload_digest:hash(JSON.stringify([retailer,domain,entity,eid,null]))});
+    payload_digest:hash(JSON.stringify([retailer,domain,entity,eid,version])),
+    ...(domain==='stock'?{on_hand:String(onHand),reserved:String(reserved)}:{})});
   }
  }
  if(rows.length>500)throw Error('TOO_MANY_HINTS');
  return rows;
 }
 async function persist(rows,cfg,fetcher=fetch){
- const response=await fetcher(cfg.base+'/rest/v1/rpc/whose_connector_ingest_hints',{
+ const response=await fetcher(cfg.base+'/rest/v1/rpc/whose_connector_ingest_hints_v2',{
   method:'POST',headers:{apikey:cfg.key,...(cfg.key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+cfg.key}),
    'Content-Type':'application/json','Accept':'application/json'},
   body:JSON.stringify({p_rows:rows}),signal:AbortSignal.timeout(3500)
