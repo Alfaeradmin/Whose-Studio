@@ -70,4 +70,18 @@
      finally{workerRun.disabled=false;}
    });
  }
+ const readinessButton=document.getElementById('kiotWebhookReadiness');
+ const readinessResult=document.getElementById('kiotWebhookReadinessResult');
+ if(readinessButton&&readinessResult){
+  readinessButton.addEventListener('click',async()=>{
+   readinessButton.disabled=true;readinessResult.textContent='Đang đọc danh sách webhook KiotViet…';
+   try {
+    const res=await authorizedFetch('/api/kiot-webhook-readiness',{cache:'no-store'});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){readinessResult.textContent='Chưa đọc được danh sách webhook KiotViet (HTTP '+res.status+').';return;}
+    readinessResult.textContent='KiotViet có '+Number(data.registeredTotal||0)+' webhook · Trỏ tới bản staging hiện tại: '+Number(data.matchingCurrentDeployment||0)+' · Đang hoạt động: '+Number(data.activeMatchingCurrentDeployment||0)+' · Secret Whose: '+(data.webhookSecretConfigured?'đã cấu hình':'chưa cấu hình')+'. Chưa thực hiện đăng ký.';
+   }catch{readinessResult.textContent='Không thể kiểm tra đăng ký webhook.';}
+   finally{readinessButton.disabled=false;}
+  });
+ }
 })();
