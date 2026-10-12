@@ -28,3 +28,23 @@ test('never acknowledges wrong product ID',async()=>{
  assert.equal(calls.some(c=>c.name==='whose_connector_store_product'),false);
  assert.equal(calls.at(-1).body.p_success,false);
 });
+
+test('database failure never results in successful inbox completion',async()=>{
+ const calls=[];
+ const fetchImpl=async(url,opt)=>{
+  const name=url.split('/').pop();calls.push({name,body:JSON.parse(opt.body)});
+  if(name==='whose_connector_claim_inbox')return {ok:true,json:async()=>[job]};
+  if(name==='whose_connector_store_product')return {ok:false,status:503};
+  return {ok:true,json:async()=>true};
+ };
+ const result=await handleOnce({env,fetchImpl,providerRead:async()=>({ok:true,data:{id:3,code:'SKU3',name:'Product 3'}})});
+ assert.deepEqual(result,{claimed:1,processed:0,retry:1});
+ assert.equal(calls.at(-1).body.p_success,false);
+});
+test('no available jobs results in no provider reads or acknowledgments',async()=>{
+ let reads=0;
+ const fetchImpl=async()=>({ok:true,json:async()=>[]});
+ const result=await handleOnce({env,fetchImpl,providerRead:async()=>{reads++;return {ok:false};}});
+ assert.deepEqual(result,{claimed:0,processed:0,retry:0});
+ assert.equal(reads,0);
+});
