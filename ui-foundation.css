@@ -1,0 +1,84 @@
+/*
+ * Whose Studio UI Foundation v1.0.0
+ * Shared, versioned tokens. Used by every new Whose screen.
+ * Never copy tokens from ALFAER WMS; this package is Whose-specific.
+ */
+:root{
+  /* Semantic brand palette. Prefer semantic purpose over ad-hoc hex. */
+  --ws-brand:#6259c5;
+  --ws-brand-hover:#5147ab;
+  --ws-brand-soft:#f0efff;
+  --ws-ink:#192235;
+  --ws-ink-secondary:#44516a;
+  --ws-ink-muted:#68758c;
+  --ws-ink-subtle:#8995aa;
+  --ws-bg:#f4f6fb;
+  --ws-surface:#ffffff;
+  --ws-surface-subtle:#f8f9fc;
+  --ws-line:#e3e8f1;
+  --ws-line-strong:#cbd4e2;
+  --ws-success:#148267;
+  --ws-success-soft:#eaf7f1;
+  --ws-warning:#a76c22;
+  --ws-warning-soft:#fff5e6;
+  --ws-danger:#bd4850;
+  --ws-danger-soft:#fff0f0;
+  --ws-info:#4d76b7;
+  --ws-info-soft:#ecf3ff;
+  /* Geometric rhythm: every custom screen uses these spacing units. */
+  --ws-space-1:4px;
+  --ws-space-2:8px;
+  --ws-space-3:12px;
+  --ws-space-4:16px;
+  --ws-space-5:20px;
+  --ws-space-6:24px;
+  --ws-space-8:32px;
+  --ws-space-10:40px;
+  --ws-font-xs:11px;
+  --ws-font-sm:12px;
+  --ws-font-body:14px;
+  --ws-font-lg:16px;
+  --ws-font-heading:22px;
+  --ws-font-display:32px;
+  --ws-line-height:1.48;
+  --ws-radius-xs:7px;
+  --ws-radius-sm:10px;
+  --ws-radius-md:14px;
+  --ws-radius-lg:18px;
+  --ws-radius-xl:22px;
+  --ws-control-sm:36px;
+  --ws-control-md:42px;
+  --ws-control-touch:44px;
+  --ws-icon-sm:16px;
+  --ws-icon-md:20px;
+  --ws-icon-lg:24px;
+  --ws-shadow-card:0 2px 8px rgba(22,35,61,.025),0 10px 28px rgba(22,35,61,.035);
+  --ws-shadow-float:0 16px 44px rgba(22,35,61,.16);
+  --ws-focus:0 0 0 3px rgba(98,89,197,.17);
+  /* One z-index system across all modules; never use arbitrary z-index:9999. */
+  --ws-layer-base:0;
+  --ws-layer-sticky:20;
+  --ws-layer-header:30;
+  --ws-layer-bottom-nav:40;
+  --ws-layer-popover:60;
+  --ws-layer-backdrop:80;
+  --ws-layer-drawer:90;
+  --ws-layer-dialog:100;
+  --ws-layer-toast:120;
+  /* Motion is responsive feedback, never a loading substitute. */
+  --ws-motion-fast:110ms;
+  --ws-motion-standard:170ms;
+  --ws-motion-enter:210ms;
+  --ws-motion-ease:cubic-bezier(.2,.72,.2,1);
+  --ws-sidebar-width:248px;
+  --ws-content-max:1500px;
+  --ws-scroll-size:10px;
+  color-scheme:light;
+}
+@media(prefers-reduced-motion:reduce){
+  :root{
+    --ws-motion-fast:0ms;
+    --ws-motion-standard:0ms;
+    --ws-motion-enter:0ms;
+  }
+}
