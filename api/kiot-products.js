@@ -10,15 +10,22 @@ function pageIndex(value){
   const n=Number(value);return n<=MAX_PAGE?n:null;
 }
 async function readVerifiedKiotPage(page){
-  const result=await safeRead('products',{pageSize:PAGE_SIZE,currentItem:page*PAGE_SIZE});
-  if(!result.ok){
+  // Retry transient reads only. A successful Whose import is never repeated here.
+  const {setTimeout:delay}=require('node:timers/promises');
+  let lastCode=null;
+  for(let attempt=0;attempt<3;attempt++){
+    const result=await safeRead('products',{pageSize:PAGE_SIZE,currentItem:page*PAGE_SIZE});
+    if(result.ok)return parseProductPage(result.data,page);
     const http=/^KiotViet GET \/products failed \((\d{3})\)$/.exec(result.error||'');
     const token=/^KiotViet token failed \((\d{3})\):/.exec(result.error||'');
-    const code=http?Number(http[1]):token?Number(token[1]):null;
-    const e=new Error('KiotViet product read failed');
-    e.upstreamStatus=code;throw e;
+    lastCode=http?Number(http[1]):token?Number(token[1]):null;
+    const retryable=lastCode===null||lastCode===408||lastCode===429||lastCode>=500;
+    if(!retryable||attempt===2)break;
+    await delay(350*(attempt+1));
   }
-  return parseProductPage(result.data,page);
+  const error=new Error('KiotViet product read failed');
+  error.upstreamStatus=lastCode;
+  throw error;
 }
 module.exports=async function handler(req,res){
   res.setHeader('Cache-Control','private, no-store, max-age=0');

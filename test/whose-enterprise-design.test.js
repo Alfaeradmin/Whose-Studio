@@ -8,6 +8,7 @@ const css=fs.readFileSync(path.join(root,'ui-enterprise-v2.css'),'utf8');
 const js=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const reset=fs.readFileSync(path.join(root,'reset-password.html'),'utf8');
 const sectionIds=['dashboard','operations','inventory','transfers','stocktake','returns','products','productSync','employees','kiot','settings'];
+const primaryNavIds=['dashboard','productSync','inventory','employees','orders','warehouse','operations','settings'];
 const protectedIds=['appRoot','authScreen','loginForm','loginEmail','loginPassword','globalSearch','refresh','sendRequest','originBranch','destinationBranch','requestList','kiotCredentialCheck','kiotPreviewBranches','kiotImportBranches','kiotDirectoryRows','staffName','staffRole'];
 
 test('every existing operational view and auth input is preserved',()=>{
@@ -32,8 +33,8 @@ test('design system covers main, recovery, responsive and real operations',()=>{
 });
 
 test('navigation is semantic, fully wired and dashboard quick actions are real',()=>{
-  for(const page of sectionIds)assert.match(html,new RegExp('<button type="button" class="nav-item(?: active)?" data-page="'+page+'"'));
-  assert.equal((html.match(/class="nav-item(?: active)?" data-page=/g)||[]).length,11);
+  for(const page of primaryNavIds)assert.match(html,new RegExp('<button type="button" class="nav-item(?: active)?" data-page="'+page+'"'));
+  assert.equal((html.match(/class="nav-item(?: active)?" data-page=/g)||[]).length,8);
   assert.ok(html.includes('data-jump-to="operations"'));
   assert.ok(html.includes('data-jump-to="kiot"'));
   assert.ok(js.includes("document.querySelectorAll('[data-jump-to]')"));

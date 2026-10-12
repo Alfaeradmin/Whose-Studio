@@ -13,14 +13,16 @@ const state = {
 
 const meta = {
   dashboard: ['Tổng quan', 'Dữ liệu vận hành, trạng thái đồng bộ và các tác vụ nhanh'],
-  operations: ['Điều phối cửa hàng', 'Yêu cầu và phối hợp hàng hóa giữa các chi nhánh'],
+  operations: ['Công việc', 'Gọi hàng và các công việc vận hành'],
+  orders: ['Đơn hàng', 'Đơn hàng và hóa đơn từ KiotViet — đang phát triển'],
+  warehouse: ['Thao tác kho', 'Nhập hàng, xuất hàng và kiểm kho'],
   inventory: ['Tồn kho', 'Tồn KiotViet theo chi nhánh'],
   transfers: ['Chuyển kho', 'Phiếu chuyển đọc trực tiếp từ KiotViet'],
   stocktake: ['Kiểm kho', 'Delta ledger và quy trình cân bằng tồn'],
   returns: ['Đổi / Trả', 'Phiếu trả hàng và lineage bán hàng'],
   products: ['Sản phẩm', 'Danh mục sản phẩm từ KiotViet'],
-  productSync: ['Đồng bộ sản phẩm', 'Xem trước ảnh KiotViet và cập nhật danh mục Whose'],
-  employees: ['Nhân viên & quyền', 'Tài khoản, chức vụ, vị trí và phạm vi thao tác'],
+  productSync: ['Sản phẩm', 'Danh mục sản phẩm Whose và dữ liệu từ KiotViet'],
+  employees: ['Nhân viên & Tài khoản', 'Tài khoản, chức vụ, vị trí và phạm vi thao tác'],
   kiot: ['Đồng bộ KiotViet', 'Kết nối read-only, độ trễ và reconciliation'],
   settings: ['Cài đặt', 'Trạng thái nền tảng và các nguyên tắc vận hành']
 };
@@ -53,9 +55,9 @@ function errorSummary(connectivity) {
 }
 
 function setMobileNavState(page) {
-  const primaryPages = new Set(['dashboard', 'operations', 'stocktake', 'inventory']);
+  const primaryPages = new Set(['dashboard', 'operations', 'warehouse', 'inventory']);
   document.querySelectorAll('.mobile-tab[data-mobile-page]').forEach((el) => {
-    el.classList.toggle('active', el.dataset.mobilePage === page);
+    el.classList.toggle('active', el.dataset.mobilePage === page || (page==='stocktake'&&el.dataset.mobilePage==='warehouse'));
   });
   const more = document.getElementById('mobileMore');
   if (more) more.classList.toggle('active', !primaryPages.has(page));
@@ -71,7 +73,7 @@ function navigate(page) {
   state.page = page;
   document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-item[data-page]').forEach((el) => {
-    const current = el.dataset.page === page;
+    const current = el.dataset.page === page || (page==='stocktake'||page==='transfers'||page==='returns')&&el.dataset.page==='warehouse' || page==='kiot'&&el.dataset.page==='settings';
     el.classList.toggle('active', current);
     if (current) el.setAttribute('aria-current', 'page');
     else el.removeAttribute('aria-current');
@@ -80,6 +82,7 @@ function navigate(page) {
   document.getElementById('pageSub').textContent = meta[page][1];
   setMobileNavState(page);
   closeSidebar();
+  if(page==='inventory')void loadInventorySnapshots();
   requestAnimationFrame(() => document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'auto' }));
 }
 
@@ -192,14 +195,48 @@ function renderProducts() {
     : '<tr><td colspan="4"><div class="empty"><b>Chưa có sản phẩm</b><span>Dữ liệu sẽ đến từ KiotViet khi credential hợp lệ.</span></div></td></tr>';
 }
 
-function renderInventory() {
-  const rows = state.overview?.samples?.productOnHands || [];
-  const inv = state.overview?.inventory || {};
-  document.getElementById('inventorySource').textContent = inv.source || '—';
-  document.getElementById('inventoryRows').innerHTML = rows.length
-    ? rows.map((p) => '<tr><td class="strong">' + esc(p.code || p.id) + '</td><td>' +
-        esc(p.branchName || 'Theo nhiều chi nhánh') + '</td><td class="muted">Chi tiết tồn nằm trong inventories của KiotViet</td></tr>').join('')
-    : '<tr><td colspan="3"><div class="empty"><b>Chưa đọc được productOnHands</b><span>Endpoint đã được tích hợp; chờ KiotViet xác thực thành công.</span></div></td></tr>';
+let inventoryOffset=0;
+let inventoryFilters={query:'',branch:''};
+let inventoryRequestSeq=0;
+async function loadInventorySnapshots(){
+ const tbody=document.getElementById('inventoryRows');
+ if(!tbody||!state.session)return;
+ const seq=++inventoryRequestSeq;
+ tbody.innerHTML='<tr><td colspan="6">Đang đọc tồn kho Whose…</td></tr>';
+ try{
+  const params=new URLSearchParams({view:'stored',offset:String(inventoryOffset),
+   q:inventoryFilters.query,branch:inventoryFilters.branch});
+  const r=await authorizedFetch('/api/kiot-inventory-sync?'+params,{cache:'no-store'});
+  if(seq!==inventoryRequestSeq)return;
+  if(!r.ok)throw Error(r.status===403?'Không có quyền xem báo cáo tồn kho.':'Không thể đọc snapshot tồn Whose.');
+  const data=await r.json();
+  if(seq!==inventoryRequestSeq)return;
+  if(!Array.isArray(data.rows)||!Number.isSafeInteger(Number(data.total)))
+   throw Error('Dữ liệu tồn trả về không hợp lệ.');
+  const rows=data.rows,total=Number(data.total);
+  document.getElementById('inventorySource').textContent='Snapshot KiotViet → Whose';
+  tbody.innerHTML=rows.length?rows.map(p=>{
+   const t=Date.parse(p.synced_at||'');
+   const fresh=Number.isFinite(t)&&Date.now()-t<=86400000;
+   const updated=Number.isFinite(t)?new Date(t).toLocaleString('vi-VN'):'Chưa có';
+   return '<tr><td><b>'+esc(p.sku)+'</b><div class="muted">'+esc(p.name)+'</div></td><td>'+
+    esc(p.branch_name)+'</td><td>'+fmt(p.on_hand)+'</td><td>'+fmt(p.reserved)+'</td><td>'+
+    fmt(Number(p.on_hand)-Number(p.reserved))+'</td><td class="'+(fresh?'muted':'ws-stale')+'">'+
+    esc(updated)+(fresh?'':' · Cần cập nhật')+'</td></tr>';
+  }).join(''):'<tr><td colspan="6">Không tìm thấy tồn phù hợp trên toàn bộ dữ liệu Whose.</td></tr>';
+  document.getElementById('inventoryPaging').textContent=fmt(total)+' kết quả · Trang '+(Math.floor(inventoryOffset/100)+1);
+  document.getElementById('inventoryPrevBtn').disabled=inventoryOffset===0;
+  document.getElementById('inventoryNextBtn').disabled=inventoryOffset+100>=total;
+  window.dispatchEvent(new CustomEvent('whose:inventory-data',{
+   detail:{total,branches:data.branches||[]}
+  }));
+ }catch(e){
+  if(seq===inventoryRequestSeq)tbody.innerHTML='<tr><td colspan="6">'+esc(e.message)+'</td></tr>';
+ }
+}
+function renderInventory(){
+ const button=document.getElementById('inventorySyncBtn');
+ if(button)button.hidden=!state.session?.is_global_admin;
 }
 
 function renderTransfers() {
@@ -490,12 +527,28 @@ async function restoreAuth() {
   if (!stored?.access_token || !stored?.refresh_token) { lockApp(); return; }
   state.session = stored;
   try {
-    const r = await authorizedFetch('/api/auth', { cache: 'no-store' });
-    if (!r.ok) throw new Error('Invalid staff session');
+    let r = await authorizedFetch('/api/auth', { cache: 'no-store' });
+    // Expired access tokens are expected; renew with the existing refresh token.
+    if (r.status === 401) {
+      await refreshAuth();
+      r = await authorizedFetch('/api/auth', { cache: 'no-store' });
+    }
+    if (r.status === 401 || r.status === 403) {
+      lockApp('Phiên đăng nhập không còn hợp lệ.');
+      return;
+    }
+    if (!r.ok) throw new Error('SESSION_CHECK_UNAVAILABLE');
     const staff = await r.json();
     setAuthenticated({ ...state.session, ...staff });
     await loadData();
-  } catch { lockApp('Phiên đăng nhập cũ không còn hợp lệ.'); }
+  } catch {
+    // Keep valid cached credentials during temporary network/server failures.
+    // Never delete a session simply because a request timed out during F5.
+    if (state.session?.access_token && state.session?.refresh_token) {
+      setAuthenticated(state.session);
+      toast('Kết nối tạm gián đoạn. Có thể bấm Làm mới để thử lại.');
+    } else lockApp('Vui lòng đăng nhập lại.');
+  }
 }
 async function sendWhoseRequest() {
   if (state.submitting || !state.session) return;
@@ -746,3 +799,67 @@ document.getElementById('sendRequest').onclick = sendWhoseRequest;
 setupProductComposer();
 navigate('dashboard');
 restoreAuth();
+
+
+// Explicit admin action; one source page per request. No KiotViet writes.
+async function syncKiotInventory() {
+  const btn=document.getElementById('inventorySyncBtn');
+  const message=document.getElementById('inventorySyncStatus');
+  if(!btn||!message||!state.session?.is_global_admin)return;
+  if(!window.confirm('Đồng bộ tồn KiotViet về Whose cho các chi nhánh đã ánh xạ? Chỉ cập nhật snapshot Whose; không chỉnh tồn KiotViet.'))return;
+  // An interrupted run can continue from a known page; prior pages use idempotent upsert.
+  const checkpointKey='whose-kiot-inventory-next-page-v1';
+  const checkpoint=Number(sessionStorage.getItem(checkpointKey));
+  const suggested=Number.isSafeInteger(checkpoint)&&checkpoint>0?checkpoint+1:11;
+  const answer=window.prompt('Bắt đầu từ trang nào? Trang 11 đang cần thử lại; chọn 1 để đồng bộ toàn bộ.',String(suggested));
+  if(answer===null)return;
+  if(!/^[1-9][0-9]{0,3}$/.test(answer)||Number(answer)>1000){message.textContent='Số trang không hợp lệ.';return;}
+  const startPage=Number(answer)-1;
+  btn.disabled=true;
+  let total=null,done=startPage*100,stored=0,unmapped=0;
+  try {
+    for(let page=startPage;page<1000;page++){
+      message.textContent='Đang nhập trang '+(page+1)+'…';
+      const response=await authorizedFetch('/api/kiot-inventory-sync',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({page,confirm:'IMPORT_KIOT_INVENTORY'}),cache:'no-store'
+      });
+      if(!response.ok){
+        const issue=await response.json().catch(()=>({}));
+        throw new Error('Trang '+(page+1)+' (HTTP '+response.status+'): '+(issue.error||'Không rõ lỗi')+
+          (issue.upstreamStatus?' · Kiot HTTP '+issue.upstreamStatus:'')+
+          (issue.received!=null?' · nhận '+issue.received+'/'+issue.expected:'')+'.');
+      }
+      const row=await response.json();
+      if(total===null)total=row.total;
+      if(row.total!==total||row.productRows!==Math.min(100,Math.max(0,total-page*100)))
+        throw new Error('Tổng sản phẩm nguồn thay đổi trong quá trình đồng bộ.');
+      done+=row.productRows;stored+=row.stored;unmapped+=row.unmappedBranchRows;
+      sessionStorage.setItem(checkpointKey,String(page+1));
+      message.textContent='Đã đọc '+fmt(done)+' / '+fmt(total)+' sản phẩm, lưu '+fmt(stored)+' dòng tồn.';
+      if(!row.hasMore){
+        sessionStorage.removeItem(checkpointKey);
+        message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
+        await loadData();
+        await loadInventorySnapshots();
+        return;
+      }
+    }
+    throw new Error('Vượt giới hạn số trang.');
+  }catch(e){message.textContent=(e.message||'Đồng bộ chưa hoàn thành')+' Có thể chạy lại an toàn.';}
+  finally{btn.disabled=false;}
+}
+document.getElementById('inventorySyncBtn')?.addEventListener('click',syncKiotInventory);
+
+document.getElementById('inventoryPrevBtn')?.addEventListener('click',()=>{inventoryOffset=Math.max(0,inventoryOffset-100);loadInventorySnapshots();});
+document.getElementById('inventoryNextBtn')?.addEventListener('click',()=>{inventoryOffset+=100;loadInventorySnapshots();});
+document.querySelector('[data-page="inventory"]')?.addEventListener('click',loadInventorySnapshots);
+
+window.addEventListener('whose:inventory-filter',event=>{
+ const query=String(event.detail?.query||'').trim().slice(0,80);
+ const branch=String(event.detail?.branch||'').trim().slice(0,128);
+ if(query===inventoryFilters.query&&branch===inventoryFilters.branch)return;
+ inventoryFilters={query,branch};
+ inventoryOffset=0;
+ void loadInventorySnapshots();
+});
