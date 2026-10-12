@@ -21,8 +21,16 @@ module.exports=async function handler(req,res){
    const found=await safeRead('webhooks',{pageSize:100,currentItem:0});
    if(!found.ok)throw new Error('LIST_FAILED');
    const data=found.data;
-   if(!Array.isArray(data?.data)||!Number.isInteger(data.total)||data.total>data.data.length)
-     return res.status(409).json({error:'WEBHOOK_LIST_INCOMPLETE'});
+   // Empty provider lists can omit total or encode it as a string.
+   // Never assume a partial nonempty page is exhaustive.
+   if(!Array.isArray(data?.data))return res.status(409).json({error:'WEBHOOK_LIST_UNRECOGNIZED'});
+   const totalRaw=data.total;
+   const total=typeof totalRaw==='number'?totalRaw:
+      typeof totalRaw==='string'&&/^[0-9]+$/.test(totalRaw)?Number(totalRaw):null;
+   const complete=Number.isSafeInteger(total)&&total>=0&&total===data.data.length;
+   const uncountedEmpty=totalRaw==null&&data.data.length===0;
+   if(!complete&&!uncountedEmpty)
+     return res.status(409).json({error:'WEBHOOK_LIST_INCOMPLETE',observedCount:data.data.length,totalKnown:Number.isSafeInteger(total)});
    current=data.data;
  }catch{return res.status(503).json({error:'WEBHOOK_LIST_UNAVAILABLE'});}
  const duplicates=current.filter(x=>String(x.type||'').toLowerCase()==='product.update');
