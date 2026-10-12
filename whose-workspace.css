@@ -22,3 +22,20 @@
 .ws-scan-dialog p{font-size:12px;line-height:1.5;color:#64756a}
 @media(max-width:650px){.ws-toolkit{padding:14px}.ws-toolkit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ws-toolkit label{grid-column:1/-1}.ws-toolkit label:nth-child(2){grid-column:1/-1}.ws-toolkit button{min-width:0;padding:0 8px;font-size:12px}}
 @media(prefers-reduced-motion:reduce){.ws-toolkit *{scroll-behavior:auto}}
+
+/* Kiot event audit and activation workspace */
+.ws-audit-panel{margin-top:20px;min-width:0}
+.ws-audit-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.ws-audit-toolbar button,.ws-audit-toolbar input,.ws-event-backfill select,.ws-event-backfill button{
+ min-height:44px;border:1px solid var(--ws-line-strong,#cbd4e2);border-radius:10px;
+ padding:8px 12px;background:var(--ws-surface,#fff);color:var(--ws-ink,#192235);font-size:13px
+}
+.ws-audit-toolbar input{flex:1 1 200px;font-size:16px}
+.ws-audit-toolbar button{cursor:pointer}
+.ws-audit-toolbar button:disabled{opacity:.48;cursor:default}
+#kiotHistoryMessage{font-size:12px;color:var(--ws-ink-muted,#68758c);min-height:16px}
+.ws-event-actions .setting-row{border-bottom:1px solid var(--ws-line,#e3e8f1)}
+.ws-event-backfill{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 0;border-top:1px solid var(--ws-line,#e3e8f1);margin-top:18px}
+.ws-event-backfill label{font-weight:680;font-size:13px;color:var(--ws-ink,#192235)}
+.ws-event-backfill output{flex:1 1 100%;font-size:12px;color:var(--ws-ink-muted,#68758c)}
+@media(max-width:550px){.ws-audit-toolbar input,.ws-event-backfill select{flex:1 1 100%;width:100%}}
