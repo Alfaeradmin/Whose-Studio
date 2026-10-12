@@ -194,14 +194,26 @@ function renderProducts() {
     : '<tr><td colspan="4"><div class="empty"><b>Chưa có sản phẩm</b><span>Dữ liệu sẽ đến từ KiotViet khi credential hợp lệ.</span></div></td></tr>';
 }
 
-function renderInventory() {
-  const rows = state.overview?.samples?.productOnHands || [];
-  const inv = state.overview?.inventory || {};
-  document.getElementById('inventorySource').textContent = inv.source || '—';
-  document.getElementById('inventoryRows').innerHTML = rows.length
-    ? rows.map((p) => '<tr><td class="strong">' + esc(p.code || p.id) + '</td><td>' +
-        esc(p.branchName || 'Theo nhiều chi nhánh') + '</td><td class="muted">Chi tiết tồn nằm trong inventories của KiotViet</td></tr>').join('')
-    : '<tr><td colspan="3"><div class="empty"><b>Chưa đọc được productOnHands</b><span>Endpoint đã được tích hợp; chờ KiotViet xác thực thành công.</span></div></td></tr>';
+let inventoryOffset=0;
+async function loadInventorySnapshots(){
+ const tbody=document.getElementById('inventoryRows');
+ if(!tbody||!state.session)return;
+ tbody.innerHTML='<tr><td colspan="5">Đang đọc snapshot tồn Whose…</td></tr>';
+ try {
+  const r=await authorizedFetch('/api/kiot-inventory-sync?view=stored&offset='+inventoryOffset,{cache:'no-store'});
+  if(!r.ok)throw Error('Không thể đọc dữ liệu tồn Whose.');
+  const data=await r.json(),rows=Array.isArray(data.rows)?data.rows:[];
+  document.getElementById('inventorySource').textContent='KiotViet → Whose';
+  tbody.innerHTML=rows.length?rows.map(p=>'<tr><td><b>'+esc(p.sku)+'</b><div class="muted">'+esc(p.name)+'</div></td><td>'+esc(p.branch_name)+'</td><td>'+fmt(p.on_hand)+'</td><td>'+fmt(p.reserved)+'</td><td>'+fmt(Number(p.on_hand)-Number(p.reserved))+'</td></tr>').join(''):
+   '<tr><td colspan="5">Chưa có snapshot tồn kho đã đồng bộ cho trang này.</td></tr>';
+  document.getElementById('inventoryPaging').textContent=fmt(data.total)+' dòng · Trang '+(Math.floor(inventoryOffset/100)+1);
+  document.getElementById('inventoryPrevBtn').disabled=inventoryOffset===0;
+  document.getElementById('inventoryNextBtn').disabled=inventoryOffset+100>=data.total;
+ }catch(e){tbody.innerHTML='<tr><td colspan="5">'+esc(e.message)+'</td></tr>';}
+}
+function renderInventory(){
+ const button=document.getElementById('inventorySyncBtn');
+ if(button)button.hidden=!state.session?.is_global_admin;
 }
 
 function renderTransfers() {
@@ -791,6 +803,7 @@ async function syncKiotInventory() {
       if(!row.hasMore){
         message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
         await loadData();
+        await loadInventorySnapshots();
         return;
       }
     }
@@ -799,3 +812,7 @@ async function syncKiotInventory() {
   finally{btn.disabled=false;}
 }
 document.getElementById('inventorySyncBtn')?.addEventListener('click',syncKiotInventory);
+
+document.getElementById('inventoryPrevBtn')?.addEventListener('click',()=>{inventoryOffset=Math.max(0,inventoryOffset-100);loadInventorySnapshots();});
+document.getElementById('inventoryNextBtn')?.addEventListener('click',()=>{inventoryOffset+=100;loadInventorySnapshots();});
+document.querySelector('[data-page="inventory"]')?.addEventListener('click',loadInventorySnapshots);
