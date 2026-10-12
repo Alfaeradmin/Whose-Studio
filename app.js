@@ -681,9 +681,9 @@ async function inspectKiotCredentialConfig(){
     const id=data.clientId,secret=data.clientSecret;
     const lines=[];
     if(!id.present) lines.push('Client ID: chưa cấu hình.');
-    else if(id.matchesOriginallySuppliedExactly) lines.push('Client ID: KHỚP chính xác với ID đã cung cấp trước đây.');
-    else if(id.matchesOriginallySuppliedAfterTrim) lines.push('Client ID: chỉ khớp sau khi bỏ khoảng trắng thừa.');
-    else lines.push('Client ID: KHÔNG KHỚP với ID đã cung cấp trước đây (có thể đã được thay đổi).');
+    else if(id.matchesLatestSuppliedExactly) lines.push('Client ID: KHỚP chính xác với Client ID mới ngày 12/10.');
+    else if(id.matchesLatestSuppliedAfterTrim) lines.push('Client ID: khớp mã mới ngày 12/10 sau khi bỏ khoảng trắng thừa.');
+    else lines.push('Client ID: KHÔNG KHỚP với Client ID mới ngày 12/10. Cần kiểm tra Vercel hoặc lần thay mã sau đó.');
     if(id.present&&!id.guidFormat)lines.push('Client ID: không đúng định dạng UUID.');
     if(id.extraOuterWhitespace)lines.push('Client ID: có khoảng trắng thừa ở đầu/cuối.');
     if(id.wrappedInQuotes)lines.push('Client ID: có dấu nháy bao ngoài.');
