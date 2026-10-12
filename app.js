@@ -664,6 +664,45 @@ async function importKiotBranches(){
     showKiotBranchMessage('Không thể xác nhận việc ghi nhận danh mục. Vui lòng kiểm tra lại trước khi thử.');
   }finally{setKiotBranchBusy(false);}
 }
+async function inspectKiotCredentialConfig(){
+  const button=document.getElementById('kiotCredentialCheck');
+  const status=document.getElementById('kiotCredentialCheckResult');
+  if(!state.session?.is_global_admin){
+    status.textContent='Chỉ Global Admin mới được kiểm tra cấu hình.';
+    return;
+  }
+  button.disabled=true;
+  status.textContent='Đang đối chiếu nội bộ Whose Studio…';
+  try {
+    const r=await authorizedFetch('/api/kiot-credential-check',{cache:'no-store'});
+    if(!r.ok)throw new Error('Không thể xác minh cấu hình Whose (HTTP '+r.status+').');
+    const data=await r.json();
+    if(!data?.clientId||!data?.clientSecret)throw new Error('Cấu trúc kết quả không hợp lệ.');
+    const id=data.clientId,secret=data.clientSecret;
+    const lines=[];
+    if(!id.present) lines.push('Client ID: chưa cấu hình.');
+    else if(id.matchesOriginallySuppliedExactly) lines.push('Client ID: KHỚP chính xác với ID đã cung cấp trước đây.');
+    else if(id.matchesOriginallySuppliedAfterTrim) lines.push('Client ID: chỉ khớp sau khi bỏ khoảng trắng thừa.');
+    else lines.push('Client ID: KHÔNG KHỚP với ID đã cung cấp trước đây (có thể đã được thay đổi).');
+    if(id.present&&!id.guidFormat)lines.push('Client ID: không đúng định dạng UUID.');
+    if(id.extraOuterWhitespace)lines.push('Client ID: có khoảng trắng thừa ở đầu/cuối.');
+    if(id.wrappedInQuotes)lines.push('Client ID: có dấu nháy bao ngoài.');
+    if(id.hasLineBreak)lines.push('Client ID: có ký tự xuống dòng.');
+    lines.push('Client Secret: '+(secret.present?'đã cấu hình (không thể xác minh đúng giá trị từ phép kiểm tra này).':'chưa cấu hình.'));
+    if(secret.extraOuterWhitespace)lines.push('Client Secret: có khoảng trắng ở đầu/cuối.');
+    if(secret.wrappedInQuotes)lines.push('Client Secret: có dấu nháy bao ngoài.');
+    if(secret.hasLineBreak)lines.push('Client Secret: có ký tự xuống dòng.');
+    lines.push('Tên gian hàng: '+(data.retailerConfigured?'đã cấu hình.':'chưa cấu hình.'));
+    lines.push('Lưu ý: phép đối chiếu không thử cấp token và không xác nhận Secret là hợp lệ.');
+    status.textContent=lines.join('\n');
+  }catch(e){
+    status.textContent=e instanceof Error?e.message:'Không thể hoàn tất đối chiếu.';
+  }finally{
+    button.disabled=false;
+  }
+}
+document.getElementById('kiotCredentialCheck').onclick=inspectKiotCredentialConfig;
+
 document.getElementById('kiotPreviewBranches').onclick=inspectKiotBranches;
 document.getElementById('kiotImportBranches').onclick=importKiotBranches;
 renderKiotBranchPreview();
