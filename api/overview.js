@@ -1,6 +1,7 @@
 const { validateStaffBearer } = require('../lib/whose-auth');
 const { accessToken } = require('../lib/whose-backend');
 const { safeRead } = require('../lib/kiotviet');
+const { overviewConnectionStatus } = require('../lib/kiot-overview-status');
 
 function listPayload(result) {
   if (!result?.ok) return null;
@@ -117,12 +118,7 @@ module.exports = async function handler(req, res) {
   const transfers = listPayload(transfersR);
   const returns = listPayload(returnsR);
 
-  res.status(200).json({
-    app: 'Whose Studio',
-    mode: 'KIOTVIET_READ_ONLY',
-    retailer: process.env.KIOTVIET_RETAILER || null,
-    generatedAt: new Date().toISOString(),
-    connectivity: {
+  const connectivity = {
       branches: { ok: branchesR.ok, ms: branchesR.ms, error: branchesR.error || null },
       settings: { ok: settingsR.ok, ms: settingsR.ms, error: settingsR.error || null },
       products: { ok: productsR.ok, ms: productsR.ms, error: productsR.error || null },
@@ -133,7 +129,23 @@ module.exports = async function handler(req, res) {
       ordersuppliers: { ok: supplierOrdersR.ok, ms: supplierOrdersR.ms, error: supplierOrdersR.error || null },
       transfers: { ok: transfersR.ok, ms: transfersR.ms, error: transfersR.error || null },
       returns: { ok: returnsR.ok, ms: returnsR.ms, error: returnsR.error || null }
-    },
+    };
+  const connectionStatus = overviewConnectionStatus(connectivity);
+  if (connectionStatus.failed) {
+    // Structured, credential-free signal to investigate real endpoint failures.
+    const failures=Object.entries(connectivity).filter(([,v])=>!v.ok)
+      .map(([name,v])=>name+':'+(/^KiotViet GET \/[^ ]+ failed \((\d{3})\)$/.exec(v.error||'')?.[1]||
+        (/^KiotViet token failed \((\d{3})\):/.exec(v.error||'')?.[1]?'token-'+/^KiotViet token failed \((\d{3})\):/.exec(v.error||'')[1]:'unknown'));
+    console.warn('[Whose/Kiot/overview]',connectionStatus.state,'successful',connectionStatus.succeeded,'failed',failures.join(','));
+  }
+
+  res.status(200).json({
+    app: 'Whose Studio',
+    mode: 'KIOTVIET_READ_ONLY',
+    retailer: process.env.KIOTVIET_RETAILER || null,
+    generatedAt: new Date().toISOString(),
+    connectivity,
+    connectionStatus,
     totals: {
       branches: branches?.total ?? null,
       products: products?.total ?? null,
