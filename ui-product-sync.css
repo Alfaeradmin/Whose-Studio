@@ -110,3 +110,22 @@
 @media(prefers-reduced-motion:reduce){
   .ps-product,.ps-progress-track span{transition:none!important}
 }
+
+/* Product details: accessible and read-only, responsive on every viewport. */
+.ps-product[role=button]{cursor:pointer}
+.ps-product[role=button]:focus-visible{outline:3px solid #756cc7;outline-offset:3px}
+.ps-detail-overlay{position:fixed;inset:0;z-index:1100;display:flex;justify-content:flex-end;background:rgba(20,28,47,.55);padding:0}
+.ps-detail-panel{width:min(570px,100%);height:100%;overflow:auto;background:#fff;box-shadow:-16px 0 50px rgba(24,30,50,.16);display:flex;flex-direction:column;color:#263149}
+.ps-detail-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:25px 28px;border-bottom:1px solid #e6e9f0}
+.ps-detail-heading{font-size:21px;line-height:1.35;margin:7px 0 0;overflow-wrap:anywhere}
+.ps-detail-close{flex:none;background:#f4f5fa;border:1px solid #e1e5ed;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:#39445a}
+.ps-detail-close:focus-visible{outline:3px solid #756cc7}
+.ps-detail-body{padding:24px 28px;display:grid;gap:20px}
+.ps-detail-picture{height:260px;border-radius:14px;background:#f7f8fb;display:grid;place-items:center;color:#8590a0;overflow:hidden}
+.ps-detail-picture img{max-width:100%;max-height:100%;object-fit:contain}
+.ps-detail-properties{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0}
+.ps-detail-property{border:1px solid #e8ebf3;border-radius:12px;padding:12px;min-width:0}
+.ps-detail-property dt{font-size:11px;color:#77849a;margin-bottom:6px}
+.ps-detail-property dd{font-size:14px;font-weight:650;margin:0;overflow-wrap:anywhere}
+.ps-detail-foot{margin:auto 28px 25px;padding:16px;background:#f6f5fc;border-radius:12px;color:#676f85;font-size:12px;line-height:1.5}
+@media(max-width:600px){.ps-detail-panel{width:100%}.ps-detail-top{padding:19px}.ps-detail-body{padding:17px;gap:15px}.ps-detail-properties{grid-template-columns:1fr 1fr;gap:8px}.ps-detail-property{padding:10px}.ps-detail-picture{height:215px}.ps-detail-foot{margin:auto 17px 20px}}
