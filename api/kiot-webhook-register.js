@@ -21,17 +21,17 @@ module.exports=async function handler(req,res){
    const found=await safeRead('webhooks',{pageSize:100,currentItem:0});
    if(!found.ok)throw new Error('LIST_FAILED');
    const data=found.data;
-   // Empty provider lists can omit total or encode it as a string.
-   // Never assume a partial nonempty page is exhaustive.
-   if(!Array.isArray(data?.data))return res.status(409).json({error:'WEBHOOK_LIST_UNRECOGNIZED'});
-   const totalRaw=data.total;
+   // KiotViet omits "data" when total=0. Accept only a proven empty list.
+   const totalRaw=data?.total;
    const total=typeof totalRaw==='number'?totalRaw:
-      typeof totalRaw==='string'&&/^[0-9]+$/.test(totalRaw)?Number(totalRaw):null;
-   const complete=Number.isSafeInteger(total)&&total>=0&&total===data.data.length;
-   const uncountedEmpty=totalRaw==null&&data.data.length===0;
-   if(!complete&&!uncountedEmpty)
-     return res.status(409).json({error:'WEBHOOK_LIST_INCOMPLETE',observedCount:data.data.length,totalKnown:Number.isSafeInteger(total)});
-   current=data.data;
+     typeof totalRaw==='string'&&/^[0-9]+$/.test(totalRaw)?Number(totalRaw):null;
+   if(!Number.isSafeInteger(total)||total<0)
+     return res.status(409).json({error:'WEBHOOK_TOTAL_UNRECOGNIZED'});
+   if(total===0&&(data.data==null||Array.isArray(data.data)&&data.data.length===0))
+     current=[];
+   else if(Array.isArray(data.data)&&data.data.length===total)
+     current=data.data;
+   else return res.status(409).json({error:'WEBHOOK_LIST_INCOMPLETE',observedCount:Array.isArray(data.data)?data.data.length:0,totalKnown:true});
  }catch{return res.status(503).json({error:'WEBHOOK_LIST_UNAVAILABLE'});}
  const duplicates=current.filter(x=>String(x.type||'').toLowerCase()==='product.update');
  if(duplicates.length){
