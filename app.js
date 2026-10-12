@@ -19,6 +19,7 @@ const meta = {
   stocktake: ['Kiểm kho', 'Delta ledger và quy trình cân bằng tồn'],
   returns: ['Đổi / Trả', 'Phiếu trả hàng và lineage bán hàng'],
   products: ['Sản phẩm', 'Danh mục sản phẩm từ KiotViet'],
+  productSync: ['Đồng bộ sản phẩm', 'Xem trước ảnh KiotViet và cập nhật danh mục Whose'],
   employees: ['Nhân viên & quyền', 'Tài khoản, chức vụ, vị trí và phạm vi thao tác'],
   kiot: ['Đồng bộ KiotViet', 'Kết nối read-only, độ trễ và reconciliation'],
   settings: ['Cài đặt', 'Trạng thái nền tảng và các nguyên tắc vận hành']
