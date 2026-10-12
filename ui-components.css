@@ -101,6 +101,18 @@
 .setting-row>div{min-width:0;flex:1}
 .setting-row .status{flex:0 0 auto;max-width:45%;text-align:right}
 
+/* Identity + mobile sign-out are part of the standard shell. */
+.drawer-logout{
+  display:flex;width:100%;min-height:var(--ws-control-touch);
+  align-items:center;justify-content:space-between;gap:12px;
+  margin-top:10px;padding:10px 12px;border:1px solid rgba(201,198,245,.16);
+  border-radius:var(--ws-radius-sm);background:rgba(255,255,255,.055);
+  color:#dce1f3;font-size:12px;font-weight:700;text-align:left;
+}
+.drawer-logout:hover{background:rgba(255,255,255,.11)}
+.drawer-logout span{font-size:16px;color:#beb6ff}
+@media(min-width:901px){.drawer-logout{display:none}}
+
 /* Layer hierarchy. New popovers and dialogs must use these primitives. */
 .workspace{position:relative;z-index:var(--ws-layer-base)}
 .topbar{z-index:var(--ws-layer-header)}
