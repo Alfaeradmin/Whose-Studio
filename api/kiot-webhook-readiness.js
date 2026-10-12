@@ -12,14 +12,20 @@ module.exports=async function handler(req,res){
  const configured=Boolean(process.env.KIOTVIET_WEBHOOK_SECRET_BASE64);
  const r=await safeRead('webhooks',{pageSize:100,currentItem:0});
  if(!r.ok)return res.status(502).json({webhookSecretConfigured:configured,registeredListReadable:false,kiotWritesEnabled:false});
+ const rawTotal=r.data?.total;
+ const total=(typeof rawTotal==='number'&&Number.isSafeInteger(rawTotal)&&rawTotal>=0)
+  ?rawTotal:(typeof rawTotal==='string'&&/^[0-9]+$/.test(rawTotal)&&Number.isSafeInteger(Number(rawTotal)))?Number(rawTotal):null;
  const data=Array.isArray(r.data?.data)?r.data.data:[];
- const shape=Array.isArray(r.data)?'array':r.data===null?'null':typeof r.data;
- const envelopeKeys=r.data&&typeof r.data==='object'&&!Array.isArray(r.data)?Object.keys(r.data).filter(k=>/^[A-Za-z][A-Za-z0-9]{0,40}$/.test(k)).slice(0,12):[];
- const innerShape=Array.isArray(r.data?.data)?'array':r.data?.data===null?'null':typeof r.data?.data;
+ const emptyConfirmed=total===0&&(r.data?.data==null||Array.isArray(r.data.data)&&r.data.data.length===0);
+ const complete=total!==null&&(emptyConfirmed||Array.isArray(r.data?.data)&&data.length===total);
  const targetHost='whose-kiot-webhook-ingress.vercel.app';
- const matches=data.filter(x=>{
+ const matches=complete?data.filter(x=>{
   try {const u=new URL(x.url);return u.protocol==='https:'&&u.hostname.toLowerCase()===targetHost&&u.pathname==='/api/webhook';}
   catch{return false;}
- });
- return res.status(200).json({webhookSecretConfigured:configured,registeredListReadable:true,registeredTotal:/^[0-9]+$/.test(String(r.data?.total??''))?Number(r.data.total):data.length,listShapeValid:Array.isArray(r.data?.data),responseShape:shape,responseKeys:envelopeKeys,itemsShape:innerShape,totalReported:r.data?.total!=null,matchingCurrentDeployment:matches.length,activeMatchingCurrentDeployment:matches.filter(x=>x.isActive===true).length,kiotWritesEnabled:false});
+ }):[];
+ return res.status(200).json({webhookSecretConfigured:configured,registeredListReadable:true,
+  registeredTotal:total,listComplete:complete,registrationSafeToConsider:complete&&matches.length===0,
+  matchingCurrentDeployment:complete?matches.length:null,
+  activeMatchingCurrentDeployment:complete?matches.filter(x=>x.isActive===true).length:null,
+  diagnostic:complete?null:'PROVIDER_WEBHOOK_LIST_INCOMPLETE',kiotWritesEnabled:false});
 };
