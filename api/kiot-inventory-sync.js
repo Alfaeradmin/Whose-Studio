@@ -53,7 +53,7 @@ module.exports=async function handler(req,res){
   for(let attempt=0;attempt<3;attempt++){
    r=await safeRead('products',{pageSize:100,currentItem:page*100,includeInventory:true});
    if(r.ok)break;
-   const m=/KiotViet GET \/products failed \((\\d{3})\)/.exec(r.error||'');
+   const m=/KiotViet GET \/products failed \((\d{3})\)/.exec(r.error||'');
    lastStatus=m?Number(m[1]):null;
    if(lastStatus&&![408,429,500,502,503,504].includes(lastStatus))break;
    if(attempt<2)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));
