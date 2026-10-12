@@ -764,3 +764,38 @@ document.getElementById('sendRequest').onclick = sendWhoseRequest;
 setupProductComposer();
 navigate('dashboard');
 restoreAuth();
+
+
+// Explicit admin action; one source page per request. No KiotViet writes.
+async function syncKiotInventory() {
+  const btn=document.getElementById('inventorySyncBtn');
+  const message=document.getElementById('inventorySyncStatus');
+  if(!btn||!message||!state.session?.is_global_admin)return;
+  if(!window.confirm('Đồng bộ tồn KiotViet về Whose cho các chi nhánh đã ánh xạ? Chỉ cập nhật snapshot Whose; không chỉnh tồn KiotViet.'))return;
+  btn.disabled=true;
+  let total=null,done=0,stored=0,unmapped=0;
+  try {
+    for(let page=0;page<1000;page++){
+      message.textContent='Đang nhập trang '+(page+1)+'…';
+      const response=await authorizedFetch('/api/kiot-inventory-sync',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({page,confirm:'IMPORT_KIOT_INVENTORY'}),cache:'no-store'
+      });
+      if(!response.ok)throw new Error('Trang '+(page+1)+' chưa nhập thành công (HTTP '+response.status+').');
+      const row=await response.json();
+      if(total===null)total=row.total;
+      if(row.total!==total||row.productRows!==Math.min(100,Math.max(0,total-page*100)))
+        throw new Error('Tổng sản phẩm nguồn thay đổi trong quá trình đồng bộ.');
+      done+=row.productRows;stored+=row.stored;unmapped+=row.unmappedBranchRows;
+      message.textContent='Đã đọc '+fmt(done)+' / '+fmt(total)+' sản phẩm, lưu '+fmt(stored)+' dòng tồn.';
+      if(!row.hasMore){
+        message.textContent+=' Hoàn thành.'+(unmapped?' Bỏ qua '+fmt(unmapped)+' dòng ở chi nhánh chưa ánh xạ.':'');
+        await loadData();
+        return;
+      }
+    }
+    throw new Error('Vượt giới hạn số trang.');
+  }catch(e){message.textContent=(e.message||'Đồng bộ chưa hoàn thành')+' Có thể chạy lại an toàn.';}
+  finally{btn.disabled=false;}
+}
+document.getElementById('inventorySyncBtn')?.addEventListener('click',syncKiotInventory);
