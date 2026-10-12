@@ -18,9 +18,16 @@ function init(){
   '<div id="kiotEventReadiness" role="status" aria-live="polite"></div>'+
   '<div id="kiotEventActions" class="ws-event-actions"></div>'+
   '<p class="muted">Tồn trước/sau là dữ liệu quan sát. KiotViet stock.update không cung cấp mã chứng từ gây biến động; chỉ liên kết nguồn khi đã xác minh.</p>'+
-  '<button class="btn" type="button" id="kiotEventCheck">Kiểm tra trạng thái</button>';
+  '<button class="btn" type="button" id="kiotEventCheck">Kiểm tra trạng thái</button>'+
+  '<div class="ws-event-backfill"><label for="kiotBackfillDomain">Đọc lại lịch sử chứng từ</label>'+
+  '<select id="kiotBackfillDomain"><option value="invoices">Hóa đơn</option><option value="orders">Đặt hàng</option>'+
+  '<option value="purchaseorders">Nhập hàng</option><option value="transfers">Chuyển hàng</option>'+
+  '<option value="returns">Trả hàng</option></select>'+
+  '<button class="btn" type="button" id="kiotBackfillStart">Đưa vào hàng đợi</button>'+
+  '<output id="kiotBackfillMessage" aria-live="polite"></output></div>';
  settings.insertBefore(panel,settings.firstChild);
  $('kiotEventCheck').addEventListener('click',refresh);
+ $('kiotBackfillStart').addEventListener('click',backfillDocuments);
  const observer=new MutationObserver(()=>{
   if(settings.classList.contains('active')&&document.body.classList.contains('is-authenticated'))refresh();
  });
@@ -62,6 +69,46 @@ async function refresh(){
   }
  }catch(e){output.textContent=e.message||'Không thể kiểm tra kết nối';}
 }
+
+async function backfillDocuments(){
+ if(busy)return;
+ const domain=$('kiotBackfillDomain').value;
+ const label=$('kiotBackfillDomain').selectedOptions[0]?.textContent||domain;
+ const key='whose:kiot:backfill:'+domain;
+ let start=Number(sessionStorage.getItem(key)||0);
+ if(!Number.isSafeInteger(start)||start<0)start=0;
+ if(!window.confirm('Đưa lịch sử '+label+' vào hàng đợi xử lý từ trang '+(start+1)+'? Đây là đọc KiotViet, không tạo hay chỉnh chứng từ.'))return;
+ busy=true;
+ const btn=$('kiotBackfillStart'),out=$('kiotBackfillMessage');
+ btn.disabled=true;
+ let queued=0,duplicate=0;
+ try{
+  for(let page=start;page<10000;page++){
+   out.textContent='Đọc '+label+' trang '+(page+1)+'…';
+   const response=await authorizedFetch('/api/kiot-document-backfill',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({domain,page,confirm:'BACKFILL_KIOT_DOCUMENTS'}),cache:'no-store'
+   });
+   if(!response.ok){
+    const issue=await response.json().catch(()=>({}));
+    throw Error('Trang '+(page+1)+': '+(issue.error||'HTTP '+response.status));
+   }
+   const data=await response.json();
+   if(!Number.isInteger(data.queued)||!Number.isInteger(data.duplicates))throw Error('ACK không hợp lệ');
+   queued+=data.queued;duplicate+=data.duplicates;
+   sessionStorage.setItem(key,String(page+1));
+   out.textContent='Đã đưa vào hàng đợi '+queued+' chứng từ mới; '+duplicate+' bản trùng.';
+   if(!data.hasMore){
+    sessionStorage.removeItem(key);
+    out.textContent+=' Hoàn thành đọc danh sách; worker tiếp tục lấy chi tiết và lưu sổ.';
+    return;
+   }
+  }
+  throw Error('Vượt giới hạn số trang');
+ }catch(e){out.textContent='Tạm dừng: '+e.message+'. Có thể chạy lại từ trang đã lưu.';}
+ finally{busy=false;btn.disabled=false;}
+}
+
 async function register(type){
  if(busy)return;
  const label=types.find(x=>x.value===type)?.label||type;
