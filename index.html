@@ -150,6 +150,11 @@
 
       <section class="page" id="kiot">
         <div class="card card-pad" style="margin-bottom:18px">
+          <div class="section-head"><div><h2>Đối chiếu bảo mật kết nối KiotViet</h2><p>So sánh Client ID trên máy chủ với thông tin đã cung cấp trước đây và kiểm tra lỗi sao chép cấu hình. Không hiển thị Client ID, Secret hoặc giá trị môi trường.</p></div></div>
+          <button class="btn" id="kiotCredentialCheck" type="button">Đối chiếu bộ khóa hiện tại</button>
+          <p id="kiotCredentialCheckResult" role="status" aria-live="polite" class="muted" style="margin-top:12px;white-space:pre-line">Chưa thực hiện đối chiếu.</p>
+        </div>
+        <div class="card card-pad" style="margin-bottom:18px">
           <div class="section-head"><div><h2>Chi nhánh KiotViet thực tế</h2><p>Đọc trực tiếp KiotViet, kiểm tra toàn bộ danh sách trước khi ghi nhận nguồn vào Whose. Không tự phân loại kho/cửa hàng.</p></div></div>
           <div class="toolbar" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px">
             <button class="btn" id="kiotPreviewBranches" type="button">Kiểm tra chi nhánh từ KiotViet</button>
