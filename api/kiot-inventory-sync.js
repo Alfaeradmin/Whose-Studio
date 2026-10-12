@@ -49,11 +49,26 @@ module.exports=async function handler(req,res){
  if(!Number.isSafeInteger(page)||page<0||page>999)return res.status(400).json({error:'INVALID_PAGE'});
  if(req.method==='POST'&&req.body?.confirm!=='IMPORT_KIOT_INVENTORY')return res.status(400).json({error:'CONFIRM_REQUIRED'});
  try{
-  const r=await safeRead('products',{pageSize:100,currentItem:page*100,includeInventory:true});
-  if(!r.ok)return res.status(502).json({error:'KIOT_READ_FAILED'});
+  let r,lastStatus=null;
+  for(let attempt=0;attempt<3;attempt++){
+   r=await safeRead('products',{pageSize:100,currentItem:page*100,includeInventory:true});
+   if(r.ok)break;
+   const m=/KiotViet GET \/products failed \((\\d{3})\)/.exec(r.error||'');
+   lastStatus=m?Number(m[1]):null;
+   if(lastStatus&&![408,429,500,502,503,504].includes(lastStatus))break;
+   if(attempt<2)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));
+  }
+  if(!r.ok){
+   console.warn('[whose/inventory-sync] provider read unavailable',page,lastStatus);
+   return res.status(502).json({error:'KIOT_READ_FAILED',page,upstreamStatus:lastStatus,retryable:lastStatus===null||[408,429,500,502,503,504].includes(lastStatus)});
+  }
   const total=Number(r.data?.total);
-  if(!Number.isSafeInteger(total)||total<0||!Array.isArray(r.data?.data)||r.data.data.length!==Math.min(100,Math.max(0,total-page*100)))
-   return res.status(502).json({error:'INCOMPLETE_PROVIDER_PAGE'});
+  const actual=Array.isArray(r.data?.data)?r.data.data.length:null;
+  const expected=Number.isSafeInteger(total)&&total>=0?Math.min(100,Math.max(0,total-page*100)):null;
+  if(expected===null||actual!==expected){
+   console.warn('[whose/inventory-sync] incomplete page',page,'actual',actual,'expected',expected);
+   return res.status(502).json({error:'INCOMPLETE_PROVIDER_PAGE',page,received:actual,expected,retryable:true});
+  }
   const rows=parse(r.data);
   const branches=await service('whose_branches?select=kiot_branch_id&kiot_branch_id=not.is.null');
   const allowed=new Set(branches.map(b=>String(b.kiot_branch_id)));
