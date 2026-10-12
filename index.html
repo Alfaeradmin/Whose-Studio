@@ -10,28 +10,28 @@
 <link rel="stylesheet" href="/ui-foundation.css?v=1.0.0">
 <link rel="stylesheet" href="/ui-enterprise-v2.css?v=20261012">
 <link rel="stylesheet" href="/ui-components.css?v=1.0.0">
-<link rel="stylesheet" href="/ui-product-sync.css?v=1.0.0">
+<link rel="stylesheet" href="/ui-product-sync.css?v=1.0.0">\n<link rel="stylesheet" href="/ui-auth-refined.css?v=20261012">
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div class="auth-screen" id="authScreen">
   <div class="auth-panel">
-    <div class="auth-symbol">W</div>
-    <div class="auth-eyebrow">WHOSE · STUDIO OPERATIONS</div>
-    <h1>Chào mừng trở lại</h1>
-    <p class="auth-lede">Đăng nhập bằng tài khoản nhân viên đã được cấp quyền. Dữ liệu của Whose chỉ hiển thị sau khi xác thực.</p>
+    <div class="auth-symbol" aria-hidden="true">W<span class="auth-symbol-dot">.</span></div>
+    <div class="auth-eyebrow">WHOSE STUDIO <span> / WORKSPACE</span></div>
+    <h1>Đăng nhập vào Whose.</h1>
+    <p class="auth-lede">Không gian vận hành dành riêng cho đội ngũ Whose Studio.</p>
     <form id="loginForm" autocomplete="on">
       <label for="loginEmail">Email công việc</label>
       <input id="loginEmail" type="email" inputmode="email" autocomplete="username" placeholder="ten@whose.vn" required maxlength="254">
       <label for="loginPassword">Mật khẩu</label>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required minlength="8">
       <p class="auth-error" id="loginError" role="alert" aria-live="polite"></p>
-      <button class="auth-submit" id="loginSubmit" type="submit">Đăng nhập <span>↗</span></button>
+      <button class="auth-submit" id="loginSubmit" type="submit">Tiếp tục <span aria-hidden="true">→</span></button>
     </form>
     <a class="auth-recovery-link" href="/reset-password.html">Thiết lập mật khẩu lần đầu / Quên mật khẩu?</a>
-    <div class="auth-caption">Tài khoản được tạo và phân quyền bởi quản trị viên. Không tự mở đăng ký.</div>
+    <div class="auth-caption">Truy cập bảo mật · Chỉ dành cho nhân viên được phân quyền</div>
   </div>
-  <div class="auth-side"><div class="auth-side-label">WHOSE ATELIER</div><div class="auth-side-title">A better way<br>to operate.</div><div class="auth-side-footer">Kho · Cửa hàng · Sản phẩm · Con người</div></div>
+  <div class="auth-side"><div class="auth-side-label">WHOSE / 2026</div><div class="auth-side-title">Everything in its place<span>.</span></div><div class="auth-side-footer"><span>PEOPLE</span><span>PRODUCT</span><span>OPERATIONS</span></div></div>
 </div>
 <div class="app is-locked" id="appRoot">
   <aside class="sidebar" id="sidebar">
