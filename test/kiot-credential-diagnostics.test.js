@@ -19,7 +19,7 @@ test('key fingerprint inspection exposes only flags, never credentials or privat
     KIOTVIET_CLIENT_SECRET:secret,
     KIOTVIET_RETAILER:'test-retailer'
   });
-  assert.equal(result.clientId.matchesOriginallySuppliedExactly,false);
+  assert.equal(result.clientId.matchesLatestSuppliedExactly,false);
   assert.equal(result.clientId.guidFormat,true);
   assert.equal(result.clientSecret.present,true);
   assert.equal(result.retailerConfigured,true);
@@ -27,7 +27,7 @@ test('key fingerprint inspection exposes only flags, never credentials or privat
   const json=JSON.stringify(result);
   assert.ok(!json.includes(id));
   assert.ok(!json.includes(secret));
-  assert.ok(!json.includes('ecbb43e5b855f545'));
+  assert.ok(!json.includes('cdc4e79d224f1731'));
 });
 test('detects common copy errors while keeping secret opaque',()=>{
  const r=safeCredentialDiagnostics({
@@ -58,4 +58,17 @@ test('only GET is allowed; no mutations',async()=>{
  await handler({method:'POST',headers:{}},res);
  assert.equal(res.statusCode,405);
  assert.equal(res.headers['Cache-Control'],'no-store, max-age=0');
+});
+
+test('comparison explicitly points to the latest rotated KiotViet Client ID',()=>{
+  const result=safeCredentialDiagnostics({
+    KIOTVIET_CLIENT_ID:'00000000-0000-4000-8000-000000000000',
+    KIOTVIET_CLIENT_SECRET:'dummy',
+    KIOTVIET_RETAILER:'dummy'
+  });
+  assert.equal(result.reference,'latest-rotated-client-id-2026-10-12');
+  assert.equal(result.clientId.matchesLatestSuppliedExactly,false);
+  assert.equal(result.clientId.matchesLatestSuppliedAfterTrim,false);
+  const json=JSON.stringify(result);
+  assert.ok(!json.includes('cdc4e79d224f1731'));
 });
