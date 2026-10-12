@@ -65,3 +65,18 @@ test('UI Kit protects API/DB behavior and does not fake metrics',()=>{
   assert.match(spec,/không ghi KiotViet hoặc tồn kho/);
   assert.doesNotMatch([foundation,components,enterprise].join('\n'),/(?:@import|url\(['"]?https?:\/\/)/i);
 });
+
+const {WHOSE_ICON_PATHS,whoseIconMarkup}=require('../ui-icons');
+test('central Whose icon registry replaces generic glyphs without external assets',()=>{
+  assert.ok(home.includes('src="/ui-icons.js?v=1.0.0" defer'));
+  assert.ok(home.indexOf('src="/ui-icons.js?v=1.0.0"')<home.indexOf('src="/app.js"'));
+  for(const name of ['menu','search','refresh','plus','log-out']){
+    assert.ok(WHOSE_ICON_PATHS[name], 'missing icon '+name);
+    assert.match(home,new RegExp('data-ws-icon="'+name+'"'));
+    assert.ok(whoseIconMarkup(name).startsWith('<svg'));
+  }
+  assert.equal(whoseIconMarkup('nothing<script>alert(1)</script>'),'');
+  assert.ok(Object.isFrozen(WHOSE_ICON_PATHS));
+  assert.match(components,/\.ws-inline-icon\{/);
+  assert.doesNotMatch(read('ui-icons.js'),/https?:\/\/|@import|fetch\(/i);
+});
