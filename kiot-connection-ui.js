@@ -84,4 +84,23 @@
    finally{readinessButton.disabled=false;}
   });
  }
+ const registerBtn=document.getElementById('kiotWebhookRegister');
+ const registerResult=document.getElementById('kiotWebhookRegisterResult');
+ if(registerBtn&&registerResult){
+  registerBtn.addEventListener('click',async()=>{
+   if(!window.confirm('Đăng ký product.update trên KiotViet và bắt đầu gửi thông báo về Whose? Chỉ đồng bộ chiều đọc, không ghi dữ liệu sang KiotViet.'))return;
+   registerBtn.disabled=true;registerResult.textContent='Đang kiểm tra trùng và đăng ký webhook KiotViet…';
+   try{
+    const res=await authorizedFetch('/api/kiot-webhook-register',{method:'POST',cache:'no-store',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:'REGISTER_PRODUCT_UPDATE'})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){
+     const codes={PRODUCT_WEBHOOK_ALREADY_EXISTS:'KiotViet đã có webhook sản phẩm; không đăng ký trùng.',WEBHOOK_LIST_INCOMPLETE:'Chưa đọc đủ danh sách webhook; không đăng ký.',SIGNING_SECRET_NOT_CONFIGURED:'Chưa cấu hình secret hợp lệ.',PROVIDER_REGISTRATION_UNCERTAIN_CHECK_LIST_BEFORE_RETRY:'Chưa xác minh được kết quả, hãy kiểm tra danh sách webhook trước khi thử lại.'};
+     registerResult.textContent=codes[data.error]||('Chưa đăng ký: '+String(data.error||'HTTP '+res.status)+'.');return;
+    }
+    registerResult.textContent='Đã đăng ký product.update thành công · ID '+String(data.id??'chưa có')+' · '+(data.isActive?'đã kích hoạt':'chưa kích hoạt')+'. Tiếp theo kiểm thử thay đổi sản phẩm thực tế.';
+   }catch{registerResult.textContent='Mất kết nối hoặc chưa rõ kết quả; kiểm tra danh sách webhook trước khi thử lại.';}
+   finally{registerBtn.disabled=false;}
+  });
+ }
 })();
