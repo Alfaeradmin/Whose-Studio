@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/ui-foundation.css?v=1.0.0">
 <link rel="stylesheet" href="/ui-enterprise-v2.css?v=20261012">
 <link rel="stylesheet" href="/ui-components.css?v=1.0.0">
+<link rel="stylesheet" href="/ui-product-sync.css?v=1.0.0">
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -48,6 +49,7 @@
 
     <div class="nav-title">Danh mục & hệ thống</div>
     <button type="button" class="nav-item" data-page="products"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.7" cy="7.7" r="1"/></svg></span><span class="nav-text">Sản phẩm</span></div></button>
+    <button type="button" class="nav-item" data-page="productSync"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><path d="m5 8 2-2 3 3m4-3h7m-7 4h5m-7 8h9m-4-3 4 3-4 3"/><path d="m3 17 3-3 4 4"/></svg></span><span class="nav-text">Đồng bộ sản phẩm</span></div></button>
     <button type="button" class="nav-item" data-page="employees"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M15 3.3a4 4 0 0 1 0 7.4M22 21v-2a4 4 0 0 0-3-3.9"/><circle cx="9" cy="7" r="4"/></svg></span><span class="nav-text">Nhân viên & quyền</span></div></button>
     <button type="button" class="nav-item" data-page="kiot"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6v5h-5M4 18v-5h5"/><path d="M5.7 9A7 7 0 0 1 18.5 6L20 11M4 13l1.5 5A7 7 0 0 0 18.3 15"/></svg></span><span class="nav-text">Đồng bộ KiotViet</span></div></button>
     <button type="button" class="nav-item" data-page="settings"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M10.3 2h3.4l.6 2.4 1.8.8 2.1-1.3 2.4 2.4-1.3 2.1.8 1.8 2.4.6v3.4l-2.4.6-.8 1.8 1.3 2.1-2.4 2.4-2.1-1.3-1.8.8-.6 2.4h-3.4l-.6-2.4-1.8-.8-2.1 1.3-2.4-2.4 1.3-2.1-.8-1.8L2 13.7v-3.4l2.4-.6.8-1.8-1.3-2.1 2.4-2.4 2.1 1.3 1.8-.8.1-.3"/></svg></span><span class="nav-text">Cài đặt</span></div></button>
@@ -141,6 +143,43 @@
         <div class="card table-wrap"><table class="table"><thead><tr><th>Phiếu</th><th>Khách / chi nhánh</th><th>Giá trị</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody id="returnRows"></tbody></table></div>
       </section>
 
+      <section class="page" id="productSync">
+        <div class="ps-hero">
+          <div><div class="ps-eyebrow"><span class="ps-live-dot"></span> KIOTVIET → WHOSE STUDIO</div>
+            <h2>Danh mục sản phẩm</h2><p>Hình ảnh, tên hàng, SKU và thuộc tính được đọc từ KiotViet. Whose lưu danh mục riêng để vận hành, không tự đồng bộ tồn kho.</p>
+          </div>
+          <div class="ps-hero-actions">
+            <button type="button" class="btn ps-secondary" id="psRefresh">Làm mới danh mục</button>
+            <button type="button" class="btn primary" id="psSyncAll" disabled>Đồng bộ từ KiotViet</button>
+          </div>
+        </div>
+        <div class="ps-stats" aria-label="Tình trạng danh mục Whose">
+          <div class="ps-stat"><div class="ps-stat-label">Sản phẩm đã lưu Whose</div><div class="ps-stat-value" id="psTotal">—</div><div class="ps-stat-foot">SKU thuộc danh mục đã đồng bộ</div></div>
+          <div class="ps-stat"><div class="ps-stat-label">Có hình ảnh</div><div class="ps-stat-value" id="psWithImages">—</div><div class="ps-stat-foot">Ảnh gốc từ KiotViet</div></div>
+          <div class="ps-stat"><div class="ps-stat-label">Đồng bộ gần nhất</div><div class="ps-stat-value ps-stat-date" id="psLastSync">—</div><div class="ps-stat-foot">Thời điểm lưu thành công</div></div>
+        </div>
+        <div class="ps-workspace">
+          <div class="ps-toolbar">
+            <div class="ps-switch" role="group" aria-label="Nguồn danh mục">
+              <button type="button" class="ps-switch-btn active" id="psShowWhose" aria-pressed="true">Đã lưu Whose</button>
+              <button type="button" class="ps-switch-btn" id="psShowKiot" aria-pressed="false">Xem trước KiotViet</button>
+            </div>
+            <label class="ps-search-label"><span class="ws-inline-icon" data-ws-icon="search" aria-hidden="true"></span><input type="search" id="psSearch" placeholder="Tìm theo SKU hoặc tên sản phẩm" autocomplete="off" aria-label="Tìm sản phẩm trong danh mục"></label>
+            <label class="ps-filter-label">Hình ảnh <select id="psImageFilter" aria-label="Lọc sản phẩm theo hình ảnh"><option value="all">Tất cả</option><option value="with">Có ảnh</option><option value="without">Chưa có ảnh</option></select></label>
+          </div>
+          <div class="ps-context" id="psContext">Hiển thị danh mục Whose đã ghi nhận.</div>
+          <div class="ps-progress" id="psProgress" hidden>
+            <div class="ps-progress-top"><strong id="psProgressLabel">Đang đồng bộ</strong><span id="psProgressPercent">0%</span></div>
+            <div class="ps-progress-track" role="progressbar" aria-label="Tiến độ đồng bộ sản phẩm" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="psProgressBar"><span id="psProgressFill"></span></div>
+            <div class="ps-progress-bottom"><span id="psProgressDetail">Đang chờ</span><button class="btn" type="button" id="psStopSync">Dừng sau trang hiện tại</button></div>
+          </div>
+          <p class="ps-status" id="psStatus" role="status" aria-live="polite">Đang chờ tải danh mục.</p>
+          <div class="ps-cards" id="psCards" aria-label="Danh sách sản phẩm có hình ảnh"></div>
+          <div class="ps-footer"><span id="psPagingInfo">—</span><div class="ps-pagination"><button type="button" class="btn" id="psPrev" disabled>← Trước</button><button type="button" class="btn" id="psNext" disabled>Tiếp →</button></div></div>
+        </div>
+        <div class="ps-note"><strong>Nguyên tắc an toàn:</strong> Chỉ Global Admin được ghi nhận danh mục sản phẩm. Hệ thống kiểm tra mỗi trang dữ liệu từ KiotViet trước khi lưu vào Whose, không tạo bản sao tồn kho, không xóa SKU vắng mặt và không gửi dữ liệu ngược sang KiotViet.</div>
+      </section>
+
       <section class="page" id="products">
         <div class="toolbar"><div class="tool-left"><input class="field" style="width:260px" placeholder="Search full catalog sẽ dùng mirror DB"></div></div>
         <div class="card table-wrap"><table class="table"><thead><tr><th>Sản phẩm</th><th>Chi nhánh</th><th>Trạng thái</th><th>Cập nhật</th></tr></thead><tbody id="productRows"></tbody></table></div>
@@ -217,5 +256,6 @@
   <div class="mobile-backdrop" id="mobileBackdrop" aria-hidden="true"></div>
   <script src="/ui-icons.js?v=1.0.0" defer></script>
   <script src="/app.js" defer></script>
+  <script src="/product-sync.js?v=1.0.0" defer></script>
 </body>
 </html>
