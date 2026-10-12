@@ -13,7 +13,7 @@
     panel.className = 'ws-toolkit';
     panel.innerHTML = `
       <div class="ws-toolkit-head">
-        <div><strong>Tìm kiếm tồn kho</strong><p>Tìm trên toàn bộ dữ liệu Whose, không chỉ trang đang xem</p></div>
+        <div><strong>Tìm kiếm tồn kho</strong><p>Tìm trên tất cả bản ghi trong phạm vi chi nhánh được cấp quyền</p></div>
         <span id="whoseInventoryCount" role="status" aria-live="polite"></span>
       </div>
       <div class="ws-toolkit-fields">
@@ -57,10 +57,11 @@
         branch.replaceChildren(new Option('Tất cả chi nhánh', ''),
           ...names.map(name => new Option(name, name)));
         branch.value = names.includes(current) ? current : '';
+        if (current && !names.includes(current)) submitSearch();
       }
       const total = Number(data.total);
       if (Number.isSafeInteger(total)) {
-        count.textContent = format(total) + ' kết quả trên toàn bộ dữ liệu';
+        count.textContent = format(total) + ' kết quả trong phạm vi được cấp';
       }
     });
 
@@ -71,7 +72,7 @@
         const response = await authorizedFetch('/api/kiot-inventory-sync?' + params, { cache: 'no-store' });
         if (!response.ok) throw new Error('Báo cáo chưa khả dụng');
         const report = await response.json();
-        const prefix = branch.value || 'Toàn bộ chi nhánh';
+        const prefix = branch.value || 'Các chi nhánh được cấp quyền';
         output.textContent = prefix + ' · ' + format(report.rows) + ' dòng'
           + ' · Tồn âm: ' + format(report.negative)
           + ' · Tồn bằng 0: ' + format(report.zero)
@@ -127,7 +128,7 @@
           try {
             const codes = await detector.detect(video);
             const value = typeof codes?.[0]?.rawValue === 'string' ? codes[0].rawValue.trim() : '';
-            if (value && value.length <= 80) {
+            if (value && value.length <= 80 && overlay.isConnected) {
               search.value = value;
               cleanup();
               clearTimeout(timer);
