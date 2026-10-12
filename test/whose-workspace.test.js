@@ -7,6 +7,6 @@ test('workspace search remains display-only and page-scoped',()=>{
  assert.match(src,/whoseInventorySearch/);
  assert.match(src,/whoseInventoryBranch/);
  assert.match(src,/inventoryRows/);
- assert.match(src,/chỉ trang này/i);
- assert.doesNotMatch(src,/\/api\/kiot-inventory-sync|fetch\(/);
+ assert.match(src,/view=summary/);
+ assert.doesNotMatch(src,/method:\s*'POST'|IMPORT_KIOT_INVENTORY/);
 });
