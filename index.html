@@ -195,6 +195,15 @@
 
       <section class="page" id="kiot">
         <div class="card card-pad" style="margin-bottom:18px">
+          <div class="section-head"><div><h2>Kiểm tra kết nối KiotViet</h2><p>Đọc trực tiếp chi nhánh và sản phẩm qua OAuth với quyền Global Admin. Hoàn toàn không ghi dữ liệu về KiotViet.</p></div></div>
+          <div class="toolbar" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px">
+            <button class="btn primary" id="kiotLiveConnectionCheck" type="button">Kiểm tra kết nối thật</button>
+            <span class="status st-gray" id="kiotLiveConnectionBadge">Chưa kiểm tra</span>
+          </div>
+          <p class="muted" id="kiotLiveConnectionResult" role="status" aria-live="polite">Bấm kiểm tra để xác minh quyền truy cập KiotViet bằng phiên Whose hiện tại. Không yêu cầu sao chép token.</p>
+          <div class="table-wrap"><table class="table"><thead><tr><th>Nguồn</th><th>Trạng thái</th><th>Số bản ghi</th><th>Phản hồi</th></tr></thead><tbody id="kiotLiveConnectionRows"><tr><td colspan="4">Chưa có kết quả</td></tr></tbody></table></div>
+        </div>
+        <div class="card card-pad" style="margin-bottom:18px">
           <div class="section-head"><div><h2>Đối chiếu bảo mật kết nối KiotViet</h2><p>So sánh Client ID trên máy chủ với bộ khóa mới bạn đã tạo ngày 12/10 và kiểm tra lỗi sao chép cấu hình. Không hiển thị Client ID, Secret hoặc giá trị môi trường.</p></div></div>
           <button class="btn" id="kiotCredentialCheck" type="button">Đối chiếu bộ khóa hiện tại</button>
           <p id="kiotCredentialCheckResult" role="status" aria-live="polite" class="muted" style="margin-top:12px;white-space:pre-line">Chưa thực hiện đối chiếu.</p>
@@ -257,5 +266,6 @@
   <script src="/ui-icons.js?v=1.0.0" defer></script>
   <script src="/app.js" defer></script>
   <script src="/product-sync.js?v=1.0.0" defer></script>
+  <script src="/kiot-connection-ui.js?v=20261012" defer></script>
 </body>
 </html>
