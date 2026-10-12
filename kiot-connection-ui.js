@@ -51,7 +51,7 @@
        if(!res.ok)throw new Error('Worker chưa thể xác minh (HTTP '+res.status+').');
        workerRun.disabled=data.workerConfigured!==true;
        workerResult.textContent=data.workerConfigured
-         ?'Đã nhận cấu hình Worker · Loại khóa: '+String(data.keyType||'unknown')+' · Định dạng: '+(data.keyLengthValid?'hợp lệ sơ bộ':'không hợp lệ')+' · Ký tự trắng: '+(data.keyHasSurroundingWhitespace?'có':'không')+' · Dấu nháy thừa: '+(data.keyHasQuotes?'có':'không')+'. Chưa xác minh khóa được Supabase chấp nhận.'
+         ?'Đã nhận cấu hình Worker · Loại khóa: '+String(data.keyType||'unknown')+' · Định dạng: '+(data.keyLengthValid?'hợp lệ sơ bộ':'không hợp lệ')+' · Ký tự trắng: '+(data.keyHasSurroundingWhitespace?'có':'không')+' · Dấu nháy thừa: '+(data.keyHasQuotes?'có':'không')+'. Webhook: '+(data.webhookConfigured?'đã đặt secret':'chưa có secret')+'. Đăng ký KiotViet: chưa xác minh.'
          :'Thiếu cấu hình Worker ở môi trường đang mở.';
      }catch(e){workerResult.textContent=e.message||'Không thể kiểm tra Worker.';}
      finally{workerCheck.disabled=false;}
