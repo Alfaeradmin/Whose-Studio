@@ -1,1 +1,24 @@
-.ws-toolkit{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:16px;margin:12px 0;background:var(--ws-surface,#fff);border:1px solid var(--ws-line,#e2e8ef);border-radius:14px}.ws-toolkit label{font-size:12px;font-weight:700;display:flex;flex-direction:column;gap:6px}.ws-toolkit input,.ws-toolkit select{min-height:44px;border:1px solid var(--ws-line-strong,#ccd5dd);border-radius:10px;background:#fff;color:var(--ws-ink,#192235);padding:0 12px;font-size:16px}.ws-toolkit input{flex:1 1 240px}.ws-toolkit select{flex:0 1 190px}.ws-toolkit span{font-size:12px;color:var(--ws-ink-muted,#69758c);margin-left:auto}@media(max-width:600px){.ws-toolkit{align-items:stretch}.ws-toolkit input,.ws-toolkit select{flex:1 1 100%;width:100%}}
+/* Whose operational workspace, responsive search + camera dialog */
+.ws-toolkit{display:block;padding:18px;margin:14px 0;background:var(--ws-surface,#fff);border:1px solid var(--ws-line,#e3e8f1);border-radius:16px;box-shadow:0 4px 22px rgba(22,35,50,.035)}
+.ws-toolkit-head{display:flex;flex-wrap:wrap;align-items:start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.ws-toolkit-head strong{font-size:16px;letter-spacing:-.02em}
+.ws-toolkit-head p{font-size:12px;color:var(--ws-ink-muted,#68758c);margin:5px 0 0}
+.ws-toolkit-head span{font-size:12px;color:var(--ws-ink-muted,#68758c);font-variant-numeric:tabular-nums}
+.ws-toolkit-fields{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.ws-toolkit label{font-size:12px;font-weight:680;display:flex;flex:1 1 230px;flex-direction:column;gap:7px;color:var(--ws-ink-secondary,#44516a)}
+.ws-toolkit label:nth-child(2){flex:0 1 220px}
+.ws-toolkit input,.ws-toolkit select{width:100%;min-height:44px;border:1px solid var(--ws-line-strong,#cbd4e2);border-radius:10px;background:#fff;color:var(--ws-ink,#192235);padding:0 12px;font-size:16px;box-sizing:border-box}
+.ws-toolkit button{min-height:44px;border:1px solid var(--ws-line-strong,#cbd4e2);border-radius:10px;background:#fff;color:var(--ws-ink,#192235);padding:0 14px;font-size:13px;font-weight:650;cursor:pointer}
+.ws-toolkit button:hover:not(:disabled){background:var(--ws-surface-subtle,#f8f9fc)}
+.ws-toolkit button:disabled{opacity:.45;cursor:not-allowed}
+.ws-toolkit output{display:block;font-size:13px;line-height:1.6;color:var(--ws-ink-secondary,#44516a);margin-top:12px}
+.ws-stale{color:var(--ws-warning,#a76c22);font-weight:650}
+.ws-scan-overlay{position:fixed;inset:0;z-index:var(--ws-layer-dialog,100);background:rgba(12,23,22,.64);display:grid;place-items:center;padding:16px}
+.ws-scan-dialog{background:#fff;border-radius:18px;padding:18px;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.ws-scan-dialog header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.ws-scan-dialog header strong{font-size:17px}
+.ws-scan-dialog header button{min-height:44px;min-width:64px;border:1px solid #d6dfd9;border-radius:10px;background:#fff}
+.ws-scan-dialog video{width:100%;max-height:60dvh;aspect-ratio:3/4;object-fit:cover;background:#111;border-radius:12px}
+.ws-scan-dialog p{font-size:12px;line-height:1.5;color:#64756a}
+@media(max-width:650px){.ws-toolkit{padding:14px}.ws-toolkit-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.ws-toolkit label{grid-column:1/-1}.ws-toolkit label:nth-child(2){grid-column:1/-1}.ws-toolkit button{min-width:0;padding:0 8px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){.ws-toolkit *{scroll-behavior:auto}}
