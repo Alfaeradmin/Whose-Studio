@@ -109,8 +109,8 @@ function renderSystemBanner() {
     host.innerHTML = '<div><strong>Supabase sẵn sàng, KiotViet thiếu cấu hình.</strong><p>Hệ thống nội bộ có thể chạy nhưng chưa đọc được dữ liệu KiotViet.</p></div>';
   } else {
     host.className = 'banner ok';
-    host.innerHTML = '<div><strong>Nền tảng đã kết nối đủ hạ tầng.</strong><p>Trạng thái chi tiết nằm trong Đồng bộ KiotViet và Cài đặt.</p></div>' +
-      '<div>' + status('Infrastructure ready', 'green') + '</div>';
+    host.innerHTML = '<div><strong>Cấu hình hạ tầng đã sẵn sàng.</strong><p>Đây là kiểm tra cấu hình, không thay thế xác thực API KiotViet. Xem kết quả đọc từng nhóm dữ liệu ở Tổng quan.</p></div>' +
+      '<div>' + status('Đã cấu hình', 'blue') + '</div>';
   }
 }
 
@@ -129,19 +129,39 @@ function renderDashboard() {
   if (dbMetric) dbMetric.textContent = state.system?.integrations?.supabase?.ready ? 'Schema ready' : 'Pending';
 
   const connectivity = d.connectivity || {};
+  const health = d.connectionStatus || {};
+  const successes = Object.values(connectivity).filter(v => v?.ok === true).length;
+  const failures = Object.entries(connectivity).filter(([,v]) => v?.ok !== true);
+  const checkCount = Object.keys(connectivity).length;
+  const healthState = health.state || (successes ? (failures.length ? 'partial' : 'connected') : 'unavailable');
   const err = errorSummary(connectivity);
   const banner = document.getElementById('kiotBanner');
   if (!state.overview) {
     banner.className = 'banner warn';
-    banner.innerHTML = '<div><strong>Chưa có phản hồi KiotViet.</strong><p>Đang tải dữ liệu.</p></div>';
-  } else if (err) {
-    banner.className = 'banner error';
-    banner.innerHTML = '<div><strong>KiotViet chưa kết nối thành công.</strong><p>' + esc(err) + '</p></div>' +
-      '<div>' + status('Connection error', 'red') + '</div>';
-  } else {
+    banner.innerHTML = '<div><strong>Chưa xác định trạng thái KiotViet.</strong><p>Chưa có kết quả kiểm tra API; không đồng nghĩa với sai khóa hoặc mất kết nối.</p></div>';
+  } else if (healthState === 'connected') {
     banner.className = 'banner ok';
-    banner.innerHTML = '<div><strong>KiotViet read-only đang hoạt động.</strong><p>Dữ liệu trên dashboard được đọc trực tiếp; Whose chưa ghi ngược KiotViet.</p></div>' +
-      '<div>' + status('Read-only', 'green') + '</div>';
+    banner.innerHTML = '<div><strong>KiotViet kết nối thành công.</strong><p>Đã đọc được ' + successes + '/' + checkCount + ' nhóm dữ liệu. Chế độ chỉ đọc; Whose không tự điều chỉnh tồn kho.</p></div>' +
+      '<div>' + status('Kết nối tốt', 'green') + '</div>';
+  } else if (healthState === 'partial') {
+    const failedNames = failures.map(([name]) => name);
+    banner.className = 'banner warn';
+    banner.innerHTML = '<div><strong>KiotViet đã kết nối — một số API chưa đọc được.</strong><p>' +
+      'Đã đọc được ' + successes + '/' + checkCount + ' nhóm dữ liệu. Cần kiểm tra: ' +
+      esc(failedNames.slice(0, 5).join(', ') + (failedNames.length > 5 ? '…' : '')) +
+      '. Xem mã lỗi cụ thể trong bảng kết nối phía dưới.</p></div>' +
+      '<div>' + status('Một phần dữ liệu lỗi', 'amber') + '</div>';
+  } else if (healthState === 'authentication_failed') {
+    banner.className = 'banner error';
+    banner.innerHTML = '<div><strong>KiotViet từ chối xác thực API.</strong><p>' +
+      esc(err || 'Không thể cấp access token.') + ' Kiểm tra cấu hình và quyền API; không tự tạo khóa mới.</p></div>' +
+      '<div>' + status('Lỗi xác thực', 'red') + '</div>';
+  } else {
+    banner.className = 'banner error';
+    banner.innerHTML = '<div><strong>Chưa đọc được API KiotViet.</strong><p>' +
+      esc(err || 'Chưa có tài nguyên nào trả kết quả thành công.') +
+      ' Cần kiểm tra chi tiết từng API; chưa thể quy kết do bộ khóa.</p></div>' +
+      '<div>' + status('Chưa khả dụng', 'red') + '</div>';
   }
 
   const rows = Object.entries(connectivity);
