@@ -18,5 +18,5 @@ module.exports=async function handler(req,res){
   try {const u=new URL(x.url);return u.protocol==='https:'&&u.hostname.toLowerCase()===ownHost&&u.pathname==='/api/kiot-webhook';}
   catch{return false;}
  });
- return res.status(200).json({webhookSecretConfigured:configured,registeredListReadable:true,registeredTotal:Number.isInteger(r.data?.total)?r.data.total:data.length,matchingCurrentDeployment:matches.length,activeMatchingCurrentDeployment:matches.filter(x=>x.isActive===true).length,kiotWritesEnabled:false});
+ return res.status(200).json({webhookSecretConfigured:configured,registeredListReadable:true,registeredTotal:/^[0-9]+$/.test(String(r.data?.total??''))?Number(r.data.total):data.length,listShapeValid:Array.isArray(r.data?.data),totalReported:r.data?.total!=null,matchingCurrentDeployment:matches.length,activeMatchingCurrentDeployment:matches.filter(x=>x.isActive===true).length,kiotWritesEnabled:false});
 };
