@@ -1,7 +1,7 @@
 'use strict';
 // Admin-triggered, strictly inbound inventory snapshots. Never writes to KiotViet.
 const {validateStaffBearer,verifyOrigin}=require('../lib/whose-auth');
-const {accessToken}=require('../lib/whose-backend');
+const {accessToken,rest}=require('../lib/whose-backend');
 const {safeRead}=require('../lib/kiotviet');
 const HOST='https://fjauxxunyxxboduyxjyr.supabase.co';
 async function service(path,method='GET',body){
@@ -37,6 +37,13 @@ module.exports=async function handler(req,res){
  const staff=await validateStaffBearer(accessToken(req));
  if(!staff.ok)return res.status(staff.status).json({error:'STAFF_AUTH_REQUIRED'});
  if(staff.is_global_admin!==true)return res.status(403).json({error:'ADMIN_REQUIRED'});
+ if(req.method==='GET'&&req.query?.view==='stored'){
+  const offset=Number(req.query?.offset??0);
+  if(!Number.isSafeInteger(offset)||offset<0||offset>100000)return res.status(400).json({error:'INVALID_OFFSET'});
+  const found=await rest('rpc/whose_inventory_snapshot_page',{method:'POST',bearer:accessToken(req),body:{p_limit:100,p_offset:offset}});
+  if(!found.ok)return res.status(502).json({error:'SNAPSHOT_READ_FAILED'});
+  return res.status(200).json(found.data);
+ }
  if(req.method==='POST'&&!verifyOrigin(req))return res.status(403).json({error:'INVALID_ORIGIN'});
  const page=Number(req.method==='GET'?req.query?.page:req.body?.page);
  if(!Number.isSafeInteger(page)||page<0||page>999)return res.status(400).json({error:'INVALID_PAGE'});
