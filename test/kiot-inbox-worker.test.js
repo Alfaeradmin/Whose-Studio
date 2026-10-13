@@ -2,7 +2,7 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {handleOnce}=require('../lib/kiot-inbox-worker');
-const env={SUPABASE_URL:'https://fjauxxunyxxboduyxjyr.supabase.co/',WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'a'.repeat(60)};
+const env={SUPABASE_URL:'https://fjauxxunyxxboduyxjyr.supabase.co/',WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'sb_secret_'+'a'.repeat(50)};
 const job={id:1,domain:'products',entity_key:'3',lease_token:'00000000-0000-4000-8000-000000000001'};
 test('acknowledges only after validated product is persisted',async()=>{
  const calls=[];
