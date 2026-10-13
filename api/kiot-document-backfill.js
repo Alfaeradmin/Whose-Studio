@@ -1,6 +1,6 @@
 'use strict';
 // Global Admin-driven, read-only Kiot source document historical catch-up.
-// Durable server cursor prevents local sessionStorage from skipping pages.
+// Durable server cursor prevents client-side page indexes from skipping source pages.
 // ACK inbox BEFORE advancing cursor. Every invocation processes ONE bounded page.
 const {createHash}=require('node:crypto');
 const {validateStaffBearer,verifyOrigin}=require('../lib/whose-auth');
@@ -39,9 +39,11 @@ async function handler(req,res){
  const page=checkpoint.nextPage;
  const r=await safeRead(domain,{pageSize:SIZE,currentItem:page*SIZE});
  if(!r.ok)return res.status(502).json({error:'KIOT_DOCUMENT_PAGE_UNAVAILABLE',page,domain});
- const total=Number(r.data?.total),records=r.data?.data;
- const expected=Number.isSafeInteger(total)&&total>=0&&total<=500000?
-  Math.min(SIZE,Math.max(0,total-page*SIZE)):null;
+ const totalRaw=r.data?.total,records=r.data?.data;
+ const total=typeof totalRaw==='number'?totalRaw:
+  (typeof totalRaw==='string'&&/^[0-9]+$/.test(totalRaw)?Number(totalRaw):NaN);
+ const expected=Number.isSafeInteger(total)&&total>=0&&total<=500000&&
+  (page===0||page*SIZE<=total)?Math.min(SIZE,Math.max(0,total-page*SIZE)):null;
  if(!Array.isArray(records)||expected===null||records.length!==expected)
   return res.status(502).json({error:'KIOT_DOCUMENT_PAGE_INCOMPLETE',domain,page,
    received:records?.length??null,expected});
