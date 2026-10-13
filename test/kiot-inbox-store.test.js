@@ -2,10 +2,13 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const {getConfig,persistVerifiedHints}=require('../lib/kiot-inbox-store');
-const env={SUPABASE_URL:'https://fjauxxunyxxboduyxjyr.supabase.co/',WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'a'.repeat(60)};
+const env={SUPABASE_URL:'https://fjauxxunyxxboduyxjyr.supabase.co/',WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'sb_secret_'+'a'.repeat(50)};
 const hint={retailer:'whose',domain:'products',entity_key:'1',event_key:'a'.repeat(64),payload_digest:'b'.repeat(64)};
 test('private service credentials are required',async()=>{
  assert.equal(getConfig({}),null);
+ assert.equal(getConfig({...env,WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'sb_publishable_'+'a'.repeat(50)}),null);
+ assert.equal(getConfig({...env,WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'a'.repeat(60)}),null);
+ assert.equal(getConfig({...env,WHOSE_CONNECTOR_SERVICE_ROLE_KEY:' '+env.WHOSE_CONNECTOR_SERVICE_ROLE_KEY}),null);
  assert.equal(getConfig({...env,SUPABASE_URL:'https://wrong.supabase.co/'}),null);
  await assert.rejects(persistVerifiedHints([hint],{env:{},fetchImpl:()=>{throw Error('network called');}}),/NOT_CONFIGURED/);
 });
