@@ -13,7 +13,7 @@ test('isolated ingress preserves existing product webhook dedupe format',()=>{
 });
 test('stock and invoice notices are accepted as durable event hints',()=>{
  const payload={Id:'evt-1',Notifications:[
-  {Action:'stock.update',Data:[{ProductId:123,BranchId:987,OnHand:6}]},
+  {Action:'stock.update',Data:[{ProductId:123,BranchId:987,OnHand:6,Reserved:0}]},
   {Action:'invoice.update',Data:[{Id:321}]}]};
  const records=hints(payload,'whose');
  assert.deepEqual(records.map(x=>x.domain),['stock','invoices']);
