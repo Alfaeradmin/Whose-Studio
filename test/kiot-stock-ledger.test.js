@@ -5,7 +5,7 @@ const {notificationHints}=require('../lib/kiot-webhook-hints');
 const {canonicalDocument}=require('../lib/kiot-canonical-document');
 const {handleOnce}=require('../lib/kiot-inbox-worker');
 const env={SUPABASE_URL:'https://fjauxxunyxxboduyxjyr.supabase.co/',
- WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'a'.repeat(60)};
+ WHOSE_CONNECTOR_SERVICE_ROLE_KEY:'sb_secret_'+'a'.repeat(50)};
 const lease='00000000-0000-4000-8000-000000000001';
 function fakeFetch(job,calls){
  return async(url,opts)=>{
