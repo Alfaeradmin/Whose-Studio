@@ -118,3 +118,5 @@ button:focus-visible,a:focus-visible{outline:3px solid #a998d6;outline-offset:2p
 @media(max-width:570px){.borrow-audit{max-width:100%}.audit-line{flex-direction:column}
  .audit-remaining{align-items:start;text-align:left;min-width:0}.audit-footer{flex-direction:column;align-items:stretch}
  .product-suggestions{max-height:220px}}
+
+#queueBottom{display:grid;gap:7px}#queueBottom .btn{width:100%}
