@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
 let initialized=false,initPromise=null,scope=[],requests=[],selectedId=null,filter='all',focusedBranch='',lastDetailId=null,lastDetailVersion=null;
-let polling=null,reloading=false,detailSequence=0,searchTimer=null,searchAbort=null,productSkuChosen=null;
+let polling=null,reloading=false,detailSequence=0,searchTimer=null,searchAbort=null,productSkuChosen=null,lastInboxSignature='';
 const el=id=>document.getElementById(id);
 const make=(tag,cls,value)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(value!==undefined)x.textContent=String(value);return x};
 const number=x=>Number(x).toLocaleString('vi-VN');
@@ -29,6 +29,9 @@ function fillBranches(){
 }
 function paintInbox(){
  const list=el('wrConversations'),scroll=list.scrollTop,q=el('wrFilter').value.trim().toLowerCase(),branchId=el('wrBranch').value;
+ const signature=JSON.stringify([filter,q,branchId,selectedId,scope.map(b=>[b.id,b.name]),requests.map(r=>[r.id,r.status,r.note,r.created_at,r.updated_at])]);
+ if(signature===lastInboxSignature)return;
+ lastInboxSignature=signature;
  const rows=requests.filter(r=>(filter==='all'||r.status===filter)&&(!branchId||r.origin_branch_id===branchId||r.destination_branch_id===branchId)&&
  (!q||[r.id,r.note,branch(r.origin_branch_id),branch(r.destination_branch_id)].some(v=>String(v||'').toLowerCase().includes(q))));
  list.replaceChildren();el('wrCount').textContent=number(rows.length)+' yêu cầu';
@@ -192,7 +195,7 @@ async function init(){
   });
   el('wrSku').addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions()});
   document.addEventListener('pointerdown',e=>{
-   if(!e.target.closest('.wr-sku-label'))hideSuggestions();
+   if(!e.target.closest('.wr-sku-field'))hideSuggestions();
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wrNewModal').hidden)closeNew()});
   initialized=true;
