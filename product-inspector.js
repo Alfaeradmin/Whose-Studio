@@ -42,7 +42,7 @@ function show(p){
   mainImage.alt=p.name||'Ảnh sản phẩm';mainImage.decoding='async';mainImage.loading='eager';
   const imageState=$('div','wpi-photo-state','Đang tải hình sản phẩm…');
   main.append(mainImage,imageState);hero.append(main);
-  let activeIndex=0,requested=0;
+  let activeIndex=0,requested=0;const failedImages=new Set();
   function displayImage(index){
    activeIndex=index;requested=0;imageState.textContent='Đang tải hình sản phẩm…';imageState.hidden=false;
    mainImage.hidden=false;
@@ -51,8 +51,9 @@ function show(p){
    mainImage.onload=()=>{imageState.hidden=true;mainImage.hidden=false};
    mainImage.onerror=()=>{
     if(requested===0){requested=1;mainImage.referrerPolicy='no-referrer';mainImage.src=urls[activeIndex];return}
-    const next=(activeIndex+1)%urls.length;
-    if(next!==index){displayImage(next);return}
+    failedImages.add(activeIndex);
+    const next=urls.findIndex((_,i)=>!failedImages.has(i));
+    if(next!==-1){displayImage(next);return}
     mainImage.hidden=true;imageState.textContent='Hình sản phẩm tạm thời không tải được từ KiotViet.';
    };
    mainImage.src=urls[index];
