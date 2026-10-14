@@ -5,20 +5,21 @@
  if(root)root.WhoseOpsDemoModel=api;
 })(typeof window!=='undefined'?window:null,function(){
  'use strict';
- const DUTIES=['seller','picker','runner','receiver','lead'];
+ const DUTIES=['seller','picker','runner','receiver','lead','admin'];
+ const REASONS={try_on:'Khách thử đồ',purchase:'Khách xem / mua',display:'Bổ sung quầy',size_check:'Đổi size',other:'Lý do khác'};
  const PRODUCTS=['DEMO-TEE-01','DEMO-PANT-02','DEMO-SHIRT-03','DEMO-BAG-04','DEMO-JACKET-05','DEMO-CAP-06'];
  const ZONES=['MAIN','BACK'];
  const activeStatuses=new Set(['queued','picking','ready','in_transit','delivered']);
  const fail=(code)=>{throw new Error(code)};
- const niceDuty={seller:'Bán hàng',picker:'Soạn kho',runner:'Vận chuyển',receiver:'Nhận tại quầy',lead:'Trưởng ca'};
+ const niceDuty={seller:'Bán hàng',picker:'Soạn kho',runner:'Vận chuyển',receiver:'Nhận tại quầy',lead:'Trưởng ca',admin:'Quản trị viên'};
  function employees(branch){
-  const names=['Bán hàng A','Kho khu MAIN','Kho khu BACK','Vận chuyển A','Nhận hàng A','Trưởng ca'];
-  const duties=['seller','picker','picker','runner','receiver','lead'];
+  const names=['Bán hàng A','Kho khu MAIN','Kho khu BACK','Vận chuyển A','Nhận hàng A','Trưởng ca','Admin'];
+  const duties=['seller','picker','picker','runner','receiver','lead','admin'];
   return names.map((name,i)=>({id:branch+'-EMP-'+(i+1),name:name+' (demo)',branch,
    duty:duties[i],zone:duties[i]==='picker'?(i===2?'BACK':'MAIN'):'ALL',active:true}));
  }
  function initial(){
-  const state={version:1,sequence:1,waveSequence:1,employees:[...employees('LVS'),...employees('NVT')],calls:[]};
+  const state={version:2,sequence:1,waveSequence:1,employees:[...employees('LVS'),...employees('NVT')],calls:[]};
   seed(state,'LVS',22);
   seed(state,'NVT',15);
   return state;
@@ -30,7 +31,7 @@
    const lines=[{sku,requested:(n%3)+1,picked:0,received:0,shortage:''}];
    if(n%3===0)lines.push({sku:PRODUCTS[(n+2)%PRODUCTS.length],requested:2,picked:0,received:0,shortage:''});
    state.calls.push({id:'DEMO-'+branch+'-'+String(n).padStart(4,'0'),branch,zone,priority:n%7===0?1:0,
-    note:'Khách chờ thử đồ • lượt mô phỏng '+n,created:Date.now()-((count-i)*120000),
+    note:'Khách chờ thử đồ • lượt mô phỏng '+n,reason:'try_on',createdBy:branch+'-EMP-1',created:Date.now()-((count-i)*120000),
     status:'queued',wave:null,picker:null,runner:null,receiver:null,
     lines,events:[{at:Date.now(),action:'Đã gọi hàng (demo)'}],version:0});
   }
@@ -39,26 +40,27 @@
  function who(state,id){const p=state.employees.find(x=>x.id===id);if(!p||!p.active)fail('NOT_ON_SHIFT');return p}
  function task(state,id){const c=state.calls.find(x=>x.id===id);if(!c)fail('NO_ORDER');return c}
  function role(p,branch,duty,zone){
-  if(p.branch!==branch||p.duty!==duty)return false;
+  if(p.branch!==branch||p.duty!=='admin'&&p.duty!==duty)return false;
   return p.zone==='ALL'||p.zone===zone;
  }
  function event(c,actor,action){c.version++;c.events.push({at:Date.now(),actor,action});}
- function createCall(state,employeeId,branch,zone,items,note){
+ function createCall(state,employeeId,branch,zone,items,note,reason){
   const p=who(state,employeeId);if(!role(p,branch,'seller',zone))fail('SELLER_SHIFT_REQUIRED');
   if(!Array.isArray(items)||!items.length||items.length>30||!ZONES.includes(zone))fail('INVALID_LINES');
+  if(!Object.hasOwn(REASONS,reason))fail('BORROW_REASON_REQUIRED');
   const set=new Set(),lines=items.map(x=>{
    if(!/^[A-Z0-9._-]{1,40}$/.test(x.sku)||!Number.isInteger(x.qty)||x.qty<1||x.qty>100||
     set.has(x.sku))fail('INVALID_LINES');
    set.add(x.sku);return{sku:x.sku,requested:x.qty,picked:0,received:0,shortage:''};
   });
   const n=state.sequence++,c={id:'DEMO-'+branch+'-'+String(n).padStart(4,'0'),branch,zone,
-   priority:0,note:String(note||'').slice(0,240),created:Date.now(),status:'queued',
+   priority:0,note:String(note||'').slice(0,240),reason,createdBy:employeeId,created:Date.now(),status:'queued',
    picker:null,runner:null,receiver:null,wave:null,lines,events:[],version:0};
   event(c,p.id,'Cửa hàng gửi yêu cầu');
   state.calls.push(c);return c;
  }
  function claimWave(state,employeeId,ids){
-  const p=who(state,employeeId);if(p.duty!=='picker'||!Array.isArray(ids)||ids.length<1||ids.length>8||
+  const p=who(state,employeeId);if(p.duty!=='picker'&&p.duty!=='admin'||!Array.isArray(ids)||ids.length<1||ids.length>8||
    new Set(ids).size!==ids.length)fail('INVALID_WAVE');
   const targets=ids.map(id=>task(state,id)),zone=targets[0].zone,branch=targets[0].branch;
   if(!role(p,branch,'picker',zone)||targets.some(c=>c.status!=='queued'||c.branch!==branch||c.zone!==zone))
@@ -115,17 +117,17 @@
  }
  function assign(state,leadId,targetId,duty,zone){
   const lead=who(state,leadId),target=who(state,targetId);
-  if(lead.duty!=='lead'||lead.branch!==target.branch||!DUTIES.includes(duty)||
+  if(!['lead','admin'].includes(lead.duty)||lead.branch!==target.branch||!DUTIES.includes(duty)||
    ![...ZONES,'ALL'].includes(zone)||duty==='picker'&&zone==='ALL')fail('SHIFT_MANAGER_REQUIRED');
   target.duty=duty;target.zone=zone;return target;
  }
  function visible(state,branch,employeeId){
   const p=who(state,employeeId);
   return state.calls.filter(c=>c.branch===branch&&
-   (p.duty==='lead'||p.zone==='ALL'||p.zone===c.zone))
+   (['lead','admin'].includes(p.duty)||p.zone==='ALL'||p.zone===c.zone))
    .sort((a,b)=>(activeStatuses.has(a.status)?0:1)-(activeStatuses.has(b.status)?0:1)||
      b.priority-a.priority||a.created-b.created||a.id.localeCompare(b.id));
  }
- return {DUTIES,PRODUCTS,ZONES,niceDuty,initial,seed,who,task,role,createCall,claimWave,
+ return {DUTIES,REASONS,PRODUCTS,ZONES,niceDuty,initial,seed,who,task,role,createCall,claimWave,
   scan,short,ready,take,deliver,receive,assign,visible,activeStatuses};
 });
