@@ -21,14 +21,14 @@
    return {id:typeof l.id==='string'?l.id:String(i),sku,qty:l.qty};
   });
   return {id:String(raw.id),code:String(raw.code||raw.id).slice(0,70),branch:raw.branch,at:raw.at,
-   status:raw.status||'finalized',warehouse:raw.warehouse||null,verified:raw.verified===true,
+   status:raw.status||'unknown',warehouse:raw.warehouse||null,verified:raw.verified===true,
    lines};
  }
  function stats(call,sku,links=[]){
   const line=call?.lines?.find(x=>x.sku?.toUpperCase()===sku?.toUpperCase());
   if(!line)throw Error('UNKNOWN_BORROW_LINE');
-  const issued=line.received>0?line.received:call.status==='delivered'?line.picked:
-   ['completed','disputed'].includes(call.status)?line.picked:0;
+  const issued=['completed','disputed'].includes(call.status)?line.received:
+   ['delivered'].includes(call.status)?line.picked:0;
   if(!nonneg(issued))throw Error('INVALID_ISSUED_QTY');
   const returned=line.returned||0;if(!nonneg(returned)||returned>issued)throw Error('INVALID_RETURN_QTY');
   const confirmed=links.filter(x=>x.callId===call.id&&x.sku===sku&&x.confirmed===true)
@@ -52,8 +52,9 @@
     if(!remaining)continue;
     const matches=calls.filter(c=>c.branch===invoice.branch&&
      ['delivered','completed','disputed'].includes(c.status)&&
-     Number.isFinite(Date.parse(c.created))&&Date.parse(invoice.at)>=c.created&&
-     Date.parse(invoice.at)<=c.created+7*86400000&&
+     Number.isFinite(typeof c.created==='number'?c.created:Date.parse(c.created))&&
+     Date.parse(invoice.at)>=(typeof c.created==='number'?c.created:Date.parse(c.created))&&
+     Date.parse(invoice.at)<=(typeof c.created==='number'?c.created:Date.parse(c.created))+7*86400000&&
      (!invoice.warehouse||invoice.warehouse===c.zone)).flatMap(c=>{
       try{const st=stats(c,item.sku,links);return st.stillBorrowed>0?[{callId:c.id,sku:item.sku,
        available:st.stillBorrowed,invoiceId:invoice.id,invoiceCode:invoice.code,invoiceQty:remaining}]:[]}
