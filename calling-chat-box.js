@@ -370,7 +370,7 @@
    el('wcProductSearch').oninput=()=>{
     clearTimeout(searchTimer);
     const text=el('wcProductSearch').value.trim();
-    if(searchAbort)searchAbort.abort();
+    searchGeneration++;if(searchAbort)searchAbort.abort();
     if(text.length<2){hideSuggestions();searchFeedback('Nhập ít nhất 2 ký tự');return}
     searchTimer=setTimeout(()=>void suggest(text),140);
    };
