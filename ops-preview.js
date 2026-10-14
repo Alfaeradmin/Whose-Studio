@@ -58,13 +58,13 @@ function list(){
  const rendered=rows.slice(0,120);
  $('orderQueue').innerHTML=rendered.map(c=>{
   const check=view==='warehouse'&&allowed('picker')&&c.status==='queued';
-  return '<button class="chat-item '+(selected===c.id?'active':'')+'" type="button" data-open="'+esc(c.id)+'">'+
+  return '<div class="chat-item '+(selected===c.id?'active':'')+'" tabindex="0" role="button" data-open="'+esc(c.id)+'">'+
    '<div class="item-top"><span>'+
     (check?'<input type="checkbox" class="wave-select" data-wave="'+esc(c.id)+'" aria-label="Chọn '+esc(c.id)+'" '+
       (selectedWave.has(c.id)?'checked':'')+'>':'')+
     '<strong>'+esc(c.id)+'</strong></span>'+badge(c)+'</div>'+
    '<div class="item-preview">'+esc(c.lines.map(l=>l.sku+' ×'+l.requested).join(' · '))+'</div>'+
-   '<small>'+esc(M.REASONS[c.reason]||'Chưa rõ lý do')+' · '+esc(c.zone)+' · '+age(c.created)+'</small></button>';
+   '<small>'+esc(M.REASONS[c.reason]||'Chưa rõ lý do')+' · '+esc(c.zone)+' · '+age(c.created)+'</small></div>';
  }).join('')+(rows.length>120?'<div class="notice">Đang hiển thị 120/'+n(rows.length)+' đơn. Dùng bộ lọc để thu hẹp.</div>':'')+
  (!rows.length?'<div class="notice">Không có yêu cầu phù hợp.</div>':'');
  $('queueBottom').hidden=false;
@@ -116,6 +116,7 @@ function body(){
  renderComposer(c,p);
 }
 function storeComposer(c,p){
+ if(c?.status==='delivered'&&allowed('receiver'))return receiveComposer(c);
  if(!allowed('seller')){
   if(c?.status==='delivered'&&allowed('receiver'))return receiveComposer(c);
   return '<div class="notice">Bạn được phân công vị trí <b>'+esc(M.niceDuty[p.duty])+
@@ -143,7 +144,12 @@ function receiveComposer(c){
    '<button class="btn" type="submit">Xác nhận nhận hàng</button></div></form>';
 }
 function warehouseComposer(c,p){
- const selectedCalls=[...selectedWave].map(id=>state.calls.find(x=>x.id===id)).filter(Boolean);
+ if(c&&allowed('runner')&&(c.status==='ready'||c.status==='in_transit')){
+  return '<div class="composer-title">Bàn giao kho → cửa hàng</div>'+
+   (c.status==='ready'?'<button class="btn" data-action="take">Tôi nhận giỏ để giao</button>':
+   c.runner===p.id?'<button class="btn" data-action="deliver">Đã giao giỏ đến quầy</button>':
+   '<div class="notice">Giỏ đang được người vận chuyển khác phụ trách.</div>');
+ }
  if(allowed('picker')){
   const claim='<div class="action-strip"><button class="btn outline" type="button" data-action="claim" '+
    (!selectedWave.size?'disabled':'')+'>Nhận lượt soạn ('+selectedWave.size+'/8)</button>'+
@@ -173,7 +179,9 @@ function renderComposer(c,p){
  $('composerArea').innerHTML=side()==='store'?storeComposer(c,p):warehouseComposer(c,p);
 }
 function draw(){
- chooseEmployee();stats();list();roster();body();save();
+ chooseEmployee();
+ if(!selected) selected=M.visible(state,branch,employeeId).find(c=>M.activeStatuses.has(c.status))?.id||null;
+ stats();list();roster();body();save();
 }
 function perform(action,sku){
  const p=person(),c=current();
@@ -244,6 +252,7 @@ document.addEventListener('change',e=>{
  }
 });
 document.addEventListener('keydown',e=>{
+ if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open]')){e.preventDefault();selected=e.target.dataset.open;notice='';draw();return}
  if(e.key==='Enter'&&e.target.id==='skuInput'){e.preventDefault();try{addSku()}catch(err){warn(err.message,true)}}
  if(e.key==='Enter'&&e.target.id==='scanInput'){e.preventDefault();try{perform('scanInput')}catch(err){warn(err.message,true)}}
 });
