@@ -1,17 +1,58 @@
 /* Whose Studio messenger preview. Explicitly synthetic, no network traffic. */
 (()=>{
 'use strict';
-const M=window.WhoseOpsDemoModel,$=id=>document.getElementById(id);
+const M=window.WhoseOpsDemoModel,B=window.WhoseOpsBillMatch,$=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[x]));
 const statuses={queued:'Chờ kho nhận',picking:'Đang soạn',ready:'Chờ vận chuyển',in_transit:'Đang giao',delivered:'Chờ quầy nhận',completed:'Đã hoàn tất',disputed:'Chênh lệch',cancelled:'Đã hủy'};
 let state;
-try{const raw=sessionStorage.getItem('whose:ops-chat-preview:v2');state=raw?JSON.parse(raw):M.initial();
- if(state?.version!==2||!Array.isArray(state.calls)||!Array.isArray(state.employees))state=M.initial();
+try{const raw=sessionStorage.getItem('whose:ops-chat-preview:v3');state=raw?JSON.parse(raw):M.initial();
+ if(state?.version!==3||!Array.isArray(state.calls)||!Array.isArray(state.employees))state=M.initial();
 }catch{state=M.initial()}
 let branch='LVS',employeeId='',adminPerspective='store',selected=null,selectedWave=new Set();
 let draft=[],draftZone='MAIN',draftReason='',draftNote='',notice='';
+let suggestions=[],suggestionMessage='',catalogTimer=null,catalogRequest=0,selectedBill=null,billProbe=null;
+const BRANCH_IDS={LVS:'43be6d1f-64d3-4738-9683-37ec6a7d14b5',NVT:'8924b841-7b2e-4552-b55c-151a70cece96'};
+const pools=()=>branch==='LVS'?[['MAIN','Kho bán hàng'],['BACK','Kho tồn']]:[['MAIN','Kho Nguyễn Văn Tráng']];
+const poolLabel=(b,z)=>b==='LVS'?(z==='MAIN'?'Kho bán hàng':z==='BACK'?'Kho tồn':'Chưa xác định'):
+ z==='MAIN'?'Kho Nguyễn Văn Tráng':'Chưa xác định';
+function realToken(){try{
+ const s=JSON.parse(sessionStorage.getItem('whose-studio-auth-v1')||'null');
+ return typeof s?.access_token==='string'&&s.access_token.length>20?s.access_token:null;
+}catch{return null}}
+function productImage(p){
+ const u=p?.image;
+ if(typeof u!=='string'||!/^https:\/\/cdn(?:2)?-retail-images\.kiotviet\.vn\//.test(u))
+  return '<span class="thumb empty">Chưa có ảnh</span>';
+ return '<img class="thumb" src="'+esc(u)+'" loading="lazy" alt="" referrerpolicy="no-referrer">';
+}
+function suggestionHTML(){
+ if(!suggestions.length)return '<p class="suggest-empty">'+esc(suggestionMessage||'Tìm theo tên hoặc SKU trong danh mục Whose đã đồng bộ KiotViet.')+'</p>';
+ return suggestions.map(p=>'<button type="button" class="suggest-choice" data-suggestion="'+esc(p.sku)+'">'+
+ productImage(p)+'<span><strong>'+esc(p.name)+'</strong><small>'+esc(p.sku)+' · KiotViet</small></span>'+
+ '<span class="suggest-pick">Chọn</span></button>').join('');
+}
+function paintSuggest(){
+ const el=$('productSuggestions');
+ if(el){el.hidden=false;el.innerHTML=suggestionHTML()}
+}
+async function searchCatalog(raw){
+ const q=String(raw||'').trim(),seq=++catalogRequest;
+ if(q.length<2){suggestions=[];suggestionMessage='Nhập tối thiểu 2 ký tự';paintSuggest();return;}
+ const token=realToken();
+ if(!token){suggestions=[];suggestionMessage='Đăng nhập Whose trên bản Preview để tìm danh mục thật, kèm hình ảnh sản phẩm.';paintSuggest();return;}
+ suggestions=[];suggestionMessage='Đang tìm sản phẩm đã đồng bộ…';paintSuggest();
+ try{
+  const url='/api/ops-product-search?'+new URLSearchParams({q,branch:BRANCH_IDS[branch]});
+  const res=await fetch(url,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+  if(!res.ok)throw Error('Không đọc được danh mục Whose (HTTP '+res.status+').');
+  const json=await res.json();
+  if(seq!==catalogRequest)return;
+  suggestions=Array.isArray(json.rows)?json.rows:[];suggestionMessage=suggestions.length?'':'Không tìm thấy sản phẩm.';
+ }catch(e){if(seq!==catalogRequest)return;suggestions=[];suggestionMessage=e.message;}
+ paintSuggest();
+}
 const person=()=>state.employees.find(e=>e.id===employeeId);
-const save=()=>{try{sessionStorage.setItem('whose:ops-chat-preview:v2',JSON.stringify(state))}catch{}};
+const save=()=>{try{sessionStorage.setItem('whose:ops-chat-preview:v3',JSON.stringify(state))}catch{}};
 const n=x=>Number(x).toLocaleString('vi-VN');
 const stamp=x=>new Date(x).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});
 const date=x=>new Date(x).toLocaleDateString('vi-VN');
@@ -64,7 +105,7 @@ function list(){
       (selectedWave.has(c.id)?'checked':'')+'>':'')+
     '<strong>'+esc(c.id)+'</strong></span>'+badge(c)+'</div>'+
    '<div class="item-preview">'+esc(c.lines.map(l=>l.sku+' ×'+l.requested).join(' · '))+'</div>'+
-   '<small>'+esc(M.REASONS[c.reason]||'Chưa rõ lý do')+' · '+esc(c.zone)+' · '+age(c.created)+'</small></div>';
+   '<small>'+esc(M.REASONS[c.reason]||'Chưa rõ lý do')+' · '+esc(poolLabel(c.branch,c.zone))+' · '+age(c.created)+'</small></div>';
  }).join('')+(rows.length>120?'<div class="notice">Đang hiển thị 120/'+n(rows.length)+' đơn. Dùng bộ lọc để thu hẹp.</div>':'')+
  (!rows.length?'<div class="notice">Không có yêu cầu phù hợp.</div>':'');
  $('queueBottom').hidden=false;
@@ -79,7 +120,7 @@ function firstBubble(c){
  return '<div class="message-row '+(fromStore?'out':'in')+'"><div class="message-avatar">CH</div><div class="bubble">'+
   '<div class="bubble-title">Yêu cầu mượn hàng · '+esc(c.id)+'</div>'+
   '<div class="field-line"><span class="hint">Lý do mượn:</span><strong>'+esc(M.REASONS[c.reason]||'Chưa rõ')+'</strong></div>'+
-  '<div class="field-line"><span class="hint">Khu vực:</span><strong>'+esc(c.zone)+'</strong></div>'+
+  '<div class="field-line"><span class="hint">Kho thao tác:</span><strong>'+esc(poolLabel(c.branch,c.zone))+'</strong></div>'+
   '<div class="field-line">'+c.lines.map(l=>'<span class="sku-chip">'+esc(l.sku)+' ×'+n(l.requested)+'</span>').join('')+'</div>'+
   (c.note?'<p>Ghi chú: '+esc(c.note)+'</p>':'')+
   '<div class="bubble-meta">Cửa hàng · '+esc(actor(c.createdBy))+' · '+stamp(c.created)+'</div>'+
@@ -123,17 +164,17 @@ function storeComposer(c,p){
    '</b>. Chỉ nhân viên bán hàng trong ca mới có thể gửi yêu cầu.</div>';
  }
  const reasonOptions='<option value="" disabled '+(!draftReason?'selected':'')+'>Chọn lý do mượn…</option>'+Object.entries(M.REASONS).map(([k,v])=>'<option value="'+k+'" '+(draftReason===k?'selected':'')+'>'+esc(v)+'</option>').join('');
- const skuChips=draft.map(x=>'<span class="draft-pill">'+esc(x.sku)+' ×'+x.qty+
+ const skuChips=draft.map(x=>'<span class="draft-pill">'+(x.image?productImage(x):'')+esc(x.sku)+' ×'+x.qty+
   '<button type="button" data-remove="'+esc(x.sku)+'" aria-label="Bỏ '+esc(x.sku)+'">×</button></span>').join('');
  return '<div class="composer-title"><span>Soạn yêu cầu gửi kho</span><span class="label">Chỉ mã · lý do mượn · ghi chú</span></div>'+
   '<div class="composer-grid"><label class="field">Mã sản phẩm<input id="skuInput" type="search" placeholder="Scan / nhập SKU" autocomplete="off" maxlength="40"></label>'+
    '<label class="field">SL<input id="qtyInput" type="number" value="1" min="1" max="100"></label>'+
-   '<button type="button" id="addSku" class="btn outline">+ Thêm mã</button></div>'+
+   '<button type="button" id="addSku" class="btn outline">+ Thêm mã</button></div>'+\n  '<div class="product-suggestions" id="productSuggestions" hidden></div>'+
    (draft.length?'<div class="draft-products">'+skuChips+'</div>':'')+
    '<div class="composer-extra"><label class="field">Lý do mượn<select id="borrowReason">'+reasonOptions+'</select></label>'+
     '<label class="field">Ghi chú<input id="borrowNote" maxlength="240" value="'+esc(draftNote)+'" placeholder="Ví dụ: khách đang thử size M"></label></div>'+
    '<div class="composer-foot"><label class="field">Khu vực kho<select id="borrowZone">'+
-    M.ZONES.map(z=>'<option value="'+z+'" '+(draftZone===z?'selected':'')+'>'+z+'</option>').join('')+'</select></label>'+
+    pools().map(([z,name])=>'<option value="'+z+'" '+(draftZone===z?'selected':'')+'>'+esc(name)+'</option>').join('')+'</select></label>'+
     '<button id="sendBorrow" class="btn" '+(!draft.length?'disabled':'')+'>Gửi yêu cầu →</button></div>';
 }
 function receiveComposer(c){
@@ -210,7 +251,7 @@ function addSku(){
  draftReason=$('borrowReason').value;draftZone=$('borrowZone').value;draftNote=$('borrowNote').value;
  const row=draft.find(x=>x.sku===sku);
  if(row){if(row.qty+qty>100)throw Error('Vượt số lượng cho một mã.');row.qty+=qty}
- else if(draft.length<30)draft.push({sku,qty});
+ else if(draft.length<30){const cat=suggestions.find(x=>x.sku===sku);draft.push({sku,qty,name:cat?.name||null,image:cat?.image||null});}
  else throw Error('Một yêu cầu tối đa 30 mã.');
  notice='';draw();
  $('skuInput')?.focus();
