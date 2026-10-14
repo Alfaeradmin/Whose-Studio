@@ -3,19 +3,24 @@
 const root=document.getElementById('wsProductInspector');
 const body=document.getElementById('wsProductInspectorBody');
 const name=document.getElementById('wsProductInspectorName');
+let activeProduct=null,inventoryNonce=0;
 const $=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n};
 const field=(label,value)=>{const d=$('div','wpi-field');d.append($('span','wpi-label',label),$('strong','',value==null||value===''?'Chưa có dữ liệu':String(value)));return d};
 const price=v=>typeof v==='number'&&Number.isFinite(v)?v.toLocaleString('vi-VN')+' ₫':null;
 const date=v=>{if(!v)return null;const t=new Date(v);return Number.isNaN(t.getTime())?String(v):t.toLocaleString('vi-VN')};
 async function loadInventory(p,container){
+ const branch=window.whoseWarehouse?.();const current=++inventoryNonce;
+ if(!branch){container.replaceChildren($('div','wpi-empty-state','Chọn kho thao tác ở sidebar để xem tồn kho.'));return}
  container.replaceChildren($('p','wpi-note','Đang xác minh tồn kho tại KiotViet…'));
  try{
   const token=await window.whoseAccessToken?.();if(!token)throw new Error('Phiên đăng nhập đã hết hạn');
-  const r=await fetch('/api/product-insights?productId='+encodeURIComponent(p.id),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+  const r=await fetch('/api/product-insights?'+new URLSearchParams({productId:String(p.id),branchId:branch.id}),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
   const d=await r.json();if(!r.ok)throw new Error(d.error||'Không thể đọc tồn kho');
+  if(current!==inventoryNonce||branch.id!==window.whoseWarehouse?.()?.id||root.hidden)return;
+  if(d.activeBranch&&d.activeBranch.id!==branch.id)throw new Error('Dữ liệu kho trả về không đúng phạm vi thao tác');
   container.replaceChildren();
-  const title=$('div','wpi-overview-heading');title.append($('h3','','Tổng quan tồn kho'),$('p','wpi-note','Nguồn: KiotViet · Snapshot tồn kho theo chi nhánh'));container.append(title);
-  if(!d.found||!Array.isArray(d.inventory)||!d.inventory.length){container.append($('div','wpi-empty-state','Chưa xác minh được tồn kho theo SKU này từ KiotViet. Không hiển thị số 0 khi dữ liệu chưa có.'));return}
+  const title=$('div','wpi-overview-heading');title.append($('h3','','Tổng quan tồn kho'),$('p','wpi-note','Nguồn: KiotViet · '+branch.name+' · Snapshot tại thời điểm đọc'));container.append(title);
+  if(!d.found||!Array.isArray(d.inventory)||!d.inventory.length){container.append($('div','wpi-empty-state','Chưa xác minh được tồn kho của SKU tại '+branch.name+'. Không hiển thị số 0 khi chưa có dữ liệu.'));return}
   const rows=d.inventory;
   const verified=rows.every(x=>typeof x.onHand==='number'&&Number.isFinite(x.onHand));
   const total=verified?rows.reduce((n,x)=>n+x.onHand,0):null;
@@ -29,9 +34,10 @@ async function loadInventory(p,container){
   for(const row of rows){const item=$('div','wpi-stock-row'),top=$('div','wpi-stock-head');top.append($('strong','',row.branchName||('Chi nhánh '+(row.branchId??'—'))),$('span','',row.onHand==null?'Chưa có số tồn':Number(row.onHand).toLocaleString('vi-VN')));item.append(top);
    const track=$('div','wpi-stock-track'),fill=$('div','wpi-stock-fill');fill.style.width=Math.max(0,(Number(row.onHand)||0)/max*100)+'%';track.append(fill);item.append(track);item.append($('small','',row.reserved==null?'Chưa có tồn giữ chỗ':'Đang giữ: '+Number(row.reserved).toLocaleString('vi-VN')));section.append(item)}
   container.append(section,$('p','wpi-note','Biểu đồ này thể hiện phân bổ tồn tại thời điểm đọc, không phải xu hướng theo ngày.'));
- }catch(e){container.replaceChildren($('div','wpi-empty-state',e.message))}
+ }catch(e){if(current===inventoryNonce&&!root.hidden)container.replaceChildren($('div','wpi-empty-state',e.message))}
 }
 function show(p){
+ activeProduct=p;inventoryNonce++;
  body.replaceChildren();name.textContent=p.name||p.sku||'Sản phẩm';
  const meta=p.metadata||{};
  const images=Array.isArray(p.images)&&p.images.length?p.images:meta.images||[];
@@ -86,7 +92,12 @@ function show(p){
  sync.append(grid2,$('p','wpi-note','Dữ liệu chỉ đọc; báo cáo chỉ hiện khi có giao dịch đã xác minh.'));left.append(sync);body.append(left,right);
  root.hidden=false;document.body.classList.add('wpi-open');document.getElementById('wsProductInspectorClose').focus();
 }
-function close(){root.hidden=true;document.body.classList.remove('wpi-open')}
+function close(){inventoryNonce++;activeProduct=null;root.hidden=true;document.body.classList.remove('wpi-open')}
+window.addEventListener('whose:warehouse-change',()=>{
+ if(root.hidden||!activeProduct)return;
+ const active=body.querySelector('.wpi-tab.active');
+ if(active?.textContent?.trim()==='Tồn kho')active.click();
+});
 window.whoseProductDetail=show;
 document.getElementById('wsProductInspectorClose').onclick=close;
 document.getElementById('wsProductInspectorBackdrop').onclick=close;
