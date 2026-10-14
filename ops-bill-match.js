@@ -24,15 +24,19 @@
    status:raw.status||'unknown',warehouse:raw.warehouse||null,verified:raw.verified===true,
    lines};
  }
- function stats(call,sku,links=[]){
+ function stats(call,sku,links=[],invoices=[]){
   const line=call?.lines?.find(x=>x.sku?.toUpperCase()===sku?.toUpperCase());
   if(!line)throw Error('UNKNOWN_BORROW_LINE');
   const issued=['completed','disputed'].includes(call.status)?line.received:
    ['delivered'].includes(call.status)?line.picked:0;
   if(!nonneg(issued))throw Error('INVALID_ISSUED_QTY');
   const returned=line.returned||0;if(!nonneg(returned)||returned>issued)throw Error('INVALID_RETURN_QTY');
-  const confirmed=links.filter(x=>x.callId===call.id&&x.sku===sku&&x.confirmed===true)
-   .reduce((sum,x)=>sum+x.qty,0);
+  const linked=links.filter(x=>x.callId===call.id&&x.sku===sku&&x.confirmed===true);
+  if(Array.isArray(invoices)&&invoices.length&&linked.some(x=>{
+   const doc=invoices.find(d=>String(d.id)===String(x.invoiceId));
+   return !doc||doc.verified!==true||doc.status!=='finalized';
+  }))throw Error('CONFIRMED_INVOICE_SOURCE_CHANGED');
+  const confirmed=linked.reduce((sum,x)=>sum+x.qty,0);
   if(!nonneg(confirmed)||confirmed+returned>issued)throw Error('MATCH_ALLOCATION_EXCEEDS_ISSUED');
   return {sku,issued,confirmed,returned,stillBorrowed:issued-confirmed-returned,
    sold:confirmed,needsReturn:issued-confirmed-returned>0};
@@ -56,7 +60,7 @@
      Date.parse(invoice.at)>=(typeof c.created==='number'?c.created:Date.parse(c.created))&&
      Date.parse(invoice.at)<=(typeof c.created==='number'?c.created:Date.parse(c.created))+7*86400000&&
      (!invoice.warehouse||invoice.warehouse===c.zone)).flatMap(c=>{
-      try{const st=stats(c,item.sku,links);return st.stillBorrowed>0?[{callId:c.id,sku:item.sku,
+      try{const st=stats(c,item.sku,links,invoices);return st.stillBorrowed>0?[{callId:c.id,sku:item.sku,
        available:st.stillBorrowed,invoiceId:invoice.id,invoiceCode:invoice.code,invoiceQty:remaining}]:[]}
       catch(e){if(e.message==='UNKNOWN_BORROW_LINE')return [];throw e}
      });
