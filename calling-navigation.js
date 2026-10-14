@@ -46,7 +46,7 @@
   try{
    if(page==='calling'){
     await window.whoseCallingOpen?.();
-    if(!document.getElementById('wrPage')||document.getElementById('wrPage').hidden)return;
+    if(!document.getElementById('wcPage')||document.getElementById('wcPage').hidden)return;
    }else{
     window.whoseCallingClose?.();
    }
