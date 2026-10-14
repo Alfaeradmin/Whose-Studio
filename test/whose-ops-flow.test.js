@@ -25,7 +25,7 @@ test('high-volume burst 150 orders is stable and isolated by branch',()=>{
 });
 test('seller creates separate call with exact SKU and role check',()=>{
  const {s,seller,picker}=fresh();
- const c=M.createCall(s,seller.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:3}], 'Khách chờ');
+ const c=M.createCall(s,seller.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:3}], 'Khách chờ','try_on');
  assert.equal(c.status,'queued');
  assert.deepEqual(c.lines.map(l=>[l.sku,l.requested]),[['DEMO-TEE-01',3]]);
  assert.throws(()=>M.createCall(s,picker.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:1}]),/SELLER_SHIFT_REQUIRED/);
@@ -67,7 +67,7 @@ test('shortage requires reason, ready requires each line accounted for and nonze
 });
 test('runner and receiver have separate custody gates and required discrepancy notes',()=>{
  const {s,picker,runner,receiver,seller}=fresh();
- const c=M.createCall(s,seller.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:2}], 'Order');
+ const c=M.createCall(s,seller.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:2}], 'Order','purchase');
  M.claimWave(s,picker.id,[c.id]);
  M.scan(s,picker.id,c.id,'DEMO-TEE-01');M.scan(s,picker.id,c.id,'DEMO-TEE-01');
  M.ready(s,picker.id,c.id);
@@ -91,8 +91,10 @@ test('lead assignment is scoped to branch and zone filters',()=>{
 });
 test('ops API strictly validates calls, idempotency and shift setup inputs',()=>{
  const b={type:'submit',branch:ids.branch,zone:'MAIN',key:ids.key,
-  lines:[{sku:'DEMO-TEE-01',qty:2}],note:'Gọi hàng'};
+  lines:[{sku:'DEMO-TEE-01',qty:2}],note:'Gọi hàng',reason:'try_on'};
  assert.equal(validate(b)[0],'whose_ops_submit');
+ assert.equal(validate({...b,reason:'invalid'}),null);
+ assert.equal(validate({...b,reason:undefined}),null);
  assert.equal(validate({...b,branch:'invalid'}),null);
  assert.equal(validate({...b,lines:[{sku:'A',qty:2},{sku:'A',qty:1}]}),null);
  assert.equal(validate({...b,lines:[{sku:'A',qty:-1}]}),null);
@@ -121,4 +123,39 @@ test('migration enforces concurrency, shift scopes and audit, no Kiot mutations'
  assert.match(sql,/REVOKE ALL ON public\.whose_ops_/);
  assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
  assert.doesNotMatch(sql,/public\.kiotapi\.com|update\s+public\.whose_inventory_snapshots/gi);
+});
+
+test('structured borrow request requires purpose and preserves note, no free-form chat',()=>{
+ const {s,seller,picker}=fresh();
+ assert.throws(()=>M.createCall(s,seller.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:1}],'Ghi chú'),/BORROW_REASON_REQUIRED/);
+ const c=M.createCall(s,seller.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:1}],'Khách đang thử','try_on');
+ assert.equal(c.reason,'try_on');assert.equal(c.note,'Khách đang thử');
+ assert.equal(c.createdBy,seller.id);
+ assert.throws(()=>M.createCall(s,picker.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:1}],'','try_on'),/SELLER_SHIFT_REQUIRED/);
+ const ui=SRC('ops-preview.js');
+ assert.match(ui,/borrowReason/);assert.match(ui,/borrowNote/);
+ assert.match(ui,/skuInput/);assert.doesNotMatch(ui,/sendChatMessage|freeTextMessage/);
+});
+test('only admin can perform both store and warehouse actions with same identity',()=>{
+ const {s,lead,picker,runner,receiver}=fresh();
+ const admin=s.employees.find(x=>x.branch==='LVS'&&x.duty==='admin');
+ assert.ok(admin);
+ const c=M.createCall(s,admin.id,'LVS','MAIN',[{sku:'DEMO-TEE-01',qty:1}],'Mượn thử','try_on');
+ assert.throws(()=>M.claimWave(s,receiver.id,[c.id]),/INVALID_WAVE/);
+ M.claimWave(s,admin.id,[c.id]);M.scan(s,admin.id,c.id,'DEMO-TEE-01');
+ M.ready(s,admin.id,c.id);M.take(s,admin.id,c.id);M.deliver(s,admin.id,c.id);
+ M.receive(s,admin.id,c.id,{'DEMO-TEE-01':1});
+ assert.equal(c.status,'completed');
+ assert.throws(()=>M.assign(s,lead.id,picker.id,'admin','ALL'),/SHIFT_MANAGER_REQUIRED/);
+ assert.throws(()=>M.assign(s,lead.id,admin.id,'seller','ALL'),/SHIFT_MANAGER_REQUIRED/);
+ assert.throws(()=>M.createCall(s,admin.id,'NVT','MAIN',[{sku:'DEMO-TEE-01',qty:1}],'','try_on'),/SELLER_SHIFT_REQUIRED/);
+});
+test('sql guards real admin bypass and mandatory borrowing purpose',()=>{
+ const sql=SRC('supabase/migrations/20261014094500_whose_store_warehouse_ops.sql');
+ assert.match(sql,/borrow_reason text NOT NULL/);
+ assert.match(sql,/coalesce\(p_reason,''\) NOT IN/);
+ assert.match(sql,/whose_private.global_admin\(\) OR \(/);
+ const api=SRC('api/ops-flow.js');
+ assert.match(api,/REASONS.has\(body.reason\)/);
+ assert.match(api,/p_reason:body.reason/);
 });

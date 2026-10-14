@@ -7,6 +7,7 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const ZONE=/^[A-Z0-9_-]{1,32}$/;
 const SKU=/^[A-Za-z0-9._-]{1,100}$/;
 const DUTY=new Set(['seller','picker','runner','receiver','lead']);
+const REASONS=new Set(['try_on','purchase','display','size_check','other']);
 const ACTION=new Set(['scan','short','ready','take','deliver','receive','cancel']);
 const validId=x=>typeof x==='string'&&UUID.test(x);
 const fail=(res,code,message)=>res.status(code).json({error:message});
@@ -29,9 +30,9 @@ function validate(body){
  const branch=body.branch;
  if(body.type==='submit'){
   return validId(branch)&&ZONE.test(body.zone||'')&&validId(body.key)&&
-   typeof(body.note??'')==='string'&&(body.note??'').length<=500&&lines(body.lines,'submit')?
+   typeof(body.note??'')==='string'&&(body.note??'').length<=500&&REASONS.has(body.reason)&&lines(body.lines,'submit')?
    ['whose_ops_submit',{p_branch:branch,p_zone:body.zone,p_lines:body.lines,
-    p_key:body.key,p_note:body.note||null}]:null;
+    p_key:body.key,p_note:body.note||null,p_reason:body.reason}]:null;
  }
  if(body.type==='claim'){
   const ids=body.calls;

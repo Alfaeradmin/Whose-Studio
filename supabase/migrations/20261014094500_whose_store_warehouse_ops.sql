@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS public.whose_ops_calls(
  zone text NOT NULL CHECK(zone ~ '^[A-Z0-9_-]{1,32}$'),
  priority smallint NOT NULL DEFAULT 0 CHECK(priority IN (0,1)),
  note text CHECK(length(note)<=500),
+ borrow_reason text NOT NULL CHECK(borrow_reason IN ('try_on','purchase','display','size_check','other')),
  status text NOT NULL DEFAULT 'queued'
   CHECK(status IN ('queued','picking','ready','in_transit','delivered','completed','disputed','cancelled')),
  wave_id uuid,
@@ -72,13 +73,13 @@ CREATE OR REPLACE FUNCTION public.whose_ops_role(p_branch uuid,p_duty text,p_zon
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
 AS $$
  SELECT auth.uid() IS NOT NULL
- AND (SELECT whose_private.global_admin() OR whose_private.branch_role(p_branch,ARRAY['admin','manager','warehouse','store']))
- AND EXISTS (
+ AND (SELECT whose_private.global_admin() OR (
+  whose_private.branch_role(p_branch,ARRAY['admin','manager','warehouse','store']) AND EXISTS (
   SELECT 1 FROM public.whose_ops_shifts s
   WHERE s.user_id=auth.uid() AND s.branch_id=p_branch AND s.duty=p_duty
    AND s.is_active AND s.starts_at<=now() AND s.ends_at>now()
    AND (p_zone IS NULL OR s.zone=p_zone OR (s.zone='ALL' AND p_duty IN ('lead','runner','receiver','seller')))
- );
+ )));
 $$;
 REVOKE ALL ON FUNCTION public.whose_ops_role(uuid,text,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.whose_ops_role(uuid,text,text) TO authenticated;
@@ -116,7 +117,8 @@ REVOKE ALL ON FUNCTION public.whose_ops_shift_set(uuid,uuid,text,text,timestampt
 GRANT EXECUTE ON FUNCTION public.whose_ops_shift_set(uuid,uuid,text,text,timestamptz,timestamptz,boolean) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.whose_ops_submit(
- p_branch uuid,p_zone text,p_lines jsonb,p_key uuid,p_note text DEFAULT NULL
+ p_branch uuid,p_zone text,p_lines jsonb,p_key uuid,p_note text DEFAULT NULL,
+ p_reason text DEFAULT NULL
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
 DECLARE v_call uuid; v_item jsonb; v_sku text; v_qty integer;
@@ -127,6 +129,7 @@ BEGIN
  IF p_key IS NULL OR p_zone !~ '^[A-Z0-9_-]{1,32}$'
   OR p_lines IS NULL OR jsonb_typeof(p_lines)<>'array'
   OR jsonb_array_length(p_lines) NOT BETWEEN 1 AND 30
+  OR coalesce(p_reason,'') NOT IN ('try_on','purchase','display','size_check','other')
   OR length(coalesce(p_note,''))>500
   OR NOT EXISTS(SELECT 1 FROM public.whose_branches WHERE id=p_branch AND is_active AND kind='store')
  THEN RAISE EXCEPTION 'INVALID_CALL' USING ERRCODE='22023'; END IF;
@@ -138,8 +141,8 @@ BEGIN
  OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_lines) x
   GROUP BY upper(x->>'sku') HAVING count(*)>1)
  THEN RAISE EXCEPTION 'INVALID_CALL_LINES' USING ERRCODE='22023'; END IF;
- INSERT INTO public.whose_ops_calls(branch_id,zone,created_by,client_key,note)
- VALUES(p_branch,p_zone,auth.uid(),p_key,p_note)
+ INSERT INTO public.whose_ops_calls(branch_id,zone,created_by,client_key,note,borrow_reason)
+ VALUES(p_branch,p_zone,auth.uid(),p_key,p_note,p_reason)
  ON CONFLICT(created_by,client_key) DO NOTHING RETURNING id INTO v_call;
  IF v_call IS NULL THEN
   SELECT id INTO v_call FROM public.whose_ops_calls
@@ -157,8 +160,8 @@ BEGIN
  VALUES(v_call,auth.uid(),'submitted',jsonb_build_object('lineCount',jsonb_array_length(p_lines)));
  RETURN v_call;
 END; $$;
-REVOKE ALL ON FUNCTION public.whose_ops_submit(uuid,text,jsonb,uuid,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.whose_ops_submit(uuid,text,jsonb,uuid,text) TO authenticated;
+REVOKE ALL ON FUNCTION public.whose_ops_submit(uuid,text,jsonb,uuid,text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.whose_ops_submit(uuid,text,jsonb,uuid,text,text) TO authenticated;
 
 -- Claim 1–8 calls together into a wave, with explicit physical tote per call.
 CREATE OR REPLACE FUNCTION public.whose_ops_claim_wave(p_ids uuid[])
@@ -305,6 +308,7 @@ BEGIN
    'priority',c.priority,'status',c.status,'version',c.version,'wave',c.wave_id,
    'picker',c.picker_id,'runner',c.runner_id,'createdBy',c.created_by,
    'createdAt',c.created_at,'updatedAt',c.updated_at,'note',c.note,
+   'reason',c.borrow_reason,
    'lines',(SELECT coalesce(jsonb_agg(jsonb_build_object('sku',l.sku,
        'requested',l.requested_qty,'picked',l.picked_qty,'received',l.received_qty,
        'shortageReason',l.shortage_reason) ORDER BY l.sku),'[]'::jsonb)

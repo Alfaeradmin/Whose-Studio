@@ -1,47 +1,45 @@
 <!doctype html>
-<html lang="vi">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Whose Studio · Store ↔ Warehouse Preview</title>
-<meta name="description" content="Whose Studio interactive demonstration of shift-aware store-to-warehouse order management.">
-<link rel="stylesheet" href="/ops-preview.css?v=1">
-</head>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whose Studio · Giao tiếp cửa hàng & kho</title>
+<meta name="description" content="Xem trước giao tiếp gọi hàng theo góc nhìn cửa hàng, kho và admin.">
+<link rel="stylesheet" href="/ops-preview.css?v=2"></head>
 <body>
-<div class="demo-banner" role="status"><span class="demo-pill">PREVIEW / DEMO</span> Dữ liệu bên dưới chỉ dùng để thử quy trình; không phải đơn KiotViet hay đơn thật của Whose. Không thay đổi tồn kho.</div>
+<div class="demo-banner"><span class="demo-pill">PREVIEW / DEMO</span> Tin nhắn và mã hàng là dữ liệu thử nghiệm · Không thay đổi tồn kho hay tạo giao dịch KiotViet.</div>
 <div class="shell">
 <header class="top">
- <div class="brand"><div class="brand-mark">W</div><div><strong>WHOSE STUDIO</strong><small>STORE ↔ WAREHOUSE OPERATIONS</small></div></div>
- <nav class="top-links"><a href="/index.html">← Ứng dụng Whose</a><button id="resetDemo" type="button" class="btn subtle">Đặt lại demo</button></nav>
+ <div class="brand"><div class="brand-mark">W</div><div><strong>WHOSE STUDIO</strong><small>STORE × WAREHOUSE · MESSENGER</small></div></div>
+ <div class="top-links"><a href="/index.html">← Whose Studio</a><button id="resetDemo" type="button" class="btn subtle">Đặt lại demo</button></div>
 </header>
-<section class="intro">
- <div><span class="eyebrow">LƯỢT GỌI HÀNG · KHO NỘI BỘ</span><h1>Đông khách vẫn soạn chính xác.</h1><p>Một hàng đợi chung. Mỗi yêu cầu một giỏ riêng. Nhân viên thao tác theo đúng vị trí được chia trong ca.</p></div>
- <div class="intro-tools"><label>Chi nhánh <select id="branch"><option value="LVS">WHOSE STUDIO LVS</option><option value="NVT">WHOSE STUDIO NVT</option></select></label>
- <label>Đang thao tác với tư cách <select id="employee"></select></label></div>
-</section>
-<div class="stats" id="stats" aria-live="polite"></div>
-<div class="workspace">
-<aside class="pane queue">
- <div class="pane-head"><div><h2>Hàng đợi yêu cầu</h2><p id="queueSubtitle">Đơn thực tế không được nạp vào bản demo</p></div><span id="queueCount" class="count">0</span></div>
- <div class="queue-tools"><input type="search" id="search" placeholder="Tìm mã đơn hoặc SKU" aria-label="Tìm yêu cầu">
- <select id="statusFilter" aria-label="Lọc trạng thái"><option value="active">Đang xử lý</option><option value="all">Tất cả</option><option value="queued">Chờ soạn</option><option value="picking">Đang soạn</option><option value="ready">Chờ bàn giao</option><option value="in_transit">Đang vận chuyển</option><option value="delivered">Chờ cửa hàng nhận</option><option value="completed">Hoàn tất</option><option value="disputed">Báo lệch</option></select></div>
- <div id="orderQueue" class="queue-scroll" aria-label="Danh sách yêu cầu"></div>
- <div class="queue-bottom"><button class="btn outline" id="seedMore" type="button">+ 40 yêu cầu mô phỏng</button></div>
-</aside>
-<main class="pane detail">
-<div class="pane-head"><div><h2 id="detailTitle">Bảng thao tác</h2><p id="detailSub">Thử các vai trò để thấy đúng màn dành cho mỗi người</p></div><span id="roleChip" class="role-chip">—</span></div>
-<div class="detail-content" id="detailContent"></div>
-</main>
-<aside class="pane side">
-<div class="pane-head"><div><h2>Phân tầng theo ca</h2><p>Chức vụ trong ca quyết định quyền</p></div></div>
-<div class="roster" id="shiftRoster"></div>
-<div class="side-note"><strong>Nguyên tắc chống lẫn</strong><p>Gom tối đa 8 đơn cùng khu vực vào một lượt. Mỗi đơn vẫn có mã giỏ riêng và bảng SKU riêng. Khi scan, hệ thống chỉ ghi nhận vào đúng đơn đang chọn.</p></div>
-<div class="side-note amber"><strong>Không ghi KiotViet</strong><p>Gọi hàng, soạn và bàn giao là sổ vận hành nội bộ. Chỉ khi có nghiệp vụ được duyệt riêng mới đối soát tồn KiotViet.</p></div>
-</aside>
+<div class="identity-bar">
+ <div><span class="eyebrow">GIAO TIẾP NỘI BỘ</span><h1>Một cuộc trò chuyện. Hai góc nhìn.</h1><p>Không nhắn tự do. Chỉ gửi yêu cầu có mã, lý do mượn và ghi chú; kho phản hồi qua trạng thái công việc.</p></div>
+ <div class="identity-controls">
+  <label>Chi nhánh<select id="branch"><option value="LVS">WHOSE STUDIO LVS</option><option value="NVT">WHOSE STUDIO NVT</option></select></label>
+  <label>Nhân viên đang xem<select id="employee"></select></label>
+  <label id="viewToggleBox" hidden>Góc nhìn admin<select id="viewMode"><option value="store">Cửa hàng</option><option value="warehouse">Kho</option></select></label>
+ </div>
 </div>
-<footer class="foot">Interactive workflow prototype · Session-only demo data · Branch-scoped views · No Kiot write calls</footer>
+<div class="mini-stats" id="stats" aria-live="polite"></div>
+<div class="chat-layout">
+ <aside class="conversations">
+  <div class="chat-side-head"><div><strong id="queueHeading">Hội thoại cửa hàng</strong><small id="queueSubtitle">Danh sách yêu cầu</small></div><span class="count" id="queueCount">0</span></div>
+  <div class="search-line"><input id="search" type="search" placeholder="Tìm mã yêu cầu, SKU…" aria-label="Tìm hội thoại">
+   <select id="statusFilter" aria-label="Lọc hội thoại"><option value="active">Đang xử lý</option><option value="all">Tất cả</option><option value="queued">Chờ soạn</option><option value="picking">Đang soạn</option><option value="ready">Chờ giao</option><option value="in_transit">Đang vận chuyển</option><option value="delivered">Chờ nhận</option><option value="completed">Hoàn tất</option><option value="disputed">Có chênh lệch</option></select></div>
+  <div id="orderQueue" class="queue-scroll" aria-label="Hàng đợi hội thoại"></div>
+  <div class="queue-bottom" id="queueBottom"><button class="btn outline" id="seedMore" type="button">+ 40 yêu cầu demo</button></div>
+ </aside>
+ <section class="messenger" aria-label="Nội dung hội thoại">
+  <div class="messenger-head"><div class="chat-contact"><div class="contact-avatar">W</div><div><strong id="detailTitle">Cửa hàng ↔ Kho</strong><small id="detailSub">Chọn hội thoại bên trái để xem</small></div></div><span id="roleChip" class="role-chip">Cửa hàng</span></div>
+  <div class="thread-scroll" id="detailContent" aria-live="polite"></div>
+  <div class="composer-area" id="composerArea"></div>
+ </section>
+ <aside class="context-side">
+  <div class="chat-side-head"><div><strong>Đang trong ca</strong><small>Quyền theo vị trí được phân</small></div></div>
+  <div id="shiftRoster" class="roster"></div>
+  <div class="side-note"><strong>Chống nhầm đơn</strong><p>Kho có thể gom tối đa 8 yêu cầu cùng khu vực, nhưng sản phẩm được scan vào từng giỏ mang mã riêng.</p></div>
+  <div class="side-note amber"><strong>Giới hạn quyền</strong><p>Cửa hàng không nhận lượt soạn. Kho không thể tạo lời gọi hàng. Chỉ admin được chuyển cả hai góc nhìn.</p></div>
+ </aside>
 </div>
-<script src="/ops-preview-model.js?v=1" defer></script>
-<script src="/ops-preview.js?v=1" defer></script>
-</body>
-</html>
+<footer class="foot">Whose Preview · dữ liệu demo trong phiên trình duyệt · chưa kết nối hàng đợi vận hành thật</footer>
+</div>
+<script src="/ops-preview-model.js?v=2" defer></script><script src="/ops-preview.js?v=2" defer></script>
+</body></html>
