@@ -22,6 +22,8 @@ function showApp(data){
 }
 function showLogin(message=''){
   session=null;sessionStorage.removeItem(KEY);
+  window.dispatchEvent(new Event('whose:logged-out'));
+  window.whoseCallingClose?.();
   appRoot.hidden=true;authScreen.hidden=false;
   error.textContent=message;
   document.getElementById('loginPassword').value='';
