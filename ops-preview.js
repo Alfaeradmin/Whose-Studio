@@ -142,7 +142,7 @@ function invoiceSummary(c){
  const allocations=state.links||[],invoices=state.invoices||[];
  let lines='';
  for(const line of c.lines){
-  let m;try{m=B.stats(c,line.sku,allocations)}
+  let m;try{m=B.stats(c,line.sku,allocations,invoices)}
   catch(e){lines+='<div class="audit-line"><strong>'+esc(line.sku)+'</strong><span>Chưa đủ dữ liệu đối soát</span></div>';continue;}
   const bills=B.linkedBills(c.id,allocations,invoices).filter(x=>x.sku===line.sku);
   const status=m.stillBorrowed>0?'pending':m.confirmed>0?'matched':'returned';
