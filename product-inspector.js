@@ -8,27 +8,44 @@ const field=(label,value)=>{const d=$('div','wpi-field');d.append($('span','wpi-
 const price=v=>typeof v==='number'&&Number.isFinite(v)?v.toLocaleString('vi-VN')+' ₫':null;
 const date=v=>{if(!v)return null;const t=new Date(v);return Number.isNaN(t.getTime())?String(v):t.toLocaleString('vi-VN')};
 async function loadInventory(p,container){
- container.textContent='Đang đọc tồn kho từ KiotViet…';
+ container.replaceChildren($('p','wpi-note','Đang xác minh tồn kho tại KiotViet…'));
  try{
-  let token=await window.whoseAccessToken?.();if(!token)throw new Error('Phiên đăng nhập hết hạn');
+  const token=await window.whoseAccessToken?.();if(!token)throw new Error('Phiên đăng nhập đã hết hạn');
   const r=await fetch('/api/product-insights?productId='+encodeURIComponent(p.id),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
   const d=await r.json();if(!r.ok)throw new Error(d.error||'Không thể đọc tồn kho');
   container.replaceChildren();
-  if(!d.found){container.append($('p','wpi-note','Không xác minh được bản ghi tồn kho theo SKU này.'));return}
-  if(!d.inventory.length){container.append($('p','wpi-note','KiotViet chưa trả về tồn kho chi nhánh cho SKU này.'));return}
-  const max=Math.max(1,...d.inventory.map(x=>Math.max(0,x.onHand||0)));
-  for(const row of d.inventory){const item=$('div','wpi-stock-row');const top=$('div','wpi-stock-head');top.append($('strong','',row.branchName||('Chi nhánh '+(row.branchId??'—'))),$('span','',row.onHand==null?'Chưa có số tồn':row.onHand.toLocaleString('vi-VN')+' sản phẩm'));item.append(top);const track=$('div','wpi-stock-track'),fill=$('div','wpi-stock-fill');fill.style.width=Math.max(0,(Number(row.onHand)||0)/max*100)+'%';track.append(fill);item.append(track);item.append($('small','',row.reserved==null?'Tồn giữ chỗ: chưa có dữ liệu':'Tồn giữ chỗ: '+row.reserved.toLocaleString('vi-VN')));container.append(item)}
-  container.append($('p','wpi-note','Biểu đồ thể hiện snapshot tồn theo chi nhánh tại thời điểm đọc; không phải biến động theo thời gian.'));
- }catch(e){container.replaceChildren($('p','wpi-note',e.message))}
+  const title=$('div','wpi-overview-heading');title.append($('h3','','Tổng quan tồn kho'),$('p','wpi-note','Nguồn: KiotViet · Snapshot tồn kho theo chi nhánh'));container.append(title);
+  if(!d.found||!Array.isArray(d.inventory)||!d.inventory.length){container.append($('div','wpi-empty-state','Chưa xác minh được tồn kho theo SKU này từ KiotViet. Không hiển thị số 0 khi dữ liệu chưa có.'));return}
+  const rows=d.inventory;
+  const verified=rows.every(x=>typeof x.onHand==='number'&&Number.isFinite(x.onHand));
+  const total=verified?rows.reduce((n,x)=>n+x.onHand,0):null;
+  const reserved=rows.every(x=>typeof x.reserved==='number'&&Number.isFinite(x.reserved))?rows.reduce((n,x)=>n+x.reserved,0):null;
+  const kpis=$('div','wpi-kpis');
+  [['Tổng tồn kho',total,'green'],['Tồn khả dụng',total!==null&&reserved!==null?total-reserved:null,'blue'],['Đang giữ',reserved,'amber'],['Số chi nhánh',rows.length,'neutral']].forEach(([label,value,color])=>{
+   const card=$('div','wpi-kpi '+color);card.append($('span','',label),$('strong','',value===null?'—':Number(value).toLocaleString('vi-VN')),$('small','',value===null?'Chưa đủ dữ liệu':label==='Số chi nhánh'?'Chi nhánh có bản ghi':'Đơn vị sản phẩm'));kpis.append(card)
+  });container.append(kpis);
+  const section=$('section','wpi-stock-section');section.append($('h3','','Phân bổ tồn kho theo chi nhánh'));
+  const max=Math.max(1,...rows.map(x=>Math.max(0,x.onHand||0)));
+  for(const row of rows){const item=$('div','wpi-stock-row'),top=$('div','wpi-stock-head');top.append($('strong','',row.branchName||('Chi nhánh '+(row.branchId??'—'))),$('span','',row.onHand==null?'Chưa có số tồn':Number(row.onHand).toLocaleString('vi-VN')));item.append(top);
+   const track=$('div','wpi-stock-track'),fill=$('div','wpi-stock-fill');fill.style.width=Math.max(0,(Number(row.onHand)||0)/max*100)+'%';track.append(fill);item.append(track);item.append($('small','',row.reserved==null?'Chưa có tồn giữ chỗ':'Đang giữ: '+Number(row.reserved).toLocaleString('vi-VN')));section.append(item)}
+  container.append(section,$('p','wpi-note','Biểu đồ này thể hiện phân bổ tồn tại thời điểm đọc, không phải xu hướng theo ngày.'));
+ }catch(e){container.replaceChildren($('div','wpi-empty-state',e.message))}
 }
 function show(p){
  body.replaceChildren();name.textContent=p.name||p.sku||'Sản phẩm';
  const meta=p.metadata||{};
  const images=Array.isArray(p.images)&&p.images.length?p.images:meta.images||[];
- const hero=$('div','wpi-gallery');
- if(images.length){images.filter(x=>typeof x==='string'&&x.startsWith('https://')).slice(0,8).forEach(url=>{const img=$('img');img.src=url;img.alt=p.name||'Ảnh sản phẩm';img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>img.remove();hero.append(img)})}
- else if(p.imageUrl){const img=$('img');img.src=p.imageUrl;img.alt=p.name||'Ảnh sản phẩm';hero.append(img)}
- if(!hero.childNodes.length)hero.append($('div','wpi-empty','KiotViet chưa cung cấp hình ảnh'));
+ const hero=$('div','wpi-gallery');hero.classList.add('wpi-gallery-premium');
+ const urls=[...new Set([...(Array.isArray(images)?images:[]),p.imageUrl,meta.thumbnail].filter(x=>typeof x==='string'&&x.startsWith('https://')))].slice(0,8);
+ if(urls.length){
+  const main=$('div','wpi-photo-hero'),mainImage=$('img','wpi-main-image');mainImage.alt=p.name||'Ảnh sản phẩm';mainImage.referrerPolicy='no-referrer';mainImage.src=urls[0];mainImage.onerror=()=>{main.replaceChildren($('div','wpi-empty','Ảnh KiotViet không tải được'))};
+  main.append(mainImage);hero.append(main);
+  if(urls.length>1){
+   const thumbs=$('div','wpi-thumbnails');
+   urls.forEach((url,i)=>{const btn=$('button','wpi-thumb'+(i===0?' selected':''));btn.type='button';btn.setAttribute('aria-label','Xem ảnh '+(i+1));const im=$('img');im.src=url;im.alt='Ảnh '+(i+1);im.loading='lazy';im.referrerPolicy='no-referrer';btn.append(im);btn.onclick=()=>{mainImage.src=url;[...thumbs.children].forEach(t=>t.classList.remove('selected'));btn.classList.add('selected')};thumbs.append(btn)});
+   hero.append(thumbs);
+  }
+ }else hero.append($('div','wpi-empty','KiotViet chưa cung cấp hình ảnh'));
  const left=$('div','wpi-left'),right=$('div','wpi-right');left.append(hero);
  const primary=$('section','wpi-section');primary.append($('h3','','Thông tin cơ bản'));
  const fields=$('div','wpi-fields');
@@ -39,7 +56,7 @@ function show(p){
  if(attrs.length){const grid=$('div','wpi-fields');attrs.forEach(x=>grid.append(field(x.name,x.value)));section.append(grid)}
  else section.append($('p','wpi-note','Nguồn dữ liệu chưa có thuộc tính biến thể cho sản phẩm này.'));
  left.append(section);
- const tabs=$('section','wpi-section');tabs.append($('h3','','Tồn kho · Bán hàng · Xuất nhập tồn'));
+ const tabs=$('section','wpi-section');tabs.append($('h3','','Thông tin vận hành'));
  const controls=$('div','wpi-tabs');const panel=$('div','wpi-tab-content');
  const views=[['stock','Tồn kho'],['location','Location'],['ledger','Thẻ kho / XNT'],['sales','Bán hàng'],['charts','Biểu đồ']];
  views.forEach(([key,title],i)=>{const b=$('button','wpi-tab',title);b.type='button';b.onclick=()=>{[...controls.children].forEach(x=>x.classList.remove('active'));b.classList.add('active');panel.replaceChildren();if(key==='stock')loadInventory(p,panel);else if(key==='location')panel.append($('p','wpi-note','Whose chưa có dữ liệu location vật lý được đồng bộ từ KiotViet. Không thể suy ra location từ tồn theo chi nhánh.'));else if(key==='ledger')panel.append($('p','wpi-note','Chưa có sổ cái giao dịch theo SKU đầy đủ và số đầu kỳ xác minh. Cần đồng bộ các giao dịch nhập, chuyển, bán, trả và điều chỉnh trước khi tính xuất–nhập–tồn.'));else if(key==='sales')panel.append($('p','wpi-note','Chưa có lịch sử hóa đơn đã đối soát theo SKU và thời gian.'));else panel.append($('p','wpi-note','Biểu đồ biến động sẽ hiển thị khi có dữ liệu thời gian đã đối soát.'));};controls.append(b);if(i===0)queueMicrotask(()=>b.click())});tabs.append(controls,panel);right.append(tabs);
