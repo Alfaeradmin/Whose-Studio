@@ -10,7 +10,6 @@ function validHmac(body,signature,secret){
  const values=[hash.toString('hex'),hash.toString('base64'),'sha256='+hash.toString('hex')];
  return values.some(v=>{const a=Buffer.from(v),b=Buffer.from(String(signature||''));return a.length===b.length&&crypto.timingSafeEqual(a,b)});
 }
-module.exports.config={api:{bodyParser:false}};
 module.exports=async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST')return res.status(405).json({error:'POST only'});
@@ -43,3 +42,4 @@ module.exports=async function handler(req,res){
  }
  return res.status(200).json({accepted:true,changed:saved});
 };
+module.exports.config={api:{bodyParser:false}};
