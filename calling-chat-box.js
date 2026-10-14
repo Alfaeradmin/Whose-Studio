@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
- let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new';
+ let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map();
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -212,7 +212,66 @@
   finally{busy=false;if(detail)paintActions(detail.thread);el('wcSendNote').disabled=!detail}
  }
  function closeNew(){el('wcCreateOverlay').hidden=true;hideSuggestions()}
- function hideSuggestions(){const h=el('wcSuggestions');h.hidden=true;h.replaceChildren()}
+ function hideSuggestions(){
+  clearTimeout(searchTimer);searchGeneration++;if(searchAbort)searchAbort.abort();searchAbort=null;
+  suggestions=[];suggestionIndex=0;
+  const host=el('wcSuggestions');if(host){host.hidden=true;host.replaceChildren()}
+  const field=el('wcProductSearch');if(field){field.setAttribute('aria-expanded','false');field.removeAttribute('aria-activedescendant')}
+ }
+ function searchFeedback(message){
+  const label=el('wcSearchFeedback');if(label)label.textContent=message;
+ }
+ function addProduct(p){
+  if(!p||!p.sku)return;
+  const same=cart.find(item=>item.sku===p.sku);
+  if(same){
+   if(same.qty<1000000)same.qty+=1;
+   else{searchFeedback('Đã đạt số lượng tối đa cho SKU này');return}
+  }else if(cart.length<40)cart.push({sku:p.sku,name:p.name||p.sku,qty:1,imageUrl:p.imageUrl||null});
+  else{searchFeedback('Một yêu cầu chứa tối đa 40 SKU');return}
+  paintCart();
+  const field=el('wcProductSearch');field.value='';hideSuggestions();
+  searchFeedback('Đã thêm '+p.sku+' · tiếp tục tìm sản phẩm khác');
+  field.focus();
+ }
+ function paintSuggestions(products){
+  suggestions=(products||[]).filter(p=>p&&p.sku);
+  suggestionIndex=0;
+  const host=el('wcSuggestions'),field=el('wcProductSearch');
+  host.replaceChildren();
+  if(!suggestions.length){
+   host.hidden=true;field.setAttribute('aria-expanded','false');
+   searchFeedback('Không tìm thấy sản phẩm phù hợp trong danh mục Whose');
+   return;
+  }
+  suggestions.forEach((p,i)=>{
+   const button=node('button','wc-suggestion');button.type='button';button.setAttribute('role','option');
+   button.id='wcSuggestion'+i;button.setAttribute('aria-selected',String(i===0));
+   const thumb=node('span','wc-suggestion-thumb');
+   if(p.imageUrl&&p.imageUrl.startsWith('https://')){
+    const image=node('img');image.src=p.imageUrl;image.alt='';image.loading='lazy';
+    image.onerror=()=>thumb.replaceChildren(node('span','','▣'));thumb.append(image);
+   }else thumb.append(node('span','','▣'));
+   const info=node('span','wc-suggestion-copy');
+   const sku=node('strong','',p.sku),name=node('small','',p.name||p.sku);
+   info.append(sku,name);
+   const action=node('span','wc-suggestion-add',cart.some(x=>x.sku===p.sku)?'+1':'+ Thêm');
+   button.append(thumb,info,action);
+   button.onclick=()=>addProduct(p);
+   button.onmouseenter=()=>highlightSuggestion(i);
+   host.append(button);
+  });
+  host.hidden=false;field.setAttribute('aria-expanded','true');
+  highlightSuggestion(0);
+  searchFeedback(suggestions.length+' sản phẩm phù hợp · ↑↓ để chọn, Enter để thêm');
+ }
+ function highlightSuggestion(i){
+  if(!suggestions.length)return;
+  suggestionIndex=(i+suggestions.length)%suggestions.length;
+  const host=el('wcSuggestions');
+  [...host.children].forEach((x,j)=>{const active=j===suggestionIndex;x.classList.toggle('is-highlighted',active);x.setAttribute('aria-selected',String(active))});
+  el('wcProductSearch').setAttribute('aria-activedescendant','wcSuggestion'+suggestionIndex);
+ }
  function paintCart(){
   const holder=el('wcCart');holder.replaceChildren();el('wcCartCount').textContent=cart.length+' SKU';
   if(!cart.length){holder.append(node('div','wc-cart-empty','Tìm sản phẩm ở trên để thêm nhiều SKU vào cùng một yêu cầu.'));return}
@@ -233,29 +292,38 @@
   el('wcCreateTitle').textContent=next==='add'?'Bổ sung SKU vào hội thoại':'Gọi hàng mới';
   el('wcSubmitCreate').textContent=next==='add'?'Bổ sung vào chat':'Gửi yêu cầu cho kho';
   const priority=el('wcPriority').closest('label');if(priority)priority.hidden=next==='add';
-  paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;el('wcProductSearch').focus();
+  paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;searchFeedback('Nhập tên, SKU hoặc quét barcode; dùng Enter để thêm nhanh');el('wcProductSearch').focus();
  }
- async function suggest(query){
+ async function suggest(raw){
+  const query=String(raw||'').normalize('NFC').trim().slice(0,90);
+  const ticket=++searchGeneration;
   if(searchAbort)searchAbort.abort();
-  if(query.length<2){hideSuggestions();return}
+  if(query.length<2){suggestions=[];el('wcSuggestions').hidden=true;searchFeedback(query?'Nhập thêm để tìm sản phẩm nhanh':'Nhập tên, SKU hoặc quét barcode');return []}
+  const cacheKey=query.toLocaleLowerCase('vi-VN');
+  const cached=searchCache.get(cacheKey);
+  if(cached){paintSuggestions(cached);return cached}
   const controller=new AbortController();searchAbort=controller;
+  searchFeedback('Đang tìm sản phẩm…');
   try{
-   const token=await window.whoseAccessToken?.();if(!token)return;
-   const r=await fetch('/api/kiot-products?'+new URLSearchParams({view:'catalog',page:'0',q:query}),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal});
-   if(!r.ok)throw Error('Không đọc được danh mục');const data=await r.json();
-   if(controller.signal.aborted)return;
-   const host=el('wcSuggestions');host.replaceChildren();
-   for(const p of (data.rows||[]).slice(0,9)){
-    if(!p.sku)continue;const btn=node('button','wc-suggestion');btn.type='button';btn.setAttribute('role','option');
-    const img=node('img');if(p.imageUrl&&p.imageUrl.startsWith('https://')){img.src=p.imageUrl;img.alt='';img.loading='lazy'}else img.hidden=true;
-    const info=node('span');info.append(node('strong','',p.name),node('small','',p.sku));
-    btn.append(img,info);btn.onclick=()=>{
-     const same=cart.find(x=>x.sku===p.sku);if(same)same.qty+=1;else cart.push({sku:p.sku,name:p.name,qty:1});
-     paintCart();el('wcProductSearch').value='';hideSuggestions();el('wcProductSearch').focus();
-    };host.append(btn);
-   }
-   host.hidden=!host.children.length;
-  }catch(e){if(e.name!=='AbortError')el('wcFormError').textContent='Không đọc được danh mục sản phẩm'}
+   const token=await window.whoseAccessToken?.();if(!token)throw Error('Phiên đăng nhập đã hết hạn');
+   if(ticket!==searchGeneration||controller.signal.aborted)return [];
+   const response=await fetch('/api/product-quick-search?'+new URLSearchParams({q:query}),{
+    headers:{Authorization:'Bearer '+token},cache:'no-store',signal:controller.signal
+   });
+   if(!response.ok)throw Error('Không thể tra cứu danh mục Whose');
+   const data=await response.json();
+   if(ticket!==searchGeneration||controller.signal.aborted||el('wcCreateOverlay').hidden)return [];
+   const list=Array.isArray(data.rows)?data.rows:[];
+   searchCache.set(cacheKey,list);
+   if(searchCache.size>65)searchCache.delete(searchCache.keys().next().value);
+   paintSuggestions(list);
+   return list;
+  }catch(e){
+   if(e.name==='AbortError'||ticket!==searchGeneration)return [];
+   searchFeedback('Tìm kiếm tạm thời gián đoạn. Hãy thử lại.');
+   el('wcSuggestions').hidden=true;
+   return [];
+  }
  }
  async function create(e){
   e.preventDefault();if(busy)return;
@@ -299,7 +367,30 @@
     filter=btn.dataset.filter;document.querySelectorAll('.wc-filter-bar button').forEach(x=>x.classList.toggle('active',x===btn));paintInbox(true);
    });
    el('wcRoleStore').onclick=()=>setMode('store');el('wcRoleWarehouse').onclick=()=>setMode('warehouse');
-   el('wcProductSearch').oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>void suggest(el('wcProductSearch').value.trim()),250)};
+   el('wcProductSearch').oninput=()=>{
+    clearTimeout(searchTimer);
+    const text=el('wcProductSearch').value.trim();
+    if(searchAbort)searchAbort.abort();
+    if(text.length<2){hideSuggestions();searchFeedback('Nhập ít nhất 2 ký tự');return}
+    searchTimer=setTimeout(()=>void suggest(text),140);
+   };
+   el('wcProductSearch').onkeydown=async e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+     e.preventDefault();if(suggestions.length&&!el('wcSuggestions').hidden)highlightSuggestion(suggestionIndex+(e.key==='ArrowDown'?1:-1));return;
+    }
+    if(e.key==='Escape'){e.preventDefault();hideSuggestions();return}
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    const text=el('wcProductSearch').value.trim();
+    if(!text)return;
+    // Scanner may press Enter before the debounce timer has elapsed.
+    clearTimeout(searchTimer);
+    let list=suggestions;
+    if(!list.length||el('wcSuggestions').hidden)list=await suggest(text);
+    if(!list.length)return;
+    const exact=list.find(p=>p.sku.toLowerCase()===text.toLowerCase()||p.barcode?.toLowerCase()===text.toLowerCase());
+    addProduct(exact||list[suggestionIndex]||list[0]);
+   };
    document.addEventListener('pointerdown',e=>{if(!e.target.closest('.wc-sku-field'))hideSuggestions()});
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wcCreateOverlay').hidden)closeNew()});
    window.addEventListener('whose:warehouse-change',warehouseChanged);
