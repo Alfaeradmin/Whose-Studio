@@ -22,21 +22,24 @@ function sizeOf(p){
  const n=String(p.name||'');const m=n.match(/(?:^|[\s(/-])(XXXL|XXL|XL|XS|S|M|L|2XL|3XL)(?=$|[\s)/-])/i);return m?m[1].toUpperCase():null;
 }
 function card(p){
- const box=node('article','product-card'),pic=node('div','product-picture'),src=p.imageUrl||p.metadata?.thumbnail;
- if(typeof src==='string'&&/^https:\/\//i.test(src)){
-  const img=node('img');img.src=src;img.alt=p.name||'Sản phẩm';img.loading='lazy';img.referrerPolicy='no-referrer';
-  img.onerror=()=>{img.remove();pic.append(node('span','product-placeholder','Chưa có ảnh KiotViet'))};pic.append(img);
- }else pic.append(node('span','product-placeholder','Chưa có ảnh KiotViet'));
- const cat=p.category||p.metadata?.category||'Chưa phân loại';
- pic.append(node('span','product-kind',cat));box.append(pic);
- const info=node('div','product-information');
- info.append(node('div','product-sku',p.sku||'—'),node('div','product-name',p.name||'—'));
- const tags=node('div','product-tags'),size=sizeOf(p);
- if(size){const key=/^(XS|S|M|L|XL)$/.test(size)?size.toLowerCase():/^(XXL|2XL|XXXL|3XL)$/.test(size)?'xl':'';tags.append(node('span','product-chip '+(key?'size-'+key:''),'Size '+size))}
- if(p.brand||p.metadata?.brand)tags.append(node('span','product-chip category',p.brand||p.metadata.brand));
- if(tags.childNodes.length)info.append(tags);
- const foot=node('div','product-foot');foot.append(node('span','product-price',money(p.basePrice??p.metadata?.basePrice)),node('span','product-state',p.active===false||p.metadata?.sourceActive===false?'Ngừng bán':''));
- info.append(foot);box.append(info);return box;
+ const box=node('article','product-card'),label=node('div','ws-product-label');
+ const pic=node('div','product-picture'),src=p.imageUrl||p.metadata?.thumbnail;
+ if(typeof src==='string'&&/^https:\\/\\//i.test(src)){
+   const img=node('img');img.src=src;img.alt=p.name||'Ảnh sản phẩm';img.loading='lazy';img.referrerPolicy='no-referrer';
+   img.onerror=()=>{img.remove();pic.append(node('span','product-placeholder','—'))};pic.append(img);
+ }else pic.append(node('span','product-placeholder','—'));
+ const name=node('div');name.append(node('div','ws-product-name',p.name||'—'),node('div','ws-product-sub',p.brand||p.metadata?.brand||'KiotViet'));
+ label.append(pic,name);box.append(label);
+ box.append(node('span','product-sku',p.sku||'—'));
+ const category=p.category||p.metadata?.category||'Chưa phân loại';
+ const wrap=node('div');wrap.append(node('span','ws-table-pill',category));box.append(wrap);
+ box.append(node('span','product-price',money(p.basePrice??p.metadata?.basePrice)));
+ const tags=node('div','product-tags');const size=sizeOf(p);
+ if(size)tags.append(node('span','product-chip','Size '+size));else tags.append(node('span','product-chip','—'));
+ box.append(tags);
+ const stopped=p.active===false||p.metadata?.sourceActive===false;
+ box.append(node('span','product-state',stopped?'● Ngừng bán':'● Đang bán'));
+ return box;
 }
 function render(){
  const grid=$('productsGrid');grid.replaceChildren();
@@ -69,7 +72,8 @@ async function load(){
   if(data.stats)ui.stats=data.stats;
   if(ui.source==='kiot')ui.total=data.total;
   status('Đã tải '+number(ui.rows.length)+' sản phẩm · '+(ui.source==='catalog'?'Danh mục Whose':'KiotViet trực tiếp'));
- }catch(e){ui.rows=[];ui.hasMore=false;status(e.message,true)}
+  const syncStatus=$('wsSyncStatus');if(syncStatus)syncStatus.textContent='Đã đọc dữ liệu '+(ui.source==='catalog'?'Whose':'KiotViet')+' thành công.';
+ }catch(e){ui.rows=[];ui.hasMore=false;status(e.message,true);const syncStatus=$('wsSyncStatus');if(syncStatus)syncStatus.textContent='Không thể xác minh: '+e.message}
  finally{ui.loading=false;render()}
 }
 function categories(){
