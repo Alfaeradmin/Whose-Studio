@@ -117,7 +117,7 @@
  }
  function assign(state,leadId,targetId,duty,zone){
   const lead=who(state,leadId),target=who(state,targetId);
-  if(!['lead','admin'].includes(lead.duty)||lead.branch!==target.branch||!DUTIES.includes(duty)||
+  if(!['lead','admin'].includes(lead.duty)||lead.branch!==target.branch||!DUTIES.includes(duty)||duty==='admin'||target.duty==='admin'||
    ![...ZONES,'ALL'].includes(zone)||duty==='picker'&&zone==='ALL')fail('SHIFT_MANAGER_REQUIRED');
   target.duty=duty;target.zone=zone;return target;
  }
