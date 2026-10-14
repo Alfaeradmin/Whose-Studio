@@ -165,3 +165,20 @@
 @media(prefers-reduced-motion:reduce){.wc-page button,.wc-overlay button{transition:none!important}}
 
 .wc-create-main .wc-form-label[hidden]{display:none!important}
+
+/* Compact, fast catalog suggestions for high-volume store calling */
+.wc-search-shortcuts{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px;min-height:18px}
+#wcSearchFeedback{color:#748d7b;font-size:10.5px;line-height:1.4}
+.wc-keyboard-hint{color:#98aa9d;font-size:10px;white-space:nowrap}
+.wc-keyboard-hint kbd{display:inline-flex;min-width:17px;height:19px;justify-content:center;align-items:center;font-family:inherit;font-size:10px;color:#536957;background:#f4f7f4;border:1px solid #e0e9e2;border-radius:4px;margin-right:3px}
+.wc-suggestions{top:calc(100% + 8px);max-height:min(330px,42dvh);padding:6px;overscroll-behavior:contain;scrollbar-width:thin}
+.wc-suggestion{min-height:65px;gap:11px;border:1px solid transparent;transition:background-color .12s,border-color .12s}
+.wc-suggestion.is-highlighted,.wc-suggestion:hover,.wc-suggestion:focus-visible{background:#eef8f0;border-color:#d2e7d7;outline:none}
+.wc-suggestion-thumb{flex:0 0 47px;width:47px;height:49px;display:grid;place-items:center;border-radius:8px;background:#f0f4f1;color:#91a99a;overflow:hidden}
+.wc-suggestion-thumb img{display:block;width:100%!important;height:100%!important;max-width:100%!important;min-width:0!important;object-fit:contain}
+.wc-suggestion-copy{min-width:0;flex:1}
+.wc-suggestion-copy strong{display:block;color:#24513a;font-size:12px;line-height:1.4}
+.wc-suggestion-copy small{display:block;color:#819787;font-size:11px;line-height:1.4;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.wc-suggestion-add{margin-left:auto;flex:0 0 auto;border:1px solid #d8e9db;background:#fff;border-radius:6px;color:#287b51;font-size:10px;font-weight:750;padding:6px 8px}
+.wc-cart-row input:focus-visible{outline:2px solid #8fcb9e;outline-offset:2px}
+@media(max-width:760px){.wc-search-shortcuts{display:block}.wc-keyboard-hint{display:none}.wc-suggestions{max-height:40dvh}}
