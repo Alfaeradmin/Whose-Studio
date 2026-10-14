@@ -88,7 +88,10 @@
   else emit(); // sync dependent screens after login refresh
   ready=true;
  }
- toggle.addEventListener('click',()=>{if(options.hidden)open();else close()});
+ toggle.addEventListener('click',()=>{
+  if(root.classList.contains('ws-is-collapsed')&&!isMobile())document.getElementById('wsCollapseToggle')?.click();
+  if(options.hidden)open();else close();
+ });
  top.addEventListener('click',()=>{
   if(!allowed.length)return;
   if(isMobile()){document.getElementById('wsSidebarMobileOpen')?.click()}
