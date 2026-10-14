@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
- let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null;
+ let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new';
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -9,7 +9,7 @@
  const num=x=>Number(x||0).toLocaleString('vi-VN');
  const fmt=x=>{const d=new Date(x);return Number.isNaN(d.getTime())?'—':d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})};
  const labels={submitted:'Chờ kho nhận',accepted:'Kho đã nhận',picking:'Đang soạn',ready:'Chờ bàn giao',handed_over:'Đã giao · chờ nhận',received:'Cửa hàng đang giữ',return_requested:'Chờ kho nhận trả',completed:'Hoàn tất',cancelled:'Đã hủy'};
- const events={created:'Cửa hàng gọi hàng',claim:'Kho tiếp nhận',pick:'Kho vừa soạn',ready:'Kho báo soạn xong',handoff:'Kho đã bàn giao',receive:'Cửa hàng xác nhận nhận',request_return:'Cửa hàng gửi trả',receive_return:'Kho đã nhận hàng trả',cancel:'Hủy yêu cầu',note:'Ghi chú'};
+ const events={created:'Cửa hàng gọi hàng',added_sku:'Cửa hàng bổ sung sản phẩm',claim:'Kho tiếp nhận',pick:'Kho vừa soạn',ready:'Kho báo soạn xong',handoff:'Kho đã bàn giao',receive:'Cửa hàng xác nhận nhận',request_return:'Cửa hàng gửi trả',receive_return:'Kho đã nhận hàng trả',cancel:'Hủy yêu cầu',note:'Ghi chú'};
  const roles=()=>{
   const s=session(),b=branch();if(!s||!b)return [];
   if(s.is_global_admin)return ['store','warehouse'];
@@ -133,11 +133,13 @@
    if(e.body)bubble.append(node('p','',e.body));
    if(e.event_type==='created'){
     const cards=node('div','wc-bubble-lines');
+    cards.append(node('small','','DANH SÁCH SKU HIỆN TẠI'));
     for(const line of d.lines||[]){
      const item=node('div','wc-bubble-line'),label=node('div');label.append(node('strong','',line.sku),node('small','',line.product_name));item.append(label,node('span','','×'+num(line.qty_requested)));cards.append(item);
     }
     bubble.append(cards);
    }
+   if(e.event_type==='added_sku'&&e.qty)bubble.append(node('p','','Tổng bổ sung: '+num(e.qty)+' sản phẩm'));
    if(e.line_id){
     const line=(d.lines||[]).find(x=>x.id===e.line_id);
     if(line)bubble.append(node('p','','SKU '+line.sku+(e.qty?' · SL '+num(e.qty):'')));
@@ -156,6 +158,7 @@
    if(['accepted','picking'].includes(r.status))add('Soạn xong / chờ giao','ready');
    if(r.status==='ready')add('Xác nhận bàn giao','handoff');
   }else{
+   if(['submitted','accepted','picking'].includes(r.status)){const more=node('button','wc-action-button','+ Thêm SKU vào chat');more.type='button';more.onclick=()=>openNew('add');actions.append(more)}
    if(r.status==='handed_over')add('Xác nhận đã nhận hàng','receive');
    if(r.status==='submitted'&&r.requester_id===session()?.user?.id)add('Hủy yêu cầu','cancel','danger');
   }
@@ -222,9 +225,15 @@
    row.append(label,quantity,remove);holder.append(row);
   }
  }
- function openNew(){
+ function openNew(next='new'){
   if(!roles().includes('store')||!branch())return;
-  cart=[];idempotency=crypto.randomUUID();el('wcCreateForm').reset();el('wcFormError').textContent='';el('wcCreateBranch').textContent=branch().name+' · Cửa hàng → Kho';paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;el('wcProductSearch').focus();
+  if(next==='add'&&(!detail||!['submitted','accepted','picking'].includes(detail.thread.status)))return;
+  createMode=next;cart=[];idempotency=crypto.randomUUID();el('wcCreateForm').reset();el('wcFormError').textContent='';
+  el('wcCreateBranch').textContent=branch().name+' · Cửa hàng → Kho';
+  el('wcCreateTitle').textContent=next==='add'?'Bổ sung SKU vào hội thoại':'Gọi hàng mới';
+  el('wcSubmitCreate').textContent=next==='add'?'Bổ sung vào chat':'Gửi yêu cầu cho kho';
+  const priority=el('wcPriority').closest('label');if(priority)priority.hidden=next==='add';
+  paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;el('wcProductSearch').focus();
  }
  async function suggest(query){
   if(searchAbort)searchAbort.abort();
@@ -256,8 +265,14 @@
   if(!lines.length||lines.some(x=>!Number.isInteger(x.qty)||x.qty<1||x.qty>1000000)||purpose.length<3){el('wcFormError').textContent='Thêm ít nhất một SKU, kiểm tra số lượng và nhập mục đích gọi hàng.';return}
   busy=true;el('wcSubmitCreate').disabled=true;el('wcFormError').textContent='';
   try{
-   const out=await http({}, {action:'create',branch_id:b.id,lines,purpose,priority,idempotency_key:idempotency});
-   closeNew();cart=[];currentId=out.id;lastListSignature='';await refresh();await select(out.id,{force:true});
+   if(createMode==='add'){
+    if(!currentId)throw Error('Chưa chọn hội thoại');
+    const id=currentId;await http({}, {action:'add',chat_id:id,lines,note:purpose,idempotency_key:idempotency});
+    closeNew();cart=[];await refresh();await select(id,{force:true});
+   }else{
+    const out=await http({}, {action:'create',branch_id:b.id,lines,purpose,priority,idempotency_key:idempotency});
+    closeNew();cart=[];currentId=out.id;lastListSignature='';await refresh();await select(out.id,{force:true});
+   }
   }catch(error){el('wcFormError').textContent=error.message}
   finally{busy=false;el('wcSubmitCreate').disabled=false}
  }
@@ -274,7 +289,7 @@
    const res=await fetch('/calling-chat-box.html',{cache:'no-store'});
    if(!res.ok)throw Error('Không tải được giao diện chat');
    el('wrMount').innerHTML=await res.text();
-   el('wcNew').onclick=openNew;el('wcRefresh').onclick=()=>void refresh();
+   el('wcNew').onclick=()=>openNew('new');el('wcRefresh').onclick=()=>void refresh();
    el('wcCreateForm').addEventListener('submit',e=>void create(e));
    for(const id of ['wcCloseCreate','wcModalBackdrop','wcCancelCreate'])el(id).onclick=closeNew;
    el('wcNoteForm').addEventListener('submit',e=>{e.preventDefault();void act('note')});
