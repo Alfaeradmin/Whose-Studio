@@ -309,7 +309,13 @@ BEGIN
        'requested',l.requested_qty,'picked',l.picked_qty,'received',l.received_qty,
        'shortageReason',l.shortage_reason) ORDER BY l.sku),'[]'::jsonb)
      FROM public.whose_ops_lines l WHERE l.call_id=c.id)) obj
-  FROM public.whose_ops_calls c WHERE c.branch_id=p_branch
+  FROM public.whose_ops_calls c WHERE c.branch_id=p_branch AND
+   (whose_private.global_admin() OR EXISTS (
+    SELECT 1 FROM public.whose_ops_shifts s
+    WHERE s.branch_id=c.branch_id AND s.user_id=auth.uid() AND s.is_active
+     AND s.starts_at<=now() AND s.ends_at>now()
+     AND (s.zone=c.zone OR s.zone='ALL')
+   ))
   ORDER BY CASE WHEN c.status IN ('queued','picking','ready','in_transit','delivered') THEN 0 ELSE 1 END,
    c.priority DESC,c.created_at ASC,c.id
   LIMIT p_limit OFFSET p_offset
