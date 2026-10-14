@@ -38,13 +38,32 @@ function show(p){
  const hero=$('div','wpi-gallery');hero.classList.add('wpi-gallery-premium');
  const urls=[...new Set([...(Array.isArray(images)?images:[]),p.imageUrl,meta.thumbnail].filter(x=>typeof x==='string'&&x.startsWith('https://')))].slice(0,8);
  if(urls.length){
-  const main=$('div','wpi-photo-hero'),mainImage=$('img','wpi-main-image');mainImage.alt=p.name||'Ảnh sản phẩm';mainImage.referrerPolicy='no-referrer';mainImage.src=urls[0];mainImage.onerror=()=>{main.replaceChildren($('div','wpi-empty','Ảnh KiotViet không tải được'))};
-  main.append(mainImage);hero.append(main);
+  const main=$('div','wpi-photo-hero'),mainImage=$('img','wpi-main-image');
+  mainImage.alt=p.name||'Ảnh sản phẩm';mainImage.decoding='async';mainImage.loading='eager';
+  const imageState=$('div','wpi-photo-state','Đang tải hình sản phẩm…');
+  main.append(mainImage,imageState);hero.append(main);
+  let activeIndex=0,requested=0;
+  function displayImage(index){
+   activeIndex=index;requested=0;imageState.textContent='Đang tải hình sản phẩm…';imageState.hidden=false;
+   mainImage.hidden=false;
+   // Prefer regular browser image requests; some retail CDNs block stripped referrers.
+   mainImage.removeAttribute('referrerpolicy');
+   mainImage.onload=()=>{imageState.hidden=true;mainImage.hidden=false};
+   mainImage.onerror=()=>{
+    if(requested===0){requested=1;mainImage.referrerPolicy='no-referrer';mainImage.src=urls[activeIndex];return}
+    const next=(activeIndex+1)%urls.length;
+    if(next!==index){displayImage(next);return}
+    mainImage.hidden=true;imageState.textContent='Hình sản phẩm tạm thời không tải được từ KiotViet.';
+   };
+   mainImage.src=urls[index];
+  }
   if(urls.length>1){
    const thumbs=$('div','wpi-thumbnails');
-   urls.forEach((url,i)=>{const btn=$('button','wpi-thumb'+(i===0?' selected':''));btn.type='button';btn.setAttribute('aria-label','Xem ảnh '+(i+1));const im=$('img');im.src=url;im.alt='Ảnh '+(i+1);im.loading='lazy';im.referrerPolicy='no-referrer';btn.append(im);btn.onclick=()=>{mainImage.src=url;[...thumbs.children].forEach(t=>t.classList.remove('selected'));btn.classList.add('selected')};thumbs.append(btn)});
+   urls.forEach((url,i)=>{const btn=$('button','wpi-thumb'+(i===0?' selected':''));btn.type='button';btn.setAttribute('aria-label','Xem ảnh '+(i+1));const im=$('img');im.src=url;im.alt='Ảnh '+(i+1);im.loading='lazy';btn.append(im);
+    btn.onclick=()=>{[...thumbs.children].forEach(t=>t.classList.remove('selected'));btn.classList.add('selected');displayImage(i)};thumbs.append(btn)});
    hero.append(thumbs);
   }
+  displayImage(0);
  }else hero.append($('div','wpi-empty','KiotViet chưa cung cấp hình ảnh'));
  const left=$('div','wpi-left'),right=$('div','wpi-right');left.append(hero);
  const primary=$('section','wpi-section');primary.append($('h3','','Thông tin cơ bản'));
