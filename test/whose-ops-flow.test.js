@@ -32,7 +32,7 @@ test('seller creates separate call with exact SKU and role check',()=>{
 });
 test('picker can claim a wave only same zone max eight and cannot double claim',()=>{
  const {s,picker,otherPicker}=fresh();
- const jobs=s.calls.filter(c=>c.branch==='LVS'&&c.zone==='MAIN');
+ const jobs=s.calls.filter(c=>c.branch==='LVS'&&c.zone==='MAIN'&&c.status==='queued');
  const ids=jobs.slice(0,8).map(x=>x.id);
  const wave=M.claimWave(s,picker.id,ids);
  assert.ok(wave.startsWith('DEMO-WAVE'));
@@ -43,7 +43,7 @@ test('picker can claim a wave only same zone max eight and cannot double claim',
 });
 test('wave picking never mixes baskets, rejects wrong SKU and overpick',()=>{
  const {s,picker}=fresh();
- const jobs=s.calls.filter(c=>c.branch==='LVS'&&c.zone==='MAIN');
+ const jobs=s.calls.filter(c=>c.branch==='LVS'&&c.zone==='MAIN'&&c.status==='queued');
  const [a,b]=jobs.slice(0,2);
  M.claimWave(s,picker.id,[a.id,b.id]);
  const sku=a.lines[0].sku,original=b.lines[0].picked;
@@ -56,7 +56,7 @@ test('wave picking never mixes baskets, rejects wrong SKU and overpick',()=>{
 });
 test('shortage requires reason, ready requires each line accounted for and nonzero pick',()=>{
  const {s,picker}=fresh();
- const c=s.calls.find(c=>c.branch==='LVS'&&c.zone==='MAIN');
+ const c=s.calls.find(c=>c.branch==='LVS'&&c.zone==='MAIN'&&c.status==='queued');
  M.claimWave(s,picker.id,[c.id]);
  assert.throws(()=>M.ready(s,picker.id,c.id),/MUST_PICK_OR_SHORT/);
  assert.throws(()=>M.short(s,picker.id,c.id,c.lines[0].sku,'x'),/SHORTAGE_REASON_REQUIRED/);
@@ -110,7 +110,9 @@ test('preview is clearly sample data and never pretends to mutate Kiot',()=>{
  assert.match(html,/Không thay đổi tồn kho/);
  assert.match(html,/ops-preview\.js/);
  assert.match(html,/ops-preview-model\.js/);
- assert.doesNotMatch(ui,/authorizedFetch|fetch\(|public\.kiotapi\.com/);
+ assert.doesNotMatch(ui,/public\.kiotapi\.com/);
+ assert.match(ui,/\/api\/ops-product-search/);
+ assert.match(ui,/Authorization:'Bearer '/);
  assert.match(api,/verifyOrigin/);
  assert.match(api,/validateStaffBearer/);
  assert.match(api,/kiotStockMutated:false/);
