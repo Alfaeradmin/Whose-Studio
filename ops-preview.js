@@ -9,7 +9,7 @@ try{const raw=sessionStorage.getItem('whose:ops-chat-preview:v2');state=raw?JSON
  if(state?.version!==2||!Array.isArray(state.calls)||!Array.isArray(state.employees))state=M.initial();
 }catch{state=M.initial()}
 let branch='LVS',employeeId='',adminPerspective='store',selected=null,selectedWave=new Set();
-let draft=[],draftZone='MAIN',draftReason='try_on',draftNote='',notice='';
+let draft=[],draftZone='MAIN',draftReason='',draftNote='',notice='';
 const person=()=>state.employees.find(e=>e.id===employeeId);
 const save=()=>{try{sessionStorage.setItem('whose:ops-chat-preview:v2',JSON.stringify(state))}catch{}};
 const n=x=>Number(x).toLocaleString('vi-VN');
@@ -122,7 +122,7 @@ function storeComposer(c,p){
   return '<div class="notice">Bạn được phân công vị trí <b>'+esc(M.niceDuty[p.duty])+
    '</b>. Chỉ nhân viên bán hàng trong ca mới có thể gửi yêu cầu.</div>';
  }
- const reasonOptions=Object.entries(M.REASONS).map(([k,v])=>'<option value="'+k+'" '+(draftReason===k?'selected':'')+'>'+esc(v)+'</option>').join('');
+ const reasonOptions='<option value="" disabled '+(!draftReason?'selected':'')+'>Chọn lý do mượn…</option>'+Object.entries(M.REASONS).map(([k,v])=>'<option value="'+k+'" '+(draftReason===k?'selected':'')+'>'+esc(v)+'</option>').join('');
  const skuChips=draft.map(x=>'<span class="draft-pill">'+esc(x.sku)+' ×'+x.qty+
   '<button type="button" data-remove="'+esc(x.sku)+'" aria-label="Bỏ '+esc(x.sku)+'">×</button></span>').join('');
  return '<div class="composer-title"><span>Soạn yêu cầu gửi kho</span><span class="label">Chỉ mã · lý do mượn · ghi chú</span></div>'+
@@ -218,6 +218,7 @@ function addSku(){
 function send(){
  if(!draft.length)throw Error('Cần thêm ít nhất một mã sản phẩm.');
  draftReason=$('borrowReason').value;draftZone=$('borrowZone').value;draftNote=$('borrowNote').value;
+ if(!Object.hasOwn(M.REASONS,draftReason))throw Error('Vui lòng chọn lý do mượn trước khi gửi.');
  const c=M.createCall(state,employeeId,branch,draftZone,draft,draftNote,draftReason);
  selected=c.id;draft=[];draftNote='';notice='';
  $('statusFilter').value='all';draw();
@@ -240,6 +241,8 @@ document.addEventListener('click',e=>{
  }catch(err){warn(err.message,true)}
 });
 document.addEventListener('change',e=>{
+ if(e.target.id==='borrowReason'){draftReason=e.target.value;return}
+ if(e.target.id==='borrowZone'){draftZone=e.target.value;return}
  if(e.target.matches('[data-wave]')){
   const id=e.target.dataset.wave,c=state.calls.find(x=>x.id===id);
   if(e.target.checked){
@@ -251,6 +254,7 @@ document.addEventListener('change',e=>{
   renderComposer(current(),person());
  }
 });
+document.addEventListener('input',e=>{if(e.target.id==='borrowNote')draftNote=e.target.value});
 document.addEventListener('keydown',e=>{
  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open]')){e.preventDefault();selected=e.target.dataset.open;notice='';draw();return}
  if(e.key==='Enter'&&e.target.id==='skuInput'){e.preventDefault();try{addSku()}catch(err){warn(err.message,true)}}
