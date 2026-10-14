@@ -1,0 +1,48 @@
+<section class="wc-page" id="wcPage" hidden aria-label="Hộp chat gọi hàng nội bộ">
+ <header class="wc-page-heading">
+  <div><div class="wc-kicker">WHOSE STUDIO <span>/</span> INTERNAL CHAT</div><h1>Gọi hàng</h1><p id="wcBranchName">Cửa hàng và kho · cùng một chi nhánh</p></div>
+  <div class="wc-page-heading-actions"><span id="wcSyncLabel" class="wc-sync-label" role="status">Đang kết nối…</span><button type="button" id="wcRefresh" class="wc-ghost-action" aria-label="Làm mới hộp chat">↻ <span>Làm mới</span></button><button type="button" id="wcNew" class="wc-primary-action">+ Gọi hàng</button></div>
+ </header>
+ <div class="wc-workspace">
+  <aside class="wc-inbox" aria-label="Danh sách hội thoại">
+   <div class="wc-inbox-title"><div><span class="wc-eyebrow">CÙNG MỘT CHI NHÁNH</span><strong>Hộp thoại</strong></div><span class="wc-inbox-count" id="wcCount">0</span></div>
+   <label class="wc-search"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.6" cy="10.6" r="6.8"/><path d="m16 16 5 5"/></svg><input id="wcSearch" type="search" placeholder="Tìm mã, mục đích…" aria-label="Tìm hội thoại"></label>
+   <div class="wc-filter-bar" role="group" aria-label="Lọc hội thoại"><button type="button" data-filter="open" class="active">Đang mở</button><button type="button" data-filter="all">Tất cả</button><button type="button" data-filter="done">Đã xong</button></div>
+   <div class="wc-inbox-list" id="wcInboxList"><div class="wc-empty-list">Đang tải yêu cầu...</div></div>
+   <div class="wc-inbox-footer"><span class="wc-presence-dot"></span><span>Hội thoại nội bộ · lưu lịch sử thao tác</span></div>
+  </aside>
+  <section class="wc-chat" aria-label="Nội dung hội thoại">
+   <div class="wc-chat-header">
+    <div class="wc-chat-identity"><div class="wc-chat-avatar"><svg width="21" height="21" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.7"><path d="M4 18v-8l8-5 8 5v8M4 11h16M9 18v-4h6v4"/></svg></div><div><strong id="wcChatTitle">Cửa hàng ↔ Kho</strong><small id="wcChatSub">Chọn một cuộc trao đổi để xem</small></div></div>
+    <span class="wc-chat-status" id="wcChatStatus">Chưa chọn</span>
+   </div>
+   <div class="wc-chat-toolbar"><span class="wc-dept-label">Góc nhìn</span><div class="wc-role-switch" role="group" aria-label="Góc nhìn bộ phận"><button type="button" id="wcRoleStore" data-role="store">Cửa hàng</button><button type="button" id="wcRoleWarehouse" data-role="warehouse">Kho</button></div><span class="wc-chat-bridge">Một hội thoại chung, hai bộ phận</span></div>
+   <div class="wc-messages" id="wcMessages" role="log" aria-label="Lịch sử trao đổi" aria-live="polite"><div class="wc-chat-placeholder"><div class="wc-placeholder-icon">↔</div><strong>Trao đổi ngay trong cửa hàng</strong><p>Gọi SKU, nhận việc, cập nhật soạn, bàn giao và trả hàng trong cùng một hộp chat.</p></div></div>
+   <div class="wc-composer">
+    <div id="wcChatActions" class="wc-chat-actions"></div>
+    <form id="wcNoteForm" class="wc-note-form"><div class="wc-note-icon" aria-hidden="true">✎</div><textarea id="wcNoteInput" rows="1" maxlength="1000" placeholder="Ghi chú cho bộ phận còn lại…" aria-label="Ghi chú cho hội thoại" disabled></textarea><button type="submit" id="wcSendNote" title="Gửi ghi chú" disabled aria-label="Gửi ghi chú">➤</button></form>
+    <small class="wc-composer-caption">Ghi chú và thao tác nghiệp vụ được lưu vào lịch sử · Không tự điều chỉnh tồn KiotViet</small>
+   </div>
+  </section>
+  <aside class="wc-detail-rail" aria-label="Chi tiết yêu cầu">
+   <div class="wc-rail-section"><span class="wc-rail-label">THÔNG TIN YÊU CẦU</span><strong id="wcRailTitle">Chưa chọn hội thoại</strong><p id="wcRailNote">Chọn một yêu cầu để xem danh sách SKU, số lượng đã soạn và hàng đang giữ.</p><div id="wcRailMeta" class="wc-rail-meta"></div></div>
+   <div class="wc-rail-section wc-rail-products"><div class="wc-rail-section-head"><strong>Sản phẩm</strong><span id="wcLineCount">0 SKU</span></div><div id="wcRailLines" class="wc-rail-lines"><div class="wc-rail-empty">Chưa có sản phẩm.</div></div></div>
+   <div class="wc-rail-section wc-rail-bottom"><span class="wc-rail-label">LƯU Ý NGHIỆP VỤ</span><p>Soạn ≠ bàn giao. Bàn giao ≠ đã bán. Hoàn trả chỉ kết thúc khi kho xác nhận nhận. Bill phải được đối chiếu với KiotViet.</p></div>
+  </aside>
+ </div>
+</section>
+<div class="wc-overlay" id="wcCreateOverlay" hidden>
+ <button type="button" class="wc-overlay-backdrop" id="wcModalBackdrop" aria-label="Đóng cửa sổ"></button>
+ <section class="wc-create-card" role="dialog" aria-modal="true" aria-labelledby="wcCreateTitle">
+  <div class="wc-create-header"><div><span class="wc-eyebrow">CỬA HÀNG → KHO</span><h2 id="wcCreateTitle">Gọi hàng mới</h2><p id="wcCreateBranch">Tạo yêu cầu nội bộ chi nhánh</p></div><button type="button" id="wcCloseCreate" aria-label="Đóng">×</button></div>
+  <form id="wcCreateForm">
+   <div class="wc-create-main"><div class="wc-sku-field"><label for="wcProductSearch">Thêm sản phẩm</label><div class="wc-product-search-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input id="wcProductSearch" autocomplete="off" placeholder="Tìm theo tên, SKU, barcode…" aria-controls="wcSuggestions" aria-autocomplete="list"></div><div id="wcSuggestions" class="wc-suggestions" role="listbox" hidden></div></div>
+    <div class="wc-cart-bar"><strong>Danh sách sản phẩm</strong><span id="wcCartCount">0 SKU</span></div><div class="wc-cart" id="wcCart"><div class="wc-cart-empty">Tìm sản phẩm để thêm nhiều SKU vào cùng một yêu cầu.</div></div>
+    <label class="wc-form-label">Mục đích / lý do mượn<textarea id="wcPurpose" rows="3" maxlength="1000" placeholder="Ví dụ: khách cần thử nhiều size; cần soạn ngay…" required></textarea></label>
+    <label class="wc-form-label">Độ ưu tiên<select id="wcPriority"><option value="normal">Bình thường</option><option value="urgent">Gấp · khách đang chờ</option></select></label>
+    <p id="wcFormError" class="wc-form-error" role="alert"></p>
+   </div>
+   <footer class="wc-create-footer"><button type="button" class="wc-ghost-action" id="wcCancelCreate">Hủy</button><button type="submit" class="wc-primary-action" id="wcSubmitCreate">Gửi yêu cầu cho kho</button></footer>
+  </form>
+ </section>
+</div>
