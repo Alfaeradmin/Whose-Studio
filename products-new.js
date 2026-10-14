@@ -24,7 +24,7 @@ function sizeOf(p){
 function card(p){
  const box=node('article','product-card'),label=node('div','ws-product-label');
  const pic=node('div','product-picture'),src=p.imageUrl||p.metadata?.thumbnail;
- if(typeof src==='string'&&/^https:\\/\\//i.test(src)){
+ if(typeof src==='string'&&src.startsWith('https://')){
    const img=node('img');img.src=src;img.alt=p.name||'Ảnh sản phẩm';img.loading='lazy';img.referrerPolicy='no-referrer';
    img.onerror=()=>{img.remove();pic.append(node('span','product-placeholder','—'))};pic.append(img);
  }else pic.append(node('span','product-placeholder','—'));
