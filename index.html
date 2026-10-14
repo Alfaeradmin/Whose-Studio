@@ -4,258 +4,136 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Whose Studio</title>
-<meta name="description" content="Whose Studio operations platform">
-<meta name="theme-color" content="#171e31">
-<link rel="stylesheet" href="/app.css">
-<link rel="stylesheet" href="/ui-foundation.css?v=1.0.0">
-<link rel="stylesheet" href="/ui-enterprise-v2.css?v=20261012">
-<link rel="stylesheet" href="/ui-components.css?v=1.0.0">
-<link rel="stylesheet" href="/ui-product-sync.css?v=1.0.0">
+<meta name="description" content="Whose Studio workspace">
+<meta name="theme-color" content="#f7f8fa">
+<link rel="stylesheet" href="/ui-auth-minimal.css?v=20261014">
+<link rel="stylesheet" href="/products-new.css?v=20261014">
+<link rel="stylesheet" href="/option-c.css?v=20261014-shellv2">
+<link rel="stylesheet" href="/option-c-refined.css?v=20261014-2">
+<link rel="stylesheet" href="/product-inspector.css?v=20261014-modal">
+<link rel="stylesheet" href="/product-insights.css?v=20261014">
+<link rel="stylesheet" href="/product-modal-layout.css?v=20261014">
+<link rel="stylesheet" href="/product-premium.css?v=20261014-imagefix2">
+<link rel="stylesheet" href="/product-gallery-fix.css?v=20261014-1">
+<link rel="stylesheet" href="/calling-chat-box.css?v=20261014-searchv2">
+<link rel="stylesheet" href="/ws-shell.css?v=20261014-warehousev1">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+button,input{font:inherit}
+[hidden]{display:none!important}
+.auth-screen{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-panel{width:min(388px,100%);margin:auto}
+.auth-symbol{display:grid;place-items:center}
+#loginForm{display:flex;flex-direction:column}
+#loginForm input{width:100%}
+.auth-recovery-link{display:block}
+.workspace-blank{min-height:100dvh;background:#f8f9fb}
+.workspace-topbar{height:66px;border-bottom:1px solid #e7eaf0;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,4vw,55px);background:#fff}
+.workspace-brand{font-size:15px;font-weight:750;letter-spacing:.04em;color:#1c2736}
+.workspace-logout{background:#fff;border:1px solid #dfe4eb;border-radius:9px;padding:9px 14px;color:#465469;cursor:pointer}
+.workspace-logout:hover{background:#f5f7f9}
+.workspace-canvas{min-height:calc(100dvh - 66px)}
+</style>
 </head>
 <body>
-<div class="toast" id="toast"></div>
 <div class="auth-screen" id="authScreen">
   <div class="auth-panel">
     <div class="auth-symbol">W</div>
-    <div class="auth-eyebrow">WHOSE · STUDIO OPERATIONS</div>
-    <h1>Chào mừng trở lại</h1>
-    <p class="auth-lede">Đăng nhập bằng tài khoản nhân viên đã được cấp quyền. Dữ liệu của Whose chỉ hiển thị sau khi xác thực.</p>
+    <div class="auth-eyebrow">WHOSE STUDIO</div>
+    <h1>Đăng nhập Whose Studio</h1>
+    <p class="auth-lede">Đăng nhập để tiếp tục công việc.</p>
     <form id="loginForm" autocomplete="on">
       <label for="loginEmail">Email công việc</label>
       <input id="loginEmail" type="email" inputmode="email" autocomplete="username" placeholder="ten@whose.vn" required maxlength="254">
       <label for="loginPassword">Mật khẩu</label>
       <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required minlength="8">
       <p class="auth-error" id="loginError" role="alert" aria-live="polite"></p>
-      <button class="auth-submit" id="loginSubmit" type="submit">Đăng nhập <span>↗</span></button>
+      <button class="auth-submit" id="loginSubmit" type="submit">Đăng nhập</button>
     </form>
     <a class="auth-recovery-link" href="/reset-password.html">Thiết lập mật khẩu lần đầu / Quên mật khẩu?</a>
-    <div class="auth-caption">Tài khoản được tạo và phân quyền bởi quản trị viên. Không tự mở đăng ký.</div>
+    <div class="auth-caption">Dành cho nhân viên Whose Studio</div>
   </div>
-  <div class="auth-side"><div class="auth-side-label">WHOSE ATELIER</div><div class="auth-side-title">A better way<br>to operate.</div><div class="auth-side-footer">Kho · Cửa hàng · Sản phẩm · Con người</div></div>
 </div>
-<div class="app is-locked" id="appRoot">
-  <aside class="sidebar" id="sidebar">
-    <div class="brand"><div class="logo">W</div><div><b>WHOSE</b><small>STUDIO OPERATIONS</small></div></div>
-
-    <div class="nav-title">Tổng quan</div>
-    <button type="button" class="nav-item active" data-page="dashboard"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="nav-text">Tổng quan</span></div></button>
-    <button type="button" class="nav-item" data-page="operations"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"/><path d="M8 11h8M8 14h5"/></svg></span><span class="nav-text">Điều phối cửa hàng</span></div></button>
-
-    <div class="nav-title">Kho vận</div>
-    <button type="button" class="nav-item" data-page="inventory"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="M3 7v10l9 5 9-5V7M12 12v10"/></svg></span><span class="nav-text">Tồn kho</span></div></button>
-    <button type="button" class="nav-item" data-page="transfers"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7h14m-4-4 4 4-4 4M17 17H3m4-4-4 4 4 4"/></svg></span><span class="nav-text">Chuyển kho</span></div></button>
-    <button type="button" class="nav-item" data-page="stocktake"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4M4 12h16"/></svg></span><span class="nav-text">Kiểm kho</span></div></button>
-    <button type="button" class="nav-item" data-page="returns"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11a9 9 0 1 1 2.7 6.5M3 16v-5h5"/><path d="M12 7v5l3 2"/></svg></span><span class="nav-text">Đổi / Trả</span></div></button>
-
-    <div class="nav-title">Danh mục & hệ thống</div>
-    <button type="button" class="nav-item" data-page="products"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.7" cy="7.7" r="1"/></svg></span><span class="nav-text">Sản phẩm</span></div></button>
-    <button type="button" class="nav-item" data-page="productSync"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><path d="m5 8 2-2 3 3m4-3h7m-7 4h5m-7 8h9m-4-3 4 3-4 3"/><path d="m3 17 3-3 4 4"/></svg></span><span class="nav-text">Đồng bộ sản phẩm</span></div></button>
-    <button type="button" class="nav-item" data-page="employees"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M15 3.3a4 4 0 0 1 0 7.4M22 21v-2a4 4 0 0 0-3-3.9"/><circle cx="9" cy="7" r="4"/></svg></span><span class="nav-text">Nhân viên & quyền</span></div></button>
-    <button type="button" class="nav-item" data-page="kiot"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6v5h-5M4 18v-5h5"/><path d="M5.7 9A7 7 0 0 1 18.5 6L20 11M4 13l1.5 5A7 7 0 0 0 18.3 15"/></svg></span><span class="nav-text">Đồng bộ KiotViet</span></div></button>
-    <button type="button" class="nav-item" data-page="settings"><div class="nav-left"><span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M10.3 2h3.4l.6 2.4 1.8.8 2.1-1.3 2.4 2.4-1.3 2.1.8 1.8 2.4.6v3.4l-2.4.6-.8 1.8 1.3 2.1-2.4 2.4-2.1-1.3-1.8.8-.6 2.4h-3.4l-.6-2.4-1.8-.8-2.1 1.3-2.4-2.4 1.3-2.1-.8-1.8L2 13.7v-3.4l2.4-.6.8-1.8-1.3-2.1 2.4-2.4 2.1 1.3 1.8-.8.1-.3"/></svg></span><span class="nav-text">Cài đặt</span></div></button>
-
-    <div class="sidebar-footer"><div class="user"><div class="avatar">W</div><div><b id="staffName">Whose Studio</b><small id="staffRole">Đang xác thực</small></div></div><button type="button" class="drawer-logout" id="drawerLogoutBtn">Đăng xuất tài khoản <span class="ws-inline-icon" data-ws-icon="log-out" aria-hidden="true"></span></button></div>
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" focusable="false">
+<symbol id="ws-i-brand" viewBox="0 0 24 24"><path d="M4 7 12 3l8 4v10l-8 4-8-4V7Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m4.5 7.5 7.5 5 7.5-5M12 12.5V21" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+<symbol id="ws-i-box" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m7 9 5 3 5-3M12 12v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-messages" viewBox="0 0 24 24"><path d="M20 11.5A7.5 7.5 0 0 1 12.5 19H7l-4 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 10h8M8 13.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="ws-i-home" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9H3zM9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-warehouse" viewBox="0 0 24 24"><path d="M3 20V8l9-5 9 5v12M3 11h18M8 20v-5h8v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3ZM8 8h8M8 12h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 20v-2a6 6 0 0 1 12 0v2H3ZM17 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="ws-i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 7l2 5M4 12l2 5A7 7 0 0 0 18.5 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9 4v16M15 10l-2 2 2 2" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="ws-i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+<symbol id="ws-i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="ws-i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="ws-i-chevrons" viewBox="0 0 24 24"><path d="m9 9 3-3 3 3M9 15l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="ws-i-logout" viewBox="0 0 24 24"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M8 12h11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol></svg>
+<div class="workspace-blank" id="appRoot" hidden>
+  <div id="wsMobileScrim" class="ws-mobile-scrim" hidden></div>
+  <aside class="ws-sidebar" id="wsSidebar" aria-label="Thanh điều hướng">
+    <div class="ws-sidebar-header">
+      <div class="ws-brand-mark" aria-hidden="true"><svg class="ws-icon" viewBox="0 0 24 24"><use href="#ws-i-brand"></use></svg></div>
+      <div class="ws-brand-copy"><strong>WHOSE STUDIO</strong><small>Operations Workspace</small></div>
+      <button class="ws-sidebar-close" id="wsSidebarMobileClose" type="button" aria-label="Đóng menu"><svg class="ws-icon"><use href="#ws-i-close"></use></svg></button>
+    </div>
+    <div class="ws-warehouse-picker" id="wsWarehousePicker">
+      <div class="ws-warehouse-caption">KHO THAO TÁC</div>
+      <button class="ws-workspace-card ws-warehouse-trigger" id="wsWarehouseToggle" type="button" aria-label="Chọn kho thao tác" aria-haspopup="listbox" aria-expanded="false" aria-controls="wsWarehouseOptions" title="Chọn kho thao tác">
+        <span class="ws-workspace-avatar"><svg class="ws-icon" viewBox="0 0 24 24"><use href="#ws-i-warehouse"></use></svg></span>
+        <span class="ws-workspace-copy"><strong id="wsWarehouseName">Đang xác định quyền kho</strong><small id="wsWarehouseHint">Kho đang sử dụng</small></span>
+        <svg class="ws-icon ws-workspace-chevron" viewBox="0 0 24 24"><use href="#ws-i-chevrons"></use></svg>
+      </button>
+      <div id="wsWarehouseOptions" class="ws-warehouse-options" role="listbox" aria-label="Kho thao tác được phép chọn" hidden></div>
+    </div>
+    <nav class="ws-sidebar-nav" aria-label="Chức năng">
+      <div class="ws-nav-group-title">LÀM VIỆC</div>
+      <button class="ws-nav-link is-current" id="wsNavProducts" type="button" data-page="products" aria-current="page" title="Sản phẩm"><svg class="ws-icon"><use href="#ws-i-box"></use></svg><span class="ws-nav-text">Sản phẩm</span><span class="ws-nav-indicator" aria-hidden="true"></span></button>
+      <button class="ws-nav-link" id="wsNavCalling" type="button" data-page="calling" title="Gọi hàng"><svg class="ws-icon"><use href="#ws-i-messages"></use></svg><span class="ws-nav-text">Gọi hàng</span><span class="ws-nav-indicator" aria-hidden="true"></span></button>
+      <div class="ws-nav-group-title ws-nav-group-space">SẮP TRIỂN KHAI</div>
+      <div class="ws-nav-unavailable" title="Tổng quan — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-home"></use></svg><span class="ws-nav-text">Tổng quan</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Tồn kho — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-warehouse"></use></svg><span class="ws-nav-text">Tồn kho</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Đơn hàng — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-receipt"></use></svg><span class="ws-nav-text">Đơn hàng</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Nhân viên — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-users"></use></svg><span class="ws-nav-text">Nhân viên</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Đồng bộ — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-refresh"></use></svg><span class="ws-nav-text">Đồng bộ</span><span class="ws-nav-coming">Sau</span></div>
+    </nav>
+    <div class="ws-sidebar-footer">
+      <div class="ws-foot-meta"><span class="ws-connection-dot"></span><span class="ws-foot-copy">Whose Preview</span><span class="ws-foot-version">v0.2</span></div>
+      <button class="ws-collapse-toggle" id="wsCollapseToggle" type="button" title="Thu gọn thanh điều hướng" aria-label="Thu gọn thanh điều hướng" aria-expanded="true"><svg class="ws-icon"><use href="#ws-i-panel"></use></svg><span class="ws-nav-text">Thu gọn thanh bên</span></button>
+    </div>
   </aside>
-
-  <section class="workspace">
-    <header class="topbar">
-      <div class="top-left">
-        <button class="btn mobile-menu" type="button" aria-label="Mở menu điều hướng" aria-controls="sidebar" aria-expanded="false" onclick="toggleSidebar()"><span class="ws-inline-icon" data-ws-icon="menu" aria-hidden="true"></span></button>
-        <div class="page-title"><h1 id="pageTitle">Tổng quan</h1><p id="pageSub">Tổng quan dữ liệu thật và trạng thái hệ thống</p></div>
+  <div class="ws-content">
+    <header class="workspace-topbar">
+      <div class="ws-topbar-path">
+        <button id="wsSidebarMobileOpen" type="button" class="ws-mobile-menu-button" aria-label="Mở menu"><svg class="ws-icon"><use href="#ws-i-menu"></use></svg></button>
+        <span class="ws-topbar-root">Workspace</span><svg class="ws-icon ws-breadcrumb-arrow"><use href="#ws-i-chevron"></use></svg>
+        <strong id="wsPageTitle">Sản phẩm</strong><span class="ws-topbar-detail" id="wsPageSubtitle"> / Danh mục KiotViet</span>
       </div>
-      <div class="top-actions"><button class="btn logout-btn" id="logoutBtn" title="Đăng xuất tài khoản">Đăng xuất</button>
-        <div class="searchbox"><span class="ws-inline-icon" data-ws-icon="search" aria-hidden="true"></span><input id="globalSearch" aria-label="Mở danh mục sản phẩm bằng Enter" placeholder="Mở danh mục sản phẩm ↵"></div>
-        <button class="btn refresh-btn" id="refresh" aria-label="Làm mới dữ liệu"><span class="refresh-icon ws-inline-icon" data-ws-icon="refresh" aria-hidden="true"></span><span class="refresh-label">Làm mới</span></button>
-      </div>
+      <div class="ws-topbar-right"><button id="wsWarehouseTop" class="ws-warehouse-top" type="button" title="Đổi kho thao tác"><svg class="ws-icon" viewBox="0 0 24 24"><use href="#ws-i-warehouse"></use></svg><span id="wsWarehouseTopName">Chọn kho thao tác</span><svg class="ws-icon ws-warehouse-top-chevron" viewBox="0 0 24 24"><use href="#ws-i-chevrons"></use></svg></button><span class="ws-preview-chip"><span></span> Preview</span><button class="workspace-logout" type="button" id="logoutBtn"><svg class="ws-icon"><use href="#ws-i-logout"></use></svg><span>Đăng xuất</span></button></div>
     </header>
-
-    <main class="content">
-      <div class="banner warn" id="systemBanner"><div><strong>Đang đọc trạng thái hệ thống…</strong><p>Kiểm tra Vercel, KiotViet và Supabase.</p></div></div>
-
-      <section class="page active" id="dashboard">
-        <div class="dashboard-hero"><div><div class="hero-kicker">WHOSE CONTROL CENTER</div><h2>Vận hành tinh gọn.<br>Quyết định rõ ràng.</h2><p>Thông tin từ các nguồn đang kết nối, minh bạch trạng thái và không ghi ngược dữ liệu KiotViet.</p></div><div class="hero-actions"><button class="hero-action primary" type="button" data-jump-to="operations">Mở điều phối ↗</button><button class="hero-action" type="button" data-jump-to="kiot">Kiểm tra kết nối</button></div></div>
-        <div class="banner warn" id="kiotBanner"><div><strong>Đang kết nối KiotViet…</strong><p>Dữ liệu chưa sẵn sàng.</p></div></div>
-        <div class="page-heading-strip"><div><h2>Chỉ số vận hành</h2><p>Giữ nguyên số liệu thực; chưa có dữ liệu sẽ hiển thị dấu gạch ngang</p></div><span class="page-heading-tag">Dữ liệu KiotViet</span></div>
-        <div class="grid grid-4">
-          <div class="card metric"><div class="metric-label">Sản phẩm</div><div class="metric-value" id="metricProducts">—</div><div class="metric-sub">KiotViet products</div></div>
-          <div class="card metric"><div class="metric-label">Đặt hàng</div><div class="metric-value" id="metricOrders">—</div><div class="metric-sub">KiotViet orders</div></div>
-          <div class="card metric"><div class="metric-label">Hóa đơn</div><div class="metric-value" id="metricInvoices">—</div><div class="metric-sub">KiotViet invoices</div></div>
-          <div class="card metric"><div class="metric-label">Phiếu chuyển</div><div class="metric-value" id="metricTransfers">—</div><div class="metric-sub">KiotViet transfers</div></div>
-          <div class="card metric"><div class="metric-label">Phiếu trả</div><div class="metric-value" id="metricReturns">—</div><div class="metric-sub">KiotViet returns</div></div>
-          <div class="card metric"><div class="metric-label">SKU tồn kho</div><div class="metric-value" id="metricInventory">—</div><div class="metric-sub">productOnHands</div></div>
-          <div class="card metric"><div class="metric-label">Dòng âm tồn</div><div class="metric-value" id="metricNegative">—</div><div class="metric-sub">Trong mẫu tồn đã đọc</div></div>
-          <div class="card metric"><div class="metric-label">Whose database</div><div class="metric-value" id="metricDatabase" style="font-size:17px">Pending</div><div class="metric-sub">Supabase dành riêng Whose</div></div>
-        </div>
-
-        <div class="grid grid-2" style="margin-top:14px">
-          <div class="card card-pad">
-            <div class="section-head"><div><h2>Kết nối KiotViet</h2><p>Thời gian phản hồi từng resource</p></div></div>
-            <div class="table-wrap"><table class="table"><thead><tr><th>Resource</th><th>Trạng thái</th><th>Latency</th><th>Lỗi</th></tr></thead><tbody id="connectivityRows"></tbody></table></div>
-          </div>
-          <div class="card card-pad">
-            <div class="section-head"><div><h2>Chi nhánh</h2><p>Đọc trực tiếp từ KiotViet</p></div></div>
-            <div class="table-wrap"><table class="table"><thead><tr><th>Chi nhánh</th><th>ID</th><th>Địa chỉ</th><th>Trạng thái</th></tr></thead><tbody id="branchRows"></tbody></table></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="page" id="operations">
-        <div class="ops-layout">
-          <div class="ops-list">
-            <div class="ops-filter"><input id="requestSearch" placeholder="Tìm phiếu / cửa hàng / SKU"></div>
-            <div class="ops-tabs" id="opsTabs"><button class="active" data-ops-tab="open">Đang chờ</button><button data-ops-tab="progress">Đang xử lý</button><button data-ops-tab="done">Hoàn tất</button></div>
-            <div class="thread-list" id="requestList"><div class="thread placeholder"><b>Operational inbox</b><small>Danh sách yêu cầu vận hành</small></div></div>
-          </div>
-          <div class="chat">
-            <div class="chat-head"><div><b>Store ↔ Warehouse</b><small>Yêu cầu được lưu thật · không thay đổi tồn kho</small></div><span class="ops-ready" id="operationsState"></span></div>
-            <div class="chat-body"><div class="empty" id="opsEmpty"></div></div>
-            <div class="composer-area">
-              <div class="ops-branch-pair"><label>Kho gửi<select id="originBranch" aria-label="Kho gửi yêu cầu"></select></label><span class="ops-arrow">→</span><label>Kho nhận<select id="destinationBranch" aria-label="Kho nhận yêu cầu"></select></label></div>
-              <input class="ops-note" id="requestNote" maxlength="2000" placeholder="Ghi chú yêu cầu (không bắt buộc)">
-              <div class="suggestions" id="suggestions"></div>
-              <div class="drafts" id="drafts"></div>
-              <div class="composer"><button class="plus" id="addSku" type="button" title="Thêm SKU đã nhập" aria-label="Thêm SKU đã nhập"><span class="ws-inline-icon" data-ws-icon="plus" aria-hidden="true"></span></button><textarea id="productInput" rows="1" placeholder="Tìm sản phẩm hoặc nhập SKU rồi bấm +"></textarea><button class="send" id="sendRequest" disabled>Gửi yêu cầu</button></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="page" id="inventory">
-        <div class="toolbar"><div class="tool-left"><span class="chip">Nguồn: <b id="inventorySource">—</b></span></div></div>
-        <div class="card table-wrap"><table class="table"><thead><tr><th>SKU</th><th>Chi nhánh</th><th>Thông tin</th></tr></thead><tbody id="inventoryRows"></tbody></table></div>
-      </section>
-
-      <section class="page" id="transfers">
-        <div class="banner ok"><div><strong>Read model đã được triển khai.</strong><p>Whose đọc GET /transfers từ KiotViet. Ghi ngược vẫn bị khóa.</p></div></div>
-        <div class="card table-wrap"><table class="table"><thead><tr><th>Phiếu</th><th>Tuyến</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody id="transferRows"></tbody></table></div>
-      </section>
-
-      <section class="page" id="stocktake">
-        <div class="module-grid">
-          <div class="card module-card"><h3>Phiên kiểm kho</h3><p>Scan từng sản phẩm, snapshot tồn Kiot tại thời điểm kiểm và lưu kết quả vật lý.</p><div class="module-meta"><span data-module="stocktakeDeltaLedger"></span></div></div>
-          <div class="card module-card"><h3>Delta ledger</h3><p>Lưu delta = số đếm − tồn snapshot. Khi apply sẽ cộng delta vào tồn mới nhất, không ghi cứng số cũ.</p><div class="module-meta"><span class="status st-blue">Design locked</span></div></div>
-          <div class="card module-card"><h3>Duyệt & audit</h3><p>Mỗi dòng chỉ apply một lần, có người duyệt, timestamp và post-verify KiotViet.</p><div class="module-meta"><span class="status st-gray">Waiting for DB</span></div></div>
-        </div>
-      </section>
-
-      <section class="page" id="returns">
-        <div class="banner ok"><div><strong>Read-only trả hàng đã có nền API.</strong><p>Whose đọc GET /returns để dựng lineage hóa đơn → hàng trả; phần exchange-out sẽ được nối khi có dữ liệu thật.</p></div></div>
-        <div class="card table-wrap"><table class="table"><thead><tr><th>Phiếu</th><th>Khách / chi nhánh</th><th>Giá trị</th><th>Trạng thái</th><th>Ngày</th></tr></thead><tbody id="returnRows"></tbody></table></div>
-      </section>
-
-      <section class="page" id="productSync">
-        <div class="ps-hero">
-          <div><div class="ps-eyebrow"><span class="ps-live-dot"></span> KIOTVIET → WHOSE STUDIO</div>
-            <h2>Danh mục sản phẩm</h2><p>Hình ảnh, tên hàng, SKU và thuộc tính được đọc từ KiotViet. Whose lưu danh mục riêng để vận hành, không tự đồng bộ tồn kho.</p>
-          </div>
-          <div class="ps-hero-actions">
-            <button type="button" class="btn ps-secondary" id="psRefresh">Làm mới danh mục</button>
-            <button type="button" class="btn primary" id="psSyncAll" disabled>Đồng bộ từ KiotViet</button>
-          </div>
-        </div>
-        <div class="ps-stats" aria-label="Tình trạng danh mục Whose">
-          <div class="ps-stat"><div class="ps-stat-label">Sản phẩm đã lưu Whose</div><div class="ps-stat-value" id="psTotal">—</div><div class="ps-stat-foot">SKU thuộc danh mục đã đồng bộ</div></div>
-          <div class="ps-stat"><div class="ps-stat-label">Có hình ảnh</div><div class="ps-stat-value" id="psWithImages">—</div><div class="ps-stat-foot">Ảnh gốc từ KiotViet</div></div>
-          <div class="ps-stat"><div class="ps-stat-label">Đồng bộ gần nhất</div><div class="ps-stat-value ps-stat-date" id="psLastSync">—</div><div class="ps-stat-foot">Thời điểm lưu thành công</div></div>
-        </div>
-        <div class="ps-workspace">
-          <div class="ps-toolbar">
-            <div class="ps-switch" role="group" aria-label="Nguồn danh mục">
-              <button type="button" class="ps-switch-btn active" id="psShowWhose" aria-pressed="true">Đã lưu Whose</button>
-              <button type="button" class="ps-switch-btn" id="psShowKiot" aria-pressed="false">Xem trước KiotViet</button>
-            </div>
-            <label class="ps-search-label"><span class="ws-inline-icon" data-ws-icon="search" aria-hidden="true"></span><input type="search" id="psSearch" placeholder="Tìm theo SKU hoặc tên sản phẩm" autocomplete="off" aria-label="Tìm sản phẩm trong danh mục"></label>
-            <label class="ps-filter-label">Hình ảnh <select id="psImageFilter" aria-label="Lọc sản phẩm theo hình ảnh"><option value="all">Tất cả</option><option value="with">Có ảnh</option><option value="without">Chưa có ảnh</option></select></label>
-          </div>
-          <div class="ps-context" id="psContext">Hiển thị danh mục Whose đã ghi nhận.</div>
-          <div class="ps-progress" id="psProgress" hidden>
-            <div class="ps-progress-top"><strong id="psProgressLabel">Đang đồng bộ</strong><span id="psProgressPercent">0%</span></div>
-            <div class="ps-progress-track" role="progressbar" aria-label="Tiến độ đồng bộ sản phẩm" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="psProgressBar"><span id="psProgressFill"></span></div>
-            <div class="ps-progress-bottom"><span id="psProgressDetail">Đang chờ</span><button class="btn" type="button" id="psStopSync">Dừng sau trang hiện tại</button></div>
-          </div>
-          <p class="ps-status" id="psStatus" role="status" aria-live="polite">Đang chờ tải danh mục.</p>
-          <div class="ps-cards" id="psCards" aria-label="Danh sách sản phẩm có hình ảnh"></div>
-          <div class="ps-footer"><span id="psPagingInfo">—</span><div class="ps-pagination"><button type="button" class="btn" id="psPrev" disabled>← Trước</button><button type="button" class="btn" id="psNext" disabled>Tiếp →</button></div></div>
-        </div>
-        <div class="ps-note"><strong>Nguyên tắc an toàn:</strong> Chỉ Global Admin được ghi nhận danh mục sản phẩm. Hệ thống kiểm tra mỗi trang dữ liệu từ KiotViet trước khi lưu vào Whose, không tạo bản sao tồn kho, không xóa SKU vắng mặt và không gửi dữ liệu ngược sang KiotViet.</div>
-      </section>
-
-      <section class="page" id="products">
-        <div class="toolbar"><div class="tool-left"><input class="field" style="width:260px" placeholder="Search full catalog sẽ dùng mirror DB"></div></div>
-        <div class="card table-wrap"><table class="table"><thead><tr><th>Sản phẩm</th><th>Chi nhánh</th><th>Trạng thái</th><th>Cập nhật</th></tr></thead><tbody id="productRows"></tbody></table></div>
-      </section>
-
-      <section class="page" id="employees">
-        <div class="module-grid">
-          <div class="card module-card"><h3>Tài khoản</h3><p>Supabase Auth cho từng nhân viên, không dùng tài khoản chung.</p><div class="module-meta"><span data-module="auth"></span></div></div>
-          <div class="card module-card"><h3>Vai trò & chức vụ</h3><p>Nhân viên cửa hàng, trưởng cửa hàng, nhân viên kho, trưởng kho và admin.</p><div class="module-meta"><span data-module="employeesAndRoles"></span></div></div>
-          <div class="card module-card"><h3>Phạm vi</h3><p>Gán chi nhánh, kho, khu vực, ca làm và quyền thao tác; RLS sẽ kiểm soát dữ liệu theo phạm vi.</p><div class="module-meta"><span class="status st-gray">Waiting for DB</span></div></div>
-        </div>
-      </section>
-
-      <section class="page" id="kiot">
-        <div class="card card-pad" style="margin-bottom:18px">
-          <div class="section-head"><div><h2>Đối chiếu bảo mật kết nối KiotViet</h2><p>So sánh Client ID trên máy chủ với bộ khóa mới bạn đã tạo ngày 12/10 và kiểm tra lỗi sao chép cấu hình. Không hiển thị Client ID, Secret hoặc giá trị môi trường.</p></div></div>
-          <button class="btn" id="kiotCredentialCheck" type="button">Đối chiếu bộ khóa hiện tại</button>
-          <p id="kiotCredentialCheckResult" role="status" aria-live="polite" class="muted" style="margin-top:12px;white-space:pre-line">Chưa thực hiện đối chiếu.</p>
-        </div>
-        <div class="card card-pad" style="margin-bottom:18px">
-          <div class="section-head"><div><h2>Chi nhánh KiotViet thực tế</h2><p>Đọc trực tiếp KiotViet, kiểm tra toàn bộ danh sách trước khi ghi nhận nguồn vào Whose. Không tự phân loại kho/cửa hàng.</p></div></div>
-          <div class="toolbar" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px">
-            <button class="btn" id="kiotPreviewBranches" type="button">Kiểm tra chi nhánh từ KiotViet</button>
-            <button class="btn primary" id="kiotImportBranches" type="button" disabled>Ghi nhận danh mục nguồn vào Whose</button>
-          </div>
-          <p id="kiotBranchSyncStatus" class="muted" role="status" aria-live="polite">Chưa kiểm tra chi nhánh KiotViet.</p>
-          <div class="table-wrap"><table class="table"><thead><tr><th>Tên chi nhánh</th><th>Mã Kiot</th><th>ID Kiot</th><th>Địa chỉ</th><th>Trạng thái từ Kiot</th></tr></thead><tbody id="kiotDirectoryRows"></tbody></table></div>
-        </div>
-        <div class="module-grid">
-          <div class="card module-card"><h3>Kiot read model</h3><p>Branches, settings, products, productOnHands, orders, invoices, nhập hàng, chuyển hàng và trả hàng.</p><div class="module-meta"><span data-module="kiotvietReadModel"></span></div></div>
-          <div class="card module-card"><h3>Write KiotViet</h3><p>Production hiện khóa toàn bộ ghi ngược để tránh thay đổi chứng từ/tồn ngoài kiểm soát.</p><div class="module-meta"><span data-module="kiotvietWrite"></span></div></div>
-          <div class="card module-card"><h3>Realtime reconciliation</h3><p>Sẽ dùng event ingestion + database ledger khi Supabase Whose được tạo.</p><div class="module-meta"><span data-module="realtime"></span></div></div>
-        </div>
-      </section>
-
-      <section class="page" id="settings">
-        <div class="grid grid-2">
-          <div class="card card-pad">
-            <div class="section-head"><div><h2>Hạ tầng</h2><p>Production readiness</p></div></div>
-            <div class="setting-row"><div><b>Dashboard</b><small>Operational shell</small></div><span data-module="dashboard"></span></div>
-            <div class="setting-row"><div><b>Inventory mirror</b><small>Kiot productOnHands</small></div><span data-module="inventoryMirror"></span></div>
-            <div class="setting-row"><div><b>Transfers mirror</b><small>Kiot transfers</small></div><span data-module="transfersMirror"></span></div>
-            <div class="setting-row"><div><b>Returns mirror</b><small>Kiot returns</small></div><span data-module="returnsMirror"></span></div>
-          </div>
-          <div class="card card-pad">
-            <div class="section-head"><div><h2>Nghiệp vụ Whose</h2><p>Cần database riêng</p></div></div>
-            <div class="setting-row"><div><b>Store ↔ Warehouse</b><small>Chat-like operational requests</small></div><span data-module="storeWarehouseOperations"></span></div>
-            <div class="setting-row"><div><b>Employees & roles</b><small>Auth + RLS</small></div><span data-module="employeesAndRoles"></span></div>
-            <div class="setting-row"><div><b>Stocktake delta ledger</b><small>Kiểm kho không khóa vận hành</small></div><span data-module="stocktakeDeltaLedger"></span></div>
-            <div class="setting-row"><div><b>Realtime</b><small>Global operational bridge</small></div><span data-module="realtime"></span></div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </section>
+  <main class="workspace-canvas" aria-label="Danh mục sản phẩm">
+<section class="products-page">
+ <div class="products-hero"><div><div class="products-kicker">DANH MỤC / PRODUCTS</div><h1>Sản phẩm</h1><p class="products-description">Danh mục dùng chung từ KiotViet · Tồn kho tra cứu theo kho thao tác đang chọn</p></div>
+ <div class="products-actions"><button type="button" class="products-button" id="productsRefresh">Làm mới</button><button type="button" class="products-button primary" id="productsSync" hidden>Đồng bộ toàn bộ KiotViet</button></div></div>
+ <div class="products-stats"><div class="products-stat"><small>Sản phẩm đã lưu</small><strong id="productsTotal">—</strong></div><div class="products-stat"><small>Có hình ảnh</small><strong id="productsPhotos">—</strong></div><div class="products-stat"><small>Đồng bộ gần nhất</small><strong id="productsLastSync">—</strong></div></div>
+ <div class="ws-panel-layout"><div class="ws-table-panel"><div class="products-toolbar"><input class="products-search" id="productsSearch" type="search" placeholder="Tìm SKU hoặc tên sản phẩm…" aria-label="Tìm kiếm sản phẩm">
+ 
+ 
+ </div>
+ <div class="products-progress" id="productsProgress" hidden><div class="products-progress-bar" id="productsProgressBar"></div></div><div class="products-sync-detail" id="productsSyncDetail"></div>
+ <p class="products-status" id="productsStatus" role="status" aria-live="polite"></p>
+ <div class="ws-table-scroll"><div class="ws-table-head"><span>Sản phẩm</span><span>SKU</span><span>Danh mục</span><span>Giá bán</span><span>Size</span><span>Trạng thái</span></div><div class="products-grid" id="productsGrid"></div></div>
+ <div class="products-footer"><button type="button" class="products-button" id="productsPrev">Trang trước</button><span id="productsPage">Trang 1</span><button type="button" class="products-button" id="productsNext">Trang sau</button></div>
+ </div><aside class="ws-filter-rail"><section class="ws-side-card"><h3>Danh mục sản phẩm</h3><select class="products-select" id="productsCategory" aria-label="Lọc danh mục"><option value="all">Tất cả danh mục</option></select><p>Danh mục lấy từ KiotViet</p></section><section class="ws-side-card"><h3>Trạng thái hình ảnh</h3><select class="products-select" id="productsImage" aria-label="Lọc hình ảnh"><option value="all">Tất cả hình ảnh</option><option value="with">Có hình ảnh</option><option value="without">Chưa có ảnh</option></select></section><section class="ws-side-card"><h3>Nguồn dữ liệu</h3><select class="products-select" id="productsSource" aria-label="Nguồn dữ liệu"><option value="catalog">Đã đồng bộ về Whose</option><option value="kiot">Xem trực tiếp KiotViet</option></select><p>KiotViet chỉ đọc; không ghi tồn kho</p></section><section class="ws-side-card"><h3>Trạng thái đồng bộ</h3><p id="wsSyncStatus">Kết nối được xác nhận khi tải dữ liệu</p></section><section class="ws-side-card"><h3>Nhãn màu</h3><div class="ws-tags"><span>Áo</span><span>Quần</span><span>Đầm</span><span>Phụ kiện</span></div><p>Size hiển thị theo dữ liệu nguồn</p></section></aside></div></section><div id="wrMount" hidden></div></main></div>
 </div>
-<nav class="mobile-tabbar" aria-label="Điều hướng chính">
-    <button class="mobile-tab active" data-mobile-page="dashboard" aria-label="Trang chủ">
-      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span>Tổng quan</span>
-    </button>
-    <button class="mobile-tab" data-mobile-page="operations" aria-label="Operations">
-      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"/><path d="M8 11h8M8 14h5"/></svg></span><span>Điều phối</span>
-    </button>
-    <button class="mobile-tab scan-tab" data-mobile-page="stocktake" aria-label="Quét kiểm kho">
-      <span class="scan-orb"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4M4 12h16"/></svg></span><span>Kiểm</span>
-    </button>
-    <button class="mobile-tab" data-mobile-page="inventory" aria-label="Tồn kho">
-      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="M3 7v10l9 5 9-5V7M12 12v10"/></svg></span><span>Tồn kho</span>
-    </button>
-    <button class="mobile-tab" id="mobileMore" aria-label="Thêm chức năng">
-      <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Khác</span>
-    </button>
-  </nav>
-  <div class="mobile-backdrop" id="mobileBackdrop" aria-hidden="true"></div>
-  <script src="/ui-icons.js?v=1.0.0" defer></script>
-  <script src="/app.js" defer></script>
-  <script src="/product-sync.js?v=1.0.0" defer></script>
+<div class="wpi-shell" id="wsProductInspector" hidden><button class="wpi-backdrop" id="wsProductInspectorBackdrop" aria-label="Đóng chi tiết"></button><aside class="wpi-drawer" role="dialog" aria-modal="true" aria-labelledby="wsProductInspectorName"><div class="wpi-header"><div><div class="wpi-kicker">WHOSE / PRODUCT PROFILE</div><h2 id="wsProductInspectorName">Chi tiết sản phẩm</h2></div><button class="wpi-close" id="wsProductInspectorClose" type="button" aria-label="Đóng">×</button></div><div class="wpi-body" id="wsProductInspectorBody"></div></aside></div>
+<script src="/product-inspector.js?v=20261014-warehousev1" defer></script>
+<script src="/auth-shell.js?v=20261014-v3" defer></script>
+<script src="/products-new.js?v=20261014-autosync1" defer></script>
+<script src="/option-c-dropdowns.js?v=20261014-2" defer></script>
+<script src="/calling-chat-box.js?v=20261014-searchv2" defer></script>
+<script src="/calling-navigation.js?v=20261014-v2" defer></script>
+<script src="/warehouse-context.js?v=20261014-v3" defer></script>
 </body>
 </html>

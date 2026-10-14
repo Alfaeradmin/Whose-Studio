@@ -1,0 +1,38 @@
+<section class="wr-page wr-dept-page" id="wrPage" hidden aria-label="Gọi hàng nội bộ cửa hàng và kho">
+  <header class="wr-page-header"><div><div class="wr-eyebrow">WHOSE / INTERNAL OPERATIONS</div><h1>Gọi hàng nội bộ</h1><p id="wrPageSub">Cửa hàng ↔ Kho · cùng một chi nhánh</p></div><div class="wr-header-actions"><span class="wr-live wr-phase-label" id="wrConnection">Bản thử nghiệm giao diện · Chưa mở gửi yêu cầu</span><button class="wr-button wr-primary" id="wrNew" type="button">+ Soạn yêu cầu</button></div></header>
+  <div class="wr-dept-context"><div class="wr-context-icon">⌂</div><div><span>CHI NHÁNH ĐANG THAO TÁC</span><strong id="wrBranchTitle">Chọn chi nhánh từ sidebar</strong></div><div class="wr-context-arrow">Cửa hàng <span>↔</span> Kho</div></div>
+  <div class="wr-layout">
+    <aside class="wr-inbox">
+      <div class="wr-inbox-top"><div><small>HỘP THƯ NỘI BỘ</small><strong>Yêu cầu gọi hàng</strong></div><span id="wrCount">Chưa kích hoạt</span></div>
+      <div class="wr-inbox-search"><svg class="wr-small-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.8"/><path d="m16 16 5 5"/></svg><input id="wrFilter" type="search" placeholder="Tìm yêu cầu, tên sản phẩm, SKU…" aria-label="Tìm yêu cầu nội bộ" disabled></div>
+      <div class="wr-chips" role="group" aria-label="Trạng thái yêu cầu"><button type="button" class="active" aria-pressed="true" disabled>Tất cả</button><button type="button" disabled>Chờ kho</button><button type="button" disabled>Đang xử lý</button><button type="button" disabled>Hoàn tất</button></div>
+      <div class="wr-conversations" id="wrConversations"><div class="wr-empty"><strong>Chưa có dữ liệu yêu cầu nội bộ</strong><p>Yêu cầu chuyển giữa chi nhánh cũ sẽ không xuất hiện ở đây.</p></div></div>
+    </aside>
+    <section class="wr-thread">
+      <div class="wr-thread-head"><div><span class="wr-thread-icon">↔</span><strong id="wrThreadName">Hội thoại giữa hai bộ phận</strong><small id="wrThreadSubtitle">Thẻ yêu cầu và lịch sử từng sản phẩm</small></div><span class="wr-status" id="wrThreadStatus">Nội bộ</span></div>
+      <div class="wr-dept-view-bar"><div class="wr-dept-role"><span>GÓC NHÌN</span><strong id="wrRoleTitle">Đang xác định quyền</strong></div><div class="wr-dept-switch" role="group" aria-label="Góc nhìn bộ phận"><button type="button" data-dept="store" id="wrRoleStore">Cửa hàng</button><button type="button" data-dept="warehouse" id="wrRoleWarehouse">Kho</button></div></div>
+      <div class="wr-thread-scroll" id="wrThread"><div class="wr-thread-placeholder"><span>▤</span><h3>Gọi hàng ngay trong một cửa hàng</h3><p>Yêu cầu thuộc đúng chi nhánh đang chọn. Cả hai bộ phận cùng thấy một luồng xử lý.</p></div></div>
+      <div class="wr-compose"><div class="wr-compose-note"><strong id="wrComposeTitle">Cửa hàng gửi yêu cầu → Kho tiếp nhận</strong><span id="wrComposeHint">Chỉ thao tác SKU, số lượng, mục đích và trạng thái bàn giao.</span></div><button id="wrComposeNew" type="button" class="wr-button wr-primary">+ Soạn yêu cầu</button></div>
+    </section>
+    <aside class="wr-side">
+      <div class="wr-side-card"><div class="wr-side-title">Hai bộ phận · Một chi nhánh</div><div class="wr-dept-info"><span>01</span><div><strong>Cửa hàng</strong><small>Gọi hàng · Nhận · Bán hoặc trả</small></div></div><div class="wr-dept-info"><span>02</span><div><strong>Kho</strong><small>Tiếp nhận · Soạn · Bàn giao · Nhận trả</small></div></div></div>
+      <div class="wr-side-card"><div class="wr-side-title">Vòng đời một yêu cầu</div><div class="wr-stage-list"><span>Gọi hàng</span><span>Kho tiếp nhận</span><span>Soạn &amp; bàn giao</span><span>Cửa hàng nhận</span><span>Bán / hoàn trả</span></div><p>Việc bán hàng cần đối chiếu bill KiotViet. Gọi hàng không tự trừ tồn.</p></div>
+      <div class="wr-side-card"><div class="wr-side-title">Trạng thái tích hợp</div><p><strong>Đang xây dựng backend nội bộ.</strong> Hệ thống chưa có bảng và API yêu cầu cùng chi nhánh. Phiếu chuyển LVS ↔ NVT cũ không được dùng để thay thế.</p></div>
+    </aside>
+  </div>
+</section>
+<div class="wr-modal" id="wrNewModal" hidden>
+  <button class="wr-modal-backdrop" id="wrModalBackdrop" aria-label="Đóng bản nháp"></button>
+  <section class="wr-modal-card" role="dialog" aria-modal="true" aria-labelledby="wrModalTitle">
+    <header><div><div class="wr-eyebrow">STORE → WAREHOUSE</div><h2 id="wrModalTitle">Soạn yêu cầu gọi hàng</h2><p class="wr-modal-context" id="wrModalContext">Nội bộ chi nhánh đang thao tác</p></div><button type="button" id="wrClose" class="wr-close" aria-label="Đóng">×</button></header>
+    <form id="wrForm">
+      <label>Bộ phận yêu cầu<input value="Cửa hàng" disabled></label>
+      <label>Bộ phận tiếp nhận<input value="Kho" disabled></label>
+      <div class="wr-sku-field"><label for="wrSku">Tìm và chọn sản phẩm</label><input id="wrSku" maxlength="100" autocomplete="off" placeholder="Nhập SKU hoặc tên sản phẩm" aria-controls="wrProductResults" aria-autocomplete="list" required><div id="wrProductResults" class="wr-product-results" role="listbox" aria-label="Sản phẩm từ KiotViet" hidden></div><small id="wrSelectedProduct">Danh mục sản phẩm Whose đã đồng bộ KiotViet</small></div>
+      <label>Số lượng<input id="wrQty" type="number" min="1" max="1000000" step="1" value="1" required></label>
+      <label>Lý do gọi / mục đích mượn<textarea id="wrNote" maxlength="1000" rows="3" placeholder="Ví dụ: Khách đang thử tại quầy…" required></textarea></label>
+      <div class="wr-form-status" id="wrFormStatus" role="status">Bản nháp chỉ hiển thị trong phiên trình duyệt. Chưa gửi vào Whose.</div>
+      <footer><button type="button" class="wr-button" id="wrCancel">Đóng</button><button type="submit" class="wr-button wr-primary" id="wrSend">Xem trước bản nháp</button></footer>
+    </form>
+  </section>
+</div>

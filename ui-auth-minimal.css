@@ -1,0 +1,55 @@
+/* Whose Studio — minimal login foundation (isolated to authentication) */
+#authScreen.auth-screen{
+  min-height:100dvh;min-height:100svh;display:flex;align-items:center;justify-content:center;
+  background:#f7f8fa;color:#161c27;padding:32px 18px;
+  font-family:inherit;overflow-y:auto;
+}
+#authScreen .auth-panel{
+  width:min(100%,388px);margin:auto;padding:0;display:flex;flex-direction:column;
+  gap:0;background:transparent!important;box-shadow:none!important;border:0!important;
+}
+#authScreen .auth-symbol{
+  width:56px;height:56px;border-radius:16px;background:#202936;color:#fff;
+  font-size:27px;font-weight:750;margin:0 auto 21px;letter-spacing:-.045em;
+}
+#authScreen .auth-eyebrow{display:none}
+#authScreen h1{margin:0 0 8px;font-size:29px;line-height:1.22;letter-spacing:-.035em;
+  text-align:center;color:#18212e;font-weight:750}
+#authScreen .auth-lede{margin:0 0 30px;max-width:none;text-align:center;
+  color:#778192;font-size:14px;line-height:1.5}
+#authScreen #loginForm{display:flex;flex-direction:column;gap:0;width:100%}
+#authScreen #loginForm label{font-size:13px;font-weight:650;color:#364253;margin:0 0 8px}
+#authScreen #loginForm input{
+  width:100%;box-sizing:border-box;min-height:51px;height:51px;padding:0 15px;
+  margin:0 0 20px;border-radius:11px;border:1px solid #dce1e8;
+  background:#fff;color:#172130;font-size:15px;box-shadow:none!important;
+  transition:border-color .12s ease;
+}
+#authScreen #loginForm input::placeholder{color:#a1a9b6}
+#authScreen #loginForm input:focus{outline:2px solid rgba(41,70,104,.12)!important;
+  outline-offset:0;border-color:#647892!important}
+#authScreen .auth-error{min-height:0;margin:-7px 0 12px;color:#b84242;
+  font-size:12px;line-height:1.55}
+#authScreen .auth-error:empty{display:none}
+#authScreen .auth-submit{
+  width:100%;height:51px;display:flex;justify-content:center;align-items:center;
+  margin-top:3px;border:0;border-radius:11px;background:#202936;color:#fff;
+  font-weight:700;font-size:15px;cursor:pointer;transition:background-color .12s ease;
+}
+#authScreen .auth-submit:hover{background:#334155}
+#authScreen .auth-submit:focus-visible{outline:3px solid #9eb4d0;outline-offset:2px}
+#authScreen .auth-submit:disabled{opacity:.65;cursor:progress}
+#authScreen .auth-recovery-link{align-self:center;margin-top:23px;color:#56667a;
+  font-size:13px;text-align:center;text-decoration:none}
+#authScreen .auth-recovery-link:hover{text-decoration:underline}
+#authScreen .auth-caption{margin-top:32px;text-align:center;font-size:11px;
+  color:#9ca5b2;line-height:1.5}
+#authScreen .auth-side{display:none!important}
+@media(max-width:600px){
+  #authScreen.auth-screen{padding:32px 24px;align-items:center}
+  #authScreen .auth-panel{padding:0;width:min(100%,388px)}
+  #authScreen h1{font-size:27px}
+}
+@media(prefers-reduced-motion:reduce){
+  #authScreen *,#authScreen *::before,#authScreen *::after{transition:none!important;animation:none!important}
+}

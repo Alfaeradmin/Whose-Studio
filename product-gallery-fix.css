@@ -1,0 +1,43 @@
+/* Product profile gallery containment: authoritative layout rules */
+.wpi-left>.wpi-gallery.wpi-gallery-premium{
+ display:block!important;position:relative!important;flex:0 0 auto!important;
+ width:100%!important;min-width:0!important;height:auto!important;min-height:0!important;
+ padding:12px!important;margin:0!important;overflow:hidden!important;
+ border:1px solid #dce6df!important;border-radius:12px!important;
+ background:#fff!important;box-sizing:border-box!important;
+}
+.wpi-left .wpi-gallery-premium>.wpi-photo-hero{
+ position:relative!important;display:grid!important;place-items:center!important;
+ flex:none!important;box-sizing:border-box!important;
+ width:100%!important;height:320px!important;min-height:320px!important;max-height:320px!important;
+ overflow:hidden!important;border-radius:9px!important;
+ background:#f4f6f5!important;isolation:isolate!important;contain:layout paint!important;
+}
+.wpi-left .wpi-gallery-premium>.wpi-photo-hero>img.wpi-main-image{
+ display:block!important;position:relative!important;inset:auto!important;
+ width:100%!important;height:100%!important;min-width:0!important;max-width:100%!important;
+ min-height:0!important;max-height:100%!important;margin:0!important;
+ object-fit:contain!important;object-position:center!important;flex:none!important;
+ border-radius:0!important;background:transparent!important;box-sizing:border-box!important;
+}
+.wpi-left .wpi-gallery-premium>.wpi-photo-hero>img.wpi-main-image[hidden]{display:none!important}
+.wpi-left .wpi-gallery-premium>.wpi-thumbnails{
+ display:flex!important;position:relative!important;gap:8px!important;
+ width:100%!important;max-width:100%!important;height:75px!important;
+ margin-top:10px!important;overflow-x:auto!important;overflow-y:hidden!important;
+ flex:none!important;
+}
+.wpi-left .wpi-gallery-premium .wpi-thumb{
+ display:grid!important;place-items:center!important;flex:0 0 66px!important;
+ width:66px!important;height:65px!important;min-width:66px!important;max-width:66px!important;
+ padding:4px!important;box-sizing:border-box!important;overflow:hidden!important;
+}
+.wpi-left .wpi-gallery-premium .wpi-thumb>img{
+ display:block!important;width:100%!important;height:100%!important;
+ min-width:0!important;max-width:100%!important;min-height:0!important;max-height:100%!important;
+ object-fit:contain!important;
+}
+.wpi-left>.wpi-section{position:relative!important;flex:0 0 auto!important;clear:both!important}
+.wpi-left{min-width:0!important;overflow-x:hidden!important}
+@media(max-width:1050px){.wpi-left .wpi-gallery-premium>.wpi-photo-hero{height:275px!important;min-height:275px!important;max-height:275px!important}}
+@media(max-width:850px){.wpi-left .wpi-gallery-premium>.wpi-photo-hero{height:clamp(230px,56vw,365px)!important;min-height:clamp(230px,56vw,365px)!important;max-height:clamp(230px,56vw,365px)!important}}
