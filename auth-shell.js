@@ -18,6 +18,7 @@ function showApp(data){
   authScreen.hidden=true;
   appRoot.hidden=false;
   if(typeof window.whoseProductsInit==='function')window.whoseProductsInit(data);
+  window.dispatchEvent(new Event('whose:authenticated'));
 }
 function showLogin(message=''){
   session=null;sessionStorage.removeItem(KEY);
