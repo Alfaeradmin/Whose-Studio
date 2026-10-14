@@ -135,6 +135,83 @@ function eventBubble(ev){
   '</div><div class="bubble"><div class="bubble-title">'+esc(ev.action)+'</div>'+
   '<div class="bubble-meta">'+esc(actor(ev.actor))+' · '+stamp(ev.at)+'</div></div></div>';
 }
+function invoiceSummary(c){
+ if(!['delivered','completed','disputed'].includes(c.status))
+  return '<div class="borrow-audit"><div class="audit-banner">Đơn chưa bàn giao xong — chưa thể đối chiếu số đã mượn với hóa đơn.</div></div>';
+ if(!B)return '<div class="notice warn">Module đối soát bill chưa tải xong.</div>';
+ const allocations=state.links||[],invoices=state.invoices||[];
+ let lines='';
+ for(const line of c.lines){
+  let m;try{m=B.stats(c,line.sku,allocations)}
+  catch(e){lines+='<div class="audit-line"><strong>'+esc(line.sku)+'</strong><span>Chưa đủ dữ liệu đối soát</span></div>';continue;}
+  const bills=B.linkedBills(c.id,allocations,invoices).filter(x=>x.sku===line.sku);
+  const status=m.stillBorrowed>0?'pending':m.confirmed>0?'matched':'returned';
+  lines+='<div class="audit-line '+status+'"><div class="audit-info"><strong>'+esc(line.sku)+'</strong>'+
+   '<small>Đã nhận '+n(m.issued)+' · Đã match bán '+n(m.confirmed)+' · Đã trả '+n(m.returned)+'</small>'+
+   (bills.length?'<div class="bill-tags">'+bills.map(x=>
+    '<button type="button" data-bill="'+esc(x.invoiceId)+'">Bill '+esc(x.code)+' · ×'+n(x.qty)+'</button>').join('')+'</div>':'')+
+   '</div><div class="audit-remaining">'+
+   (m.stillBorrowed>0?'<b>'+n(m.stillBorrowed)+' chưa quyết toán</b><small>Chưa thấy bill khớp → cần dò hoặc nhập trả</small>':
+    '<span class="settled">Đã quyết toán</span>')+
+   (m.stillBorrowed>0&&side()==='warehouse'&&(allowed('picker')||allowed('lead'))?
+    '<button class="btn small outline" data-return="'+esc(line.sku)+'" data-remaining="'+m.stillBorrowed+'">Xác nhận nhập trả</button>':'')+
+   '</div></div>';
+ }
+ const suggestions=B.candidates(state.calls,invoices,allocations);
+ const pending=suggestions.candidates.filter(x=>x.callId===c.id);
+ const conflicts=suggestions.ambiguous.filter(x=>x.candidateCallIds.includes(c.id));
+ let proposed='';
+ if(pending.length)proposed+='<div class="audit-banner">Có '+pending.length+
+  ' bill ứng viên chưa được xác nhận. Không tự trừ hàng mượn cho đến khi xác minh.</div>';
+ if(conflicts.length)proposed+='<div class="audit-banner warn">'+conflicts.length+
+  ' bill có nhiều yêu cầu cùng SKU, phải chọn chính xác phiếu gốc.</div>';
+ const real=billProbe?.call===c.id?(billProbe.message||
+  (billProbe.rows||[]).map(x=>'<div class="audit-line"><b>'+esc(x.code)+'</b><span>'+
+  esc(x.sku)+' ×'+n(x.qty)+' · Trạng thái nguồn: '+esc(x.statusValue||'Chưa xác thực')+
+  '</span></div>').join('')+
+  '<p class="mini-disclaimer">Mới đọc '+n(billProbe.scanned)+' chứng từ / trang. Chưa chứng minh đầy đủ lịch sử.</p>'):'';
+ return '<details class="borrow-audit" open><summary>Chi tiết hàng mượn · Khớp bill · Nhập trả</summary>'+
+  '<div class="audit-intro">Nguồn: '+esc(poolLabel(c.branch,c.zone))+
+   ' · Đối chiếu theo từng dòng SKU và số lượng, không khớp cả bill theo một mã.</div>'+
+  lines+proposed+
+  '<div class="audit-footer"><button class="btn small subtle" type="button" data-probe="'+esc(c.lines[0].sku)+
+  '">Tra cứu hóa đơn KiotViet trực tiếp</button><small>Chỉ đọc, không thay đổi tồn. Yêu cầu đăng nhập Whose Preview.</small></div>'+
+  (real?'<div class="audit-live">'+real+'</div>':'')+'</details>';
+}
+function billCard(id){
+ const invoice=(state.invoices||[]).find(x=>x.id===id);if(!invoice)return '';
+ const rel=B.billToCalls(id,state.links||[]);
+ return '<div class="bill-card"><div class="row"><strong>Chi tiết bill '+esc(invoice.code)+
+  '</strong><button type="button" class="btn small subtle" data-closebill>Đóng</button></div>'+
+  '<p>Chi nhánh '+esc(invoice.branch)+' · '+esc(poolLabel(invoice.branch,invoice.warehouse))+
+  ' · '+esc(new Date(invoice.at).toLocaleString('vi-VN'))+'</p>'+
+  '<div class="bill-tags">'+invoice.lines.map(l=>'<span>'+esc(l.sku)+' ×'+n(l.qty)+'</span>').join('')+'</div>'+
+  '<p><b>Đã xác nhận khớp với:</b></p>'+
+  (rel.length?rel.map(x=>'<button class="btn small outline" type="button" data-open="'+esc(x.callId)+'">'+
+    esc(x.callId)+' · '+esc(x.sku)+' ×'+n(x.qty)+'</button>').join(' '):
+   '<div class="audit-banner warn">Chưa có liên kết yêu cầu nào đã xác nhận.</div>')+
+  '<p class="mini-disclaimer">Dữ liệu bill trên trang này là DEMO. Dữ liệu KiotViet thật phải được xác minh riêng.</p></div>';
+}
+async function checkRealBills(sku){
+ const c=current(),token=realToken();
+ if(!c)return;
+ if(!token){billProbe={call:c.id,message:'Cần đăng nhập tài khoản Whose tại Preview để đọc hóa đơn KiotViet.'};body();return}
+ const since=new Date(Math.max(Date.now()-30*86400000,c.created-60000)).toISOString();
+ billProbe={call:c.id,message:'Đang đọc chứng từ nguồn KiotViet (chỉ 10 hóa đơn/trang)…'};body();
+ try{
+  const r=await fetch('/api/ops-bill-probe?'+new URLSearchParams({
+   branch:BRANCH_IDS[c.branch],sku,since,page:'0'
+  }),{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+  if(!r.ok)throw Error('Không thể truy vấn hóa đơn (HTTP '+r.status+').');
+  const data=await r.json();
+  if(current()?.id!==c.id)return;
+  billProbe={call:c.id,rows:data.rows||[],scanned:data.scanned,
+   message:(data.rows||[]).length?'':('Chưa tìm thấy '+sku+' trong '+data.scanned+
+    ' hóa đơn vừa kiểm tra. Chưa thể kết luận chưa bán; có thể còn trang khác.')};
+ }catch(e){billProbe={call:c.id,message:e.message};}
+ body();
+}
+
 function body(){
  const p=person();if(!p)return;
  const c=current();
@@ -152,6 +229,7 @@ function body(){
   $('detailContent').innerHTML='<div class="empty-state"><strong>Giao tiếp như nhắn tin</strong>'+
    'Chọn một yêu cầu ở bên trái để xem toàn bộ dòng thời gian.<p>Không có ô gửi tin nhắn tự do: chỉ mã hàng, lý do mượn, ghi chú và cập nhật tiến độ.</p></div>';
  }
+ if(c)$('detailContent').innerHTML+=invoiceSummary(c)+(selectedBill?billCard(selectedBill):'');
  const role=p.duty==='admin'?side()+' (admin)':M.niceDuty[p.duty];
  if(notice)$('detailContent').innerHTML+='<div class="notice '+(notice.startsWith('⚠')?'warn':'success')+'">'+esc(notice)+'</div>';
  renderComposer(c,p);
