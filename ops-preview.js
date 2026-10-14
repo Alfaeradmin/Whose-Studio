@@ -169,7 +169,8 @@ function storeComposer(c,p){
  return '<div class="composer-title"><span>Soạn yêu cầu gửi kho</span><span class="label">Chỉ mã · lý do mượn · ghi chú</span></div>'+
   '<div class="composer-grid"><label class="field">Mã sản phẩm<input id="skuInput" type="search" placeholder="Scan / nhập SKU" autocomplete="off" maxlength="40"></label>'+
    '<label class="field">SL<input id="qtyInput" type="number" value="1" min="1" max="100"></label>'+
-   '<button type="button" id="addSku" class="btn outline">+ Thêm mã</button></div>'+\n  '<div class="product-suggestions" id="productSuggestions" hidden></div>'+
+   '<button type="button" id="addSku" class="btn outline">+ Thêm mã</button></div>'+
+  '<div class="product-suggestions" id="productSuggestions" hidden></div>'+
    (draft.length?'<div class="draft-products">'+skuChips+'</div>':'')+
    '<div class="composer-extra"><label class="field">Lý do mượn<select id="borrowReason">'+reasonOptions+'</select></label>'+
     '<label class="field">Ghi chú<input id="borrowNote" maxlength="240" value="'+esc(draftNote)+'" placeholder="Ví dụ: khách đang thử size M"></label></div>'+
