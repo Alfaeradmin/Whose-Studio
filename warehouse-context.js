@@ -65,6 +65,7 @@
   }
  }
  function bootstrap(){
+  const previousId=selected?.id,previousUser=userKey;
   const session=window.whoseSession?.();
   if(!session?.user?.id){
    userKey='';allowed=[];selected=null;
@@ -84,8 +85,7 @@
   try{persisted=sessionStorage.getItem(storageKey(userKey))}catch{}
   const requested=selected?.id&&canUse(selected.id)?selected.id:persisted&&canUse(persisted)?persisted:allowed[0].id;
   render();choose(requested,false);render();
-  if(!ready||selected?.id!==requested)emit();
-  else emit(); // sync dependent screens after login refresh
+  if(!ready||previousId!==selected?.id||previousUser!==userKey)emit();
   ready=true;
  }
  toggle.addEventListener('click',()=>{
