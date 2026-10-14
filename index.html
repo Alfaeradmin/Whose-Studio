@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="/product-inspector.css?v=20261014-modal">
 <link rel="stylesheet" href="/product-insights.css?v=20261014">
 <link rel="stylesheet" href="/product-modal-layout.css?v=20261014">
+<link rel="stylesheet" href="/product-premium.css?v=20261014">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
@@ -71,7 +72,7 @@ button,input{font:inherit}
  </div><aside class="ws-filter-rail"><section class="ws-side-card"><h3>Danh mục sản phẩm</h3><select class="products-select" id="productsCategory" aria-label="Lọc danh mục"><option value="all">Tất cả danh mục</option></select><p>Danh mục lấy từ KiotViet</p></section><section class="ws-side-card"><h3>Trạng thái hình ảnh</h3><select class="products-select" id="productsImage" aria-label="Lọc hình ảnh"><option value="all">Tất cả hình ảnh</option><option value="with">Có hình ảnh</option><option value="without">Chưa có ảnh</option></select></section><section class="ws-side-card"><h3>Nguồn dữ liệu</h3><select class="products-select" id="productsSource" aria-label="Nguồn dữ liệu"><option value="catalog">Đã đồng bộ về Whose</option><option value="kiot">Xem trực tiếp KiotViet</option></select><p>KiotViet chỉ đọc; không ghi tồn kho</p></section><section class="ws-side-card"><h3>Trạng thái đồng bộ</h3><p id="wsSyncStatus">Kết nối được xác nhận khi tải dữ liệu</p></section><section class="ws-side-card"><h3>Nhãn màu</h3><div class="ws-tags"><span>Áo</span><span>Quần</span><span>Đầm</span><span>Phụ kiện</span></div><p>Size hiển thị theo dữ liệu nguồn</p></section></aside></div></section></main></div>
 </div>
 <div class="wpi-shell" id="wsProductInspector" hidden><button class="wpi-backdrop" id="wsProductInspectorBackdrop" aria-label="Đóng chi tiết"></button><aside class="wpi-drawer" role="dialog" aria-modal="true" aria-labelledby="wsProductInspectorName"><div class="wpi-header"><div><div class="wpi-kicker">WHOSE / PRODUCT PROFILE</div><h2 id="wsProductInspectorName">Chi tiết sản phẩm</h2></div><button class="wpi-close" id="wsProductInspectorClose" type="button" aria-label="Đóng">×</button></div><div class="wpi-body" id="wsProductInspectorBody"></div></aside></div>
-<script src="/product-inspector.js?v=20261014-layout" defer></script>
+<script src="/product-inspector.js?v=20261014-premium" defer></script>
 <script src="/auth-shell.js?v=20261014" defer></script>
 <script src="/products-new.js?v=20261014-autosync1" defer></script>
 <script src="/option-c-dropdowns.js?v=20261014-2" defer></script>
