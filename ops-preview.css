@@ -67,3 +67,6 @@ button:focus-visible,a:focus-visible{outline:3px solid #a998d6;outline-offset:2p
 @media(max-width:1200px){.chat-layout{grid-template-columns:280px minmax(0,1fr)}.context-side{display:none}}
 @media(max-width:720px){.shell{padding:0 10px}.identity-bar{flex-direction:column;align-items:stretch}.identity-controls{flex-wrap:wrap}.identity-controls label{flex:1;min-width:140px}.mini-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.chat-layout{display:flex;flex-direction:column;height:auto}.conversations{height:255px;flex:none}.messenger{height:620px}.thread-scroll{padding:15px}.composer-area{max-height:320px}.top-links{gap:7px}.top-links a{font-size:11px}.message-row{max-width:95%}}
 @media(max-width:410px){.composer-grid{grid-template-columns:1fr 75px}.composer-grid button{grid-column:1/-1}.composer-extra{grid-template-columns:1fr}.chat-side-head,.messenger-head{padding:13px}.message-row{max-width:100%}}
+
+/* Never expose the admin-only view selector to non-admin roles. */
+[hidden]{display:none!important}
