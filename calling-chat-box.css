@@ -163,3 +163,5 @@
 @media(max-width:1250px){.wc-workspace{grid-template-columns:minmax(250px,300px) minmax(0,1fr)}.wc-detail-rail{display:none}}
 @media(max-width:760px){.wc-page{padding:14px}.wc-page-heading{flex-wrap:wrap}.wc-workspace{grid-template-columns:minmax(0,1fr);height:auto}.wc-inbox{height:258px}.wc-chat{height:68dvh;min-height:480px}.wc-inbox-title{padding:14px}.wc-chat-header{padding:12px}.wc-chat-toolbar{padding:10px 12px}.wc-chat-bridge{display:none}.wc-messages{padding:15px}.wc-composer{padding:11px}.wc-sync-label{display:none}.wc-create-main{padding:17px}.wc-create-header,.wc-create-footer{padding:17px}}
 @media(prefers-reduced-motion:reduce){.wc-page button,.wc-overlay button{transition:none!important}}
+
+.wc-create-main .wc-form-label[hidden]{display:none!important}
