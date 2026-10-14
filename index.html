@@ -7,6 +7,7 @@
 <meta name="description" content="Whose Studio workspace">
 <meta name="theme-color" content="#f7f8fa">
 <link rel="stylesheet" href="/ui-auth-minimal.css?v=20261014">
+<link rel="stylesheet" href="/products-new.css?v=20261014">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
@@ -47,11 +48,25 @@ button,input{font:inherit}
 </div>
 <div class="workspace-blank" id="appRoot" hidden>
   <header class="workspace-topbar">
-    <div class="workspace-brand">WHOSE STUDIO</div>
+    <div class="workspace-brand">WHOSE STUDIO</div><nav class="workspace-nav"><button class="workspace-tab" type="button" aria-current="page">Sản phẩm</button></nav>
     <button class="workspace-logout" type="button" id="logoutBtn">Đăng xuất</button>
   </header>
-  <main class="workspace-canvas" aria-label="Workspace trống"></main>
+  <main class="workspace-canvas" aria-label="Danh mục sản phẩm">
+<section class="products-page">
+ <div class="products-hero"><div><div class="products-kicker">WHOSE / PRODUCT CATALOG</div><h1>Sản phẩm</h1><p class="products-description">Danh mục từ KiotViet · hình ảnh và thuộc tính gốc</p></div>
+ <div class="products-actions"><button type="button" class="products-button" id="productsRefresh">Làm mới</button><button type="button" class="products-button primary" id="productsSync" hidden>Đồng bộ toàn bộ KiotViet</button></div></div>
+ <div class="products-stats"><div class="products-stat"><small>Sản phẩm đã lưu</small><strong id="productsTotal">—</strong></div><div class="products-stat"><small>Có hình ảnh</small><strong id="productsPhotos">—</strong></div><div class="products-stat"><small>Đồng bộ gần nhất</small><strong id="productsLastSync">—</strong></div></div>
+ <div class="products-toolbar"><input class="products-search" id="productsSearch" type="search" placeholder="Tìm SKU hoặc tên sản phẩm…" aria-label="Tìm kiếm sản phẩm">
+ <select class="products-select" id="productsCategory" aria-label="Lọc danh mục"><option value="all">Tất cả danh mục</option></select>
+ <select class="products-select" id="productsImage" aria-label="Lọc hình ảnh"><option value="all">Tất cả hình ảnh</option><option value="with">Có hình ảnh</option><option value="without">Chưa có ảnh</option></select>
+ <select class="products-select" id="productsSource" aria-label="Nguồn dữ liệu"><option value="catalog">Đã đồng bộ về Whose</option><option value="kiot">Xem trực tiếp KiotViet</option></select></div>
+ <div class="products-progress" id="productsProgress" hidden><div class="products-progress-bar" id="productsProgressBar"></div></div><div class="products-sync-detail" id="productsSyncDetail"></div>
+ <p class="products-status" id="productsStatus" role="status" aria-live="polite"></p>
+ <div class="products-grid" id="productsGrid"></div>
+ <div class="products-footer"><button type="button" class="products-button" id="productsPrev">Trang trước</button><span id="productsPage">Trang 1</span><button type="button" class="products-button" id="productsNext">Trang sau</button></div>
+ </section></main>
 </div>
 <script src="/auth-shell.js?v=20261014" defer></script>
+<script src="/products-new.js?v=20261014" defer></script>
 </body>
 </html>
