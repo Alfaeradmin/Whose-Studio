@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
-const M=require('../lib/whose-ops-preview-model');
+const M=require('../ops-preview-model');
 const {validate}=require('../api/ops-flow')._test;
 const SRC=n=>fs.readFileSync(path.join(__dirname,'..',n),'utf8');
 const ids={branch:'43be6d1f-64d3-4738-9683-37ec6a7d14b5',
