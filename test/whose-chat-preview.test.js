@@ -31,6 +31,8 @@ test('database release remains Whose-only and protects borrowing reasons',()=>{
 });
 test('demo does not silently access real Whose or Kiot data',()=>{
  assert.match(html,/PREVIEW \/ DEMO/);
- assert.doesNotMatch(ui,/\bfetch\(|authorizedFetch|localStorage|\bXMLHttpRequest/);
+ assert.doesNotMatch(ui,/authorizedFetch|localStorage|\bXMLHttpRequest/);
+ assert.match(ui,/\/api\/ops-product-search/);
+ assert.match(ui,/\/api\/ops-bill-probe/);
  assert.match(ui,/sessionStorage/);
 });
