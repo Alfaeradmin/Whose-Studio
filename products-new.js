@@ -39,6 +39,7 @@ function card(p){
  box.append(tags);
  const stopped=p.active===false||p.metadata?.sourceActive===false;
  box.append(node('span','product-state',stopped?'● Ngừng bán':'● Đang bán'));
+ box.tabIndex=0;box.setAttribute('role','button');box.setAttribute('aria-label','Xem chi tiết '+(p.name||p.sku));box.onclick=()=>window.whoseProductDetail?.(p);box.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();box.click()}};
  return box;
 }
 function render(){
