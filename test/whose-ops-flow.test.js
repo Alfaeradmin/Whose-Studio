@@ -107,7 +107,7 @@ test('preview is clearly sample data and never pretends to mutate Kiot',()=>{
  assert.match(html,/PREVIEW \/ DEMO/);
  assert.match(html,/Không thay đổi tồn kho/);
  assert.match(html,/ops-preview\.js/);
- assert.match(html,/whose-ops-preview-model\.js/);
+ assert.match(html,/ops-preview-model\.js/);
  assert.doesNotMatch(ui,/authorizedFetch|fetch\(|public\.kiotapi\.com/);
  assert.match(api,/verifyOrigin/);
  assert.match(api,/validateStaffBearer/);
