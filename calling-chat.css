@@ -107,3 +107,11 @@
 @media(max-width:1240px){.wr-layout{grid-template-columns:minmax(255px,310px) minmax(0,1fr)}.wr-side{display:none}}
 @media(max-width:760px){.wr-page{padding:19px 13px 26px}.wr-page-header{display:block}.wr-header-actions{justify-content:flex-start;margin-top:17px}.wr-live{flex:1}.wr-layout{display:grid;grid-template-columns:minmax(0,1fr);height:auto;gap:12px}.wr-inbox{height:290px}.wr-thread{height:67dvh;min-height:475px}.wr-thread-head{padding:12px 15px;min-height:72px}.wr-thread-head strong{font-size:12px}.wr-thread-scroll{padding:14px}.wr-message{max-width:100%;padding:14px}.wr-compose{padding:12px}.wr-compose-note{display:none}.wr-modal{padding:11px}.wr-modal-card form{padding:18px}.wr-modal-card header{padding:18px}}
 @media(prefers-reduced-motion:reduce){.wr-button,.wr-conversation,.wr-chips button,.wr-inbox-search input{transition:none!important}}
+
+/* Warehouse scope summary shares the global selector; no second independent branch filter. */
+.wr-active-warehouse{display:flex;align-items:center;gap:10px;border:1px solid #d7e8dc;background:#f2f9f3;border-radius:10px;padding:12px;min-width:0}
+.wr-active-warehouse-icon{display:grid;place-items:center;flex:0 0 35px;width:35px;height:35px;background:#dceee1;border-radius:9px;color:#247f4c;font-size:20px}
+.wr-active-warehouse div{min-width:0;display:grid;gap:5px}
+.wr-active-warehouse strong{font-size:12px;color:#285137;line-height:1.4;word-break:break-word}
+.wr-active-warehouse small{font-size:10px;color:#779785;line-height:1.5}
+#wrFrom:disabled{color:#2a5f3d;background:#eef7f0;border-color:#cae3d1;opacity:1;cursor:default}
