@@ -85,3 +85,48 @@
  #appRoot .ws-collapse-toggle{display:none}
 }
 @media(prefers-reduced-motion:reduce){#appRoot.workspace-blank,#appRoot .ws-sidebar,#appRoot button.ws-nav-link,#appRoot button.ws-collapse-toggle,#appRoot .workspace-logout{transition:none!important}}
+
+/* Branch warehouse action selector. This never grants any server-side permission. */
+#appRoot .ws-warehouse-picker{position:relative;min-width:0;margin:0 11px 20px;z-index:45}
+#appRoot .ws-warehouse-caption{padding:0 11px;margin-bottom:9px;color:#748b7b;font-size:10px;font-weight:780;letter-spacing:.115em;white-space:nowrap}
+#appRoot button.ws-warehouse-trigger{display:flex;align-items:center;gap:10px;box-sizing:border-box;width:100%;min-height:65px;margin:0;padding:10px 11px;cursor:pointer;text-align:left;border:1px solid #35463a;border-radius:10px;background:#202c24;color:#f0faf1;transition:background-color var(--ws-motion) var(--ws-ease),border-color var(--ws-motion) var(--ws-ease)}
+#appRoot button.ws-warehouse-trigger:hover,#appRoot .ws-warehouse-picker.is-open button.ws-warehouse-trigger{border-color:#668872;background:#29392e}
+#appRoot button.ws-warehouse-trigger:disabled{opacity:.6;cursor:default}
+#appRoot button.ws-warehouse-trigger .ws-workspace-avatar{background:#31533d;color:#b8ebc7;width:36px;height:36px;flex-basis:36px}
+#appRoot button.ws-warehouse-trigger .ws-workspace-avatar .ws-icon{width:20px;height:20px;flex-basis:20px}
+#appRoot button.ws-warehouse-trigger .ws-workspace-copy{flex:1;min-width:0}
+#appRoot button.ws-warehouse-trigger .ws-workspace-copy strong{max-width:100%;font-size:11.5px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+#appRoot button.ws-warehouse-trigger .ws-workspace-copy small{color:#91b5a0;font-size:10px}
+#appRoot button.ws-warehouse-trigger .ws-workspace-chevron{margin-left:0;width:16px;height:16px;flex:0 0 16px;color:#9fbbab}
+#appRoot .ws-warehouse-picker.is-open .ws-workspace-chevron{color:#d4f6db}
+#appRoot .ws-warehouse-options{position:absolute;left:0;right:0;top:calc(100% + 7px);z-index:55;box-sizing:border-box;background:#25342a;border:1px solid #506453;border-radius:11px;padding:6px;box-shadow:0 14px 35px #040e084f;max-height:255px;overflow-y:auto}
+#appRoot .ws-warehouse-options[hidden]{display:none!important}
+#appRoot .ws-warehouse-option{display:flex;align-items:center;gap:9px;box-sizing:border-box;width:100%;min-height:54px;border:1px solid transparent;border-radius:8px;padding:8px;text-align:left;background:transparent;color:#dbe9df;cursor:pointer}
+#appRoot .ws-warehouse-option:hover,#appRoot .ws-warehouse-option:focus-visible{outline:none;background:#344e3b;border-color:#4e7254}
+#appRoot .ws-warehouse-option.is-selected{background:#33543d;border-color:#4d7757}
+#appRoot .ws-warehouse-option-icon{display:grid;place-items:center;border-radius:8px;width:30px;height:30px;flex:0 0 30px;background:#476250;color:#b9e7c5;font-size:13px;font-weight:750}
+#appRoot .ws-warehouse-option-main{display:grid;gap:4px;min-width:0;flex:1}
+#appRoot .ws-warehouse-option-main strong{font-size:10.7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#appRoot .ws-warehouse-option-main small{font-size:10px;color:#9bb6a2}
+#appRoot .ws-warehouse-check{color:#abf0be;font-size:16px;font-weight:750}
+#appRoot .ws-warehouse-top{display:flex;align-items:center;gap:8px;max-width:min(32vw,290px);padding:8px 10px;border:1px solid #dce6dd;border-radius:8px;color:#386447;background:#f7faf7;font-size:11px;font-weight:720;white-space:nowrap;cursor:pointer;transition:background-color var(--ws-motion),border-color var(--ws-motion)}
+#appRoot .ws-warehouse-top:hover{background:#edf7ef;border-color:#a9cdb5}
+#appRoot .ws-warehouse-top:disabled{opacity:.55;cursor:default}
+#appRoot .ws-warehouse-top .ws-icon{width:15px;height:15px;flex:0 0 15px}
+#appRoot .ws-warehouse-top span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#appRoot .ws-warehouse-top .ws-warehouse-top-chevron{width:13px;height:13px;flex:0 0 13px;color:#80a48b}
+#appRoot.ws-is-collapsed .ws-warehouse-caption,#appRoot.ws-is-collapsed .ws-warehouse-trigger .ws-workspace-chevron{display:none}
+#appRoot.ws-is-collapsed .ws-warehouse-picker{margin:0 9px 20px}
+#appRoot.ws-is-collapsed button.ws-warehouse-trigger{justify-content:center;min-height:52px;padding:8px}
+#appRoot.ws-is-collapsed .ws-warehouse-options{display:none!important}
+#appRoot.ws-is-collapsed .ws-warehouse-trigger .ws-workspace-copy{display:none}
+#appRoot .ws-warehouse-trigger:focus-visible,#appRoot .ws-warehouse-top:focus-visible{outline:2px solid #72daa1;outline-offset:2px}
+@media(max-width:800px){
+ #appRoot .ws-warehouse-top{max-width:165px;padding:7px 8px}
+ #appRoot .ws-warehouse-top span{max-width:110px}
+ #appRoot.ws-is-collapsed .ws-warehouse-picker{margin:0 11px 20px}
+ #appRoot.ws-is-collapsed .ws-warehouse-caption,#appRoot.ws-is-collapsed .ws-warehouse-trigger .ws-workspace-copy,#appRoot.ws-is-collapsed .ws-warehouse-trigger .ws-workspace-chevron{display:flex}
+ #appRoot.ws-is-collapsed button.ws-warehouse-trigger{min-height:65px;justify-content:flex-start;padding:10px 11px}
+ #appRoot.ws-is-collapsed .ws-warehouse-options:not([hidden]){display:block!important}
+}
+@media(max-width:480px){#appRoot .ws-topbar-path{gap:6px}#appRoot .ws-warehouse-top{max-width:125px}#appRoot .ws-warehouse-top .ws-warehouse-top-chevron{display:none}}
