@@ -43,7 +43,7 @@ test('picker can claim a wave only same zone max eight and cannot double claim',
 });
 test('wave picking never mixes baskets, rejects wrong SKU and overpick',()=>{
  const {s,picker}=fresh();
- const jobs=s.calls.filter(c=>c.branch==='LVS'&&c.zone==='MAIN');
+ const jobs=s.calls.filter(c=>c.branch==='LVS'&&c.zone==='MAIN'&&c.status==='queued');
  const [a,b]=jobs.slice(0,2);
  M.claimWave(s,picker.id,[a.id,b.id]);
  const sku=a.lines[0].sku,original=b.lines[0].picked;
