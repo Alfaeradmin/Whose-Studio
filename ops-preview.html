@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whose Studio · Store ↔ Warehouse Preview</title>
+<meta name="description" content="Whose Studio interactive demonstration of shift-aware store-to-warehouse order management.">
+<link rel="stylesheet" href="/ops-preview.css?v=1">
+</head>
+<body>
+<div class="demo-banner" role="status"><span class="demo-pill">PREVIEW / DEMO</span> Dữ liệu bên dưới chỉ dùng để thử quy trình; không phải đơn KiotViet hay đơn thật của Whose. Không thay đổi tồn kho.</div>
+<div class="shell">
+<header class="top">
+ <div class="brand"><div class="brand-mark">W</div><div><strong>WHOSE STUDIO</strong><small>STORE ↔ WAREHOUSE OPERATIONS</small></div></div>
+ <nav class="top-links"><a href="/index.html">← Ứng dụng Whose</a><button id="resetDemo" type="button" class="btn subtle">Đặt lại demo</button></nav>
+</header>
+<section class="intro">
+ <div><span class="eyebrow">LƯỢT GỌI HÀNG · KHO NỘI BỘ</span><h1>Đông khách vẫn soạn chính xác.</h1><p>Một hàng đợi chung. Mỗi yêu cầu một giỏ riêng. Nhân viên thao tác theo đúng vị trí được chia trong ca.</p></div>
+ <div class="intro-tools"><label>Chi nhánh <select id="branch"><option value="LVS">WHOSE STUDIO LVS</option><option value="NVT">WHOSE STUDIO NVT</option></select></label>
+ <label>Đang thao tác với tư cách <select id="employee"></select></label></div>
+</section>
+<div class="stats" id="stats" aria-live="polite"></div>
+<div class="workspace">
+<aside class="pane queue">
+ <div class="pane-head"><div><h2>Hàng đợi yêu cầu</h2><p id="queueSubtitle">Đơn thực tế không được nạp vào bản demo</p></div><span id="queueCount" class="count">0</span></div>
+ <div class="queue-tools"><input type="search" id="search" placeholder="Tìm mã đơn hoặc SKU" aria-label="Tìm yêu cầu">
+ <select id="statusFilter" aria-label="Lọc trạng thái"><option value="active">Đang xử lý</option><option value="all">Tất cả</option><option value="queued">Chờ soạn</option><option value="picking">Đang soạn</option><option value="ready">Chờ bàn giao</option><option value="in_transit">Đang vận chuyển</option><option value="delivered">Chờ cửa hàng nhận</option><option value="completed">Hoàn tất</option><option value="disputed">Báo lệch</option></select></div>
+ <div id="orderQueue" class="queue-scroll" aria-label="Danh sách yêu cầu"></div>
+ <div class="queue-bottom"><button class="btn outline" id="seedMore" type="button">+ 40 yêu cầu mô phỏng</button></div>
+</aside>
+<main class="pane detail">
+<div class="pane-head"><div><h2 id="detailTitle">Bảng thao tác</h2><p id="detailSub">Thử các vai trò để thấy đúng màn dành cho mỗi người</p></div><span id="roleChip" class="role-chip">—</span></div>
+<div class="detail-content" id="detailContent"></div>
+</main>
+<aside class="pane side">
+<div class="pane-head"><div><h2>Phân tầng theo ca</h2><p>Chức vụ trong ca quyết định quyền</p></div></div>
+<div class="roster" id="shiftRoster"></div>
+<div class="side-note"><strong>Nguyên tắc chống lẫn</strong><p>Gom tối đa 8 đơn cùng khu vực vào một lượt. Mỗi đơn vẫn có mã giỏ riêng và bảng SKU riêng. Khi scan, hệ thống chỉ ghi nhận vào đúng đơn đang chọn.</p></div>
+<div class="side-note amber"><strong>Không ghi KiotViet</strong><p>Gọi hàng, soạn và bàn giao là sổ vận hành nội bộ. Chỉ khi có nghiệp vụ được duyệt riêng mới đối soát tồn KiotViet.</p></div>
+</aside>
+</div>
+<footer class="foot">Interactive workflow prototype · Session-only demo data · Branch-scoped views · No Kiot write calls</footer>
+</div>
+<script src="/ops-preview-model.js?v=1" defer></script>
+<script src="/ops-preview.js?v=1" defer></script>
+</body>
+</html>
