@@ -78,7 +78,15 @@ button,input{font:inherit}
       <div class="ws-brand-copy"><strong>WHOSE STUDIO</strong><small>Operations Workspace</small></div>
       <button class="ws-sidebar-close" id="wsSidebarMobileClose" type="button" aria-label="Đóng menu"><svg class="ws-icon"><use href="#ws-i-close"></use></svg></button>
     </div>
-    <div class="ws-workspace-card"><span class="ws-workspace-avatar">W</span><span class="ws-workspace-copy"><strong>Whose Studio</strong><small>Không gian vận hành</small></span></div>
+    <div class="ws-warehouse-picker" id="wsWarehousePicker">
+      <div class="ws-warehouse-caption">KHO THAO TÁC</div>
+      <button class="ws-workspace-card ws-warehouse-trigger" id="wsWarehouseToggle" type="button" aria-label="Chọn kho thao tác" aria-haspopup="listbox" aria-expanded="false" aria-controls="wsWarehouseOptions" title="Chọn kho thao tác">
+        <span class="ws-workspace-avatar"><svg class="ws-icon" viewBox="0 0 24 24"><use href="#ws-i-warehouse"></use></svg></span>
+        <span class="ws-workspace-copy"><strong id="wsWarehouseName">Đang xác định quyền kho</strong><small id="wsWarehouseHint">Kho đang sử dụng</small></span>
+        <svg class="ws-icon ws-workspace-chevron" viewBox="0 0 24 24"><use href="#ws-i-chevrons"></use></svg>
+      </button>
+      <div id="wsWarehouseOptions" class="ws-warehouse-options" role="listbox" aria-label="Kho thao tác được phép chọn" hidden></div>
+    </div>
     <nav class="ws-sidebar-nav" aria-label="Chức năng">
       <div class="ws-nav-group-title">LÀM VIỆC</div>
       <button class="ws-nav-link is-current" id="wsNavProducts" type="button" data-page="products" aria-current="page" title="Sản phẩm"><svg class="ws-icon"><use href="#ws-i-box"></use></svg><span class="ws-nav-text">Sản phẩm</span><span class="ws-nav-indicator" aria-hidden="true"></span></button>
@@ -102,7 +110,7 @@ button,input{font:inherit}
         <span class="ws-topbar-root">Workspace</span><svg class="ws-icon ws-breadcrumb-arrow"><use href="#ws-i-chevron"></use></svg>
         <strong id="wsPageTitle">Sản phẩm</strong><span class="ws-topbar-detail" id="wsPageSubtitle"> / Danh mục KiotViet</span>
       </div>
-      <div class="ws-topbar-right"><span class="ws-preview-chip"><span></span> Preview</span><button class="workspace-logout" type="button" id="logoutBtn"><svg class="ws-icon"><use href="#ws-i-logout"></use></svg><span>Đăng xuất</span></button></div>
+      <div class="ws-topbar-right"><button id="wsWarehouseTop" class="ws-warehouse-top" type="button" title="Đổi kho thao tác"><svg class="ws-icon" viewBox="0 0 24 24"><use href="#ws-i-warehouse"></use></svg><span id="wsWarehouseTopName">Chọn kho thao tác</span><svg class="ws-icon ws-warehouse-top-chevron" viewBox="0 0 24 24"><use href="#ws-i-chevrons"></use></svg></button><span class="ws-preview-chip"><span></span> Preview</span><button class="workspace-logout" type="button" id="logoutBtn"><svg class="ws-icon"><use href="#ws-i-logout"></use></svg><span>Đăng xuất</span></button></div>
     </header>
   <main class="workspace-canvas" aria-label="Danh mục sản phẩm">
 <section class="products-page">
@@ -126,5 +134,6 @@ button,input{font:inherit}
 <script src="/option-c-dropdowns.js?v=20261014-2" defer></script>
 <script src="/calling-chat.js?v=20261014-v3" defer></script>
 <script src="/calling-navigation.js?v=20261014-v2" defer></script>
+<script src="/warehouse-context.js?v=20261014-v1" defer></script>
 </body>
 </html>
