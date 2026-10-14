@@ -29,7 +29,7 @@ function validate(body){
  const branch=body.branch;
  if(body.type==='submit'){
   return validId(branch)&&ZONE.test(body.zone||'')&&validId(body.key)&&
-   typeof(body.note??'')==='string'&&body.note?.length<=500&&lines(body.lines,'submit')?
+   typeof(body.note??'')==='string'&&(body.note??'').length<=500&&lines(body.lines,'submit')?
    ['whose_ops_submit',{p_branch:branch,p_zone:body.zone,p_lines:body.lines,
     p_key:body.key,p_note:body.note||null}]:null;
  }
