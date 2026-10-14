@@ -4,11 +4,20 @@ const authScreen=document.getElementById('authScreen');
 const appRoot=document.getElementById('appRoot');
 const error=document.getElementById('loginError');
 let session=null;
+window.whoseSession=()=>session;
+window.whoseAccessToken=async()=>{
+ if(!session?.access_token)return null;
+ if(Number(session.expires_at||0)*1000<Date.now()+45000&&session.refresh_token){
+  try{const renewed=await authPost({action:'refresh',refresh_token:session.refresh_token});showApp(renewed)}catch{showLogin('Phiên đăng nhập đã hết hạn.');return null}
+ }
+ return session?.access_token||null;
+};
 function showApp(data){
   session=data;
   sessionStorage.setItem(KEY,JSON.stringify(data));
   authScreen.hidden=true;
   appRoot.hidden=false;
+  if(typeof window.whoseProductsInit==='function')window.whoseProductsInit(data);
 }
 function showLogin(message=''){
   session=null;sessionStorage.removeItem(KEY);
