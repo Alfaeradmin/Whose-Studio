@@ -55,6 +55,20 @@ const http=async(req,res)=>{
   if(!result.ok)return res.status(responseCode(result.status)).json({error:result.status===403?'Role cannot create store requests':result.data?.message||'Could not create request'});
   return res.status(201).json({id:result.data});
  }
+ if(body.action==='add'){
+  if(!isUuid(body.chat_id))return res.status(400).json({error:'Invalid conversation'});
+  if(!Array.isArray(body.lines)||body.lines.length<1||body.lines.length>40)return res.status(400).json({error:'Select up to 40 SKU'});
+  const lines=[];for(const item of body.lines){
+   const sku=String(item?.sku||'').trim(),qty=Number(item?.qty);
+   if(!sku||sku.length>100||!Number.isInteger(qty)||qty<1||qty>1000000)return res.status(400).json({error:'Invalid SKU quantity'});
+   lines.push({sku,qty});
+  }
+  const note=String(body.note||'').trim();
+  if(note.length<3||note.length>1000)return res.status(400).json({error:'Add the reason for requesting more products'});
+  const result=await rest('rpc/whose_chat_add_lines',{method:'POST',bearer,body:{p_chat:body.chat_id,p_lines:lines,p_note:note,p_idempotency:requestKey||null}});
+  if(!result.ok)return res.status(responseCode(result.status)).json({error:result.data?.message||'Could not add SKU'});
+  return res.status(200).json({result:result.data});
+ }
  if(body.action==='act'){
   if(!isUuid(body.chat_id))return res.status(400).json({error:'Select conversation'});
   const action=String(body.kind||'');
