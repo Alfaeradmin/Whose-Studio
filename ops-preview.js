@@ -111,7 +111,7 @@ function list(){
  $('queueBottom').hidden=false;
 }
 function roster(){
- const all=state.employees.filter(e=>e.branch===branch);
+ const all=state.employees.filter(e=>e.branch===branch&&e.active);
  $('shiftRoster').innerHTML=all.map(e=>'<div class="person"><strong>'+esc(e.name)+'</strong><small>'+esc(M.niceDuty[e.duty])+
   ' · '+esc(e.zone)+(e.id===employeeId?' · bạn đang xem':'')+'</small></div>').join('');
 }
@@ -157,10 +157,12 @@ function invoiceSummary(c){
     '<button class="btn small outline" data-return="'+esc(line.sku)+'" data-remaining="'+m.stillBorrowed+'">Xác nhận nhập trả</button>':'')+
    '</div></div>';
  }
- const suggestions=B.candidates(state.calls,invoices,allocations);
+ let suggestions={candidates:[],ambiguous:[]};let validationIssue='';
+ try{suggestions=B.candidates(state.calls,invoices,allocations)}
+ catch(e){validationIssue='Hóa đơn đã xác nhận có thay đổi hoặc dữ liệu nguồn không nhất quán. Cần kiểm tra lại.';}
  const pending=suggestions.candidates.filter(x=>x.callId===c.id);
  const conflicts=suggestions.ambiguous.filter(x=>x.candidateCallIds.includes(c.id));
- let proposed='';
+ let proposed=validationIssue?'<div class="audit-banner warn">'+esc(validationIssue)+'</div>':'';
  if(pending.length)proposed+='<div class="audit-banner">Có '+pending.length+
   ' bill ứng viên chưa được xác nhận. Không tự trừ hàng mượn cho đến khi xác minh.</div>';
  if(conflicts.length)proposed+='<div class="audit-banner warn">'+conflicts.length+
@@ -428,6 +430,9 @@ $('viewMode').addEventListener('change',()=>{if(person()?.duty!=='admin'){warn('
 $('statusFilter').addEventListener('change',()=>{list()});
 $('search').addEventListener('input',()=>{list()});
 $('seedMore').addEventListener('click',()=>{M.seed(state,branch,40);warn('Đã thêm 40 yêu cầu mô phỏng.')});
+$('showBillDemo').addEventListener('click',()=>{branch='LVS';$('branch').value=branch;
+ employeeId='LVS-EMP-7';adminPerspective='store';selected=state.calls.find(x=>x.branch==='LVS'&&x.status==='completed')?.id||null;
+ $('statusFilter').value='all';billProbe=null;selectedBill=null;notice='';draw();});
 $('resetDemo').addEventListener('click',()=>{if(!confirm('Đặt lại dữ liệu mô phỏng? Không ảnh hưởng Whose/KiotViet.'))return;
  state=M.initial();selected=null;selectedWave.clear();draft=[];draftNote='';notice='';draw()});
 draw();
