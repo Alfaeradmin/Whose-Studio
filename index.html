@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="/product-premium.css?v=20261014-imagefix2">
 <link rel="stylesheet" href="/product-gallery-fix.css?v=20261014-1">
 <link rel="stylesheet" href="/calling-chat.css?v=20261014">
+<link rel="stylesheet" href="/ws-shell.css?v=20261014-v2">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
@@ -54,10 +55,55 @@ button,input{font:inherit}
     <div class="auth-caption">Dành cho nhân viên Whose Studio</div>
   </div>
 </div>
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" focusable="false">
+<symbol id="ws-i-brand" viewBox="0 0 24 24"><path d="M4 7 12 3l8 4v10l-8 4-8-4V7Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m4.5 7.5 7.5 5 7.5-5M12 12.5V21" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+<symbol id="ws-i-box" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m7 9 5 3 5-3M12 12v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-messages" viewBox="0 0 24 24"><path d="M20 11.5A7.5 7.5 0 0 1 12.5 19H7l-4 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 10h8M8 13.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+<symbol id="ws-i-home" viewBox="0 0 24 24"><path d="m3 11 9-7 9 7v9H3zM9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-warehouse" viewBox="0 0 24 24"><path d="M3 20V8l9-5 9 5v12M3 11h18M8 20v-5h8v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3ZM8 8h8M8 12h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 20v-2a6 6 0 0 1 12 0v2H3ZM17 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="ws-i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5.5 9A7 7 0 0 1 18 7l2 5M4 12l2 5A7 7 0 0 0 18.5 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+<symbol id="ws-i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9 4v16M15 10l-2 2 2 2" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="ws-i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/></symbol>
+<symbol id="ws-i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="ws-i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+<symbol id="ws-i-chevrons" viewBox="0 0 24 24"><path d="m9 9 3-3 3 3M9 15l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+<symbol id="ws-i-logout" viewBox="0 0 24 24"><path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M8 12h11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol></svg>
 <div class="workspace-blank" id="appRoot" hidden>
-  <aside class="ws-sidebar"><div class="ws-brand">⬡ &nbsp; WHOSE STUDIO</div><nav aria-label="Điều hướng chính"><div class="ws-nav-muted">⌂ &nbsp; Tổng quan</div><button type="button" class="ws-nav-active" id="wsNavProducts">▣ &nbsp; Sản phẩm</button><button type="button" class="ws-nav-muted" id="wsNavCalling">▤ &nbsp; Gọi hàng</button><div class="ws-nav-muted">▢ &nbsp; Tồn kho</div><div class="ws-nav-muted">▤ &nbsp; Đơn hàng</div><div class="ws-nav-muted">♙ &nbsp; Nhân viên</div><div class="ws-nav-muted">↻ &nbsp; Đồng bộ</div><div class="ws-nav-muted">⚙ &nbsp; Cài đặt</div></nav><div class="ws-sidebar-foot">WS &nbsp; Whose Studio <small>Workspace · Preview</small></div></aside><div class="ws-content"><header class="workspace-topbar"><div class="workspace-brand">Sản phẩm <span> / Danh mục KiotViet</span></div>
-    <button class="workspace-logout" type="button" id="logoutBtn">Đăng xuất</button>
-  </header>
+  <div id="wsMobileScrim" class="ws-mobile-scrim" hidden></div>
+  <aside class="ws-sidebar" id="wsSidebar" aria-label="Thanh điều hướng">
+    <div class="ws-sidebar-header">
+      <div class="ws-brand-mark" aria-hidden="true"><svg class="ws-icon" viewBox="0 0 24 24"><use href="#ws-i-brand"></use></svg></div>
+      <div class="ws-brand-copy"><strong>WHOSE STUDIO</strong><small>Operations Workspace</small></div>
+      <button class="ws-sidebar-close" id="wsSidebarMobileClose" type="button" aria-label="Đóng menu"><svg class="ws-icon"><use href="#ws-i-close"></use></svg></button>
+    </div>
+    <div class="ws-workspace-card"><span class="ws-workspace-avatar">W</span><span class="ws-workspace-copy"><strong>Whose Studio</strong><small>Không gian vận hành</small></span><svg class="ws-icon ws-workspace-chevron"><use href="#ws-i-chevrons"></use></svg></div>
+    <nav class="ws-sidebar-nav" aria-label="Chức năng">
+      <div class="ws-nav-group-title">LÀM VIỆC</div>
+      <button class="ws-nav-link is-current" id="wsNavProducts" type="button" data-page="products" aria-current="page" title="Sản phẩm"><svg class="ws-icon"><use href="#ws-i-box"></use></svg><span class="ws-nav-text">Sản phẩm</span><span class="ws-nav-indicator" aria-hidden="true"></span></button>
+      <button class="ws-nav-link" id="wsNavCalling" type="button" data-page="calling" title="Gọi hàng"><svg class="ws-icon"><use href="#ws-i-messages"></use></svg><span class="ws-nav-text">Gọi hàng</span><span class="ws-nav-indicator" aria-hidden="true"></span></button>
+      <div class="ws-nav-group-title ws-nav-group-space">SẮP TRIỂN KHAI</div>
+      <div class="ws-nav-unavailable" title="Tổng quan — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-home"></use></svg><span class="ws-nav-text">Tổng quan</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Tồn kho — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-warehouse"></use></svg><span class="ws-nav-text">Tồn kho</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Đơn hàng — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-receipt"></use></svg><span class="ws-nav-text">Đơn hàng</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Nhân viên — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-users"></use></svg><span class="ws-nav-text">Nhân viên</span><span class="ws-nav-coming">Sau</span></div>
+      <div class="ws-nav-unavailable" title="Đồng bộ — chưa được kích hoạt"><svg class="ws-icon"><use href="#ws-i-refresh"></use></svg><span class="ws-nav-text">Đồng bộ</span><span class="ws-nav-coming">Sau</span></div>
+    </nav>
+    <div class="ws-sidebar-footer">
+      <div class="ws-foot-meta"><span class="ws-connection-dot"></span><span class="ws-foot-copy">Whose Preview</span><span class="ws-foot-version">v0.2</span></div>
+      <button class="ws-collapse-toggle" id="wsCollapseToggle" type="button" title="Thu gọn thanh điều hướng" aria-label="Thu gọn thanh điều hướng" aria-expanded="true"><svg class="ws-icon"><use href="#ws-i-panel"></use></svg><span class="ws-nav-text">Thu gọn thanh bên</span></button>
+    </div>
+  </aside>
+  <div class="ws-content">
+    <header class="workspace-topbar">
+      <div class="ws-topbar-path">
+        <button id="wsSidebarMobileOpen" type="button" class="ws-mobile-menu-button" aria-label="Mở menu"><svg class="ws-icon"><use href="#ws-i-menu"></use></svg></button>
+        <span class="ws-topbar-root">Workspace</span><svg class="ws-icon ws-breadcrumb-arrow"><use href="#ws-i-chevron"></use></svg>
+        <strong id="wsPageTitle">Sản phẩm</strong><span class="ws-topbar-detail" id="wsPageSubtitle"> / Danh mục KiotViet</span>
+      </div>
+      <div class="ws-topbar-right"><span class="ws-preview-chip"><span></span> Preview</span><button class="workspace-logout" type="button" id="logoutBtn"><svg class="ws-icon"><use href="#ws-i-logout"></use></svg><span>Đăng xuất</span></button></div>
+    </header>
   <main class="workspace-canvas" aria-label="Danh mục sản phẩm">
 <section class="products-page">
  <div class="products-hero"><div><div class="products-kicker">DANH MỤC / PRODUCTS</div><h1>Sản phẩm</h1><p class="products-description">Danh mục từ KiotViet · hình ảnh và thuộc tính gốc</p></div>
@@ -79,6 +125,6 @@ button,input{font:inherit}
 <script src="/products-new.js?v=20261014-autosync1" defer></script>
 <script src="/option-c-dropdowns.js?v=20261014-2" defer></script>
 <script src="/calling-chat.js?v=20261014" defer></script>
-<script src="/calling-navigation.js?v=20261014" defer></script>
+<script src="/calling-navigation.js?v=20261014-v2" defer></script>
 </body>
 </html>
