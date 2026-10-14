@@ -269,8 +269,34 @@ function send(){
 document.addEventListener('click',e=>{
  const el=e.target;
  if(el.matches('[data-wave]'))return;
+ const suggestion=el.closest('[data-suggestion]');
+ if(suggestion){
+  const prod=suggestions.find(x=>x.sku===suggestion.dataset.suggestion);
+  if(!prod)return;
+  if($('skuInput'))$('skuInput').value=prod.sku;
+  if($('productSuggestions'))$('productSuggestions').hidden=true;
+  try{addSku()}catch(e){warn(e.message,true)}return;
+ }
+ const bill=el.closest('[data-bill]');
+ if(bill){selectedBill=bill.dataset.bill;body();return;}
+ if(el.closest('[data-closebill]')){selectedBill=null;body();return;}
+ const returned=el.closest('[data-return]');
+ if(returned){
+  try{
+   const c=current(),sku=returned.dataset.return;
+   const count=Number(prompt('Kho đã nhận trả bao nhiêu '+sku+'?',returned.dataset.remaining));
+   if(!Number.isInteger(count)||count<1)return;
+   const reason=prompt('Lý do / tình trạng hàng nhập trả (bắt buộc):');
+   if(reason===null)return;
+   M.confirmReturn(state,employeeId,c.id,sku,count,reason);
+   warn('Đã ghi nhận hàng trả về kho (DEMO).');
+  }catch(e){warn(e.message,true)}
+  return;
+ }
+ const probe=el.closest('[data-probe]');
+ if(probe){void checkRealBills(probe.dataset.probe);return;}
  const open=el.closest('[data-open]');
- if(open){selected=open.dataset.open;notice='';draw();return;}
+ if(open){selected=open.dataset.open;selectedBill=null;billProbe=null;notice='';draw();return;}
  if(el.closest('[data-remove]')){
   draftReason=$('borrowReason').value;draftZone=$('borrowZone').value;draftNote=$('borrowNote').value;
   draft=draft.filter(x=>x.sku!==el.closest('[data-remove]').dataset.remove);draw();return;
@@ -296,7 +322,13 @@ document.addEventListener('change',e=>{
   renderComposer(current(),person());
  }
 });
-document.addEventListener('input',e=>{if(e.target.id==='borrowNote')draftNote=e.target.value});
+document.addEventListener('input',e=>{
+ if(e.target.id==='borrowNote')draftNote=e.target.value;
+ if(e.target.id==='skuInput'){
+  clearTimeout(catalogTimer);
+  catalogTimer=setTimeout(()=>{void searchCatalog(e.target.value)},180);
+ }
+});
 document.addEventListener('keydown',e=>{
  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open]')){e.preventDefault();selected=e.target.dataset.open;notice='';draw();return}
  if(e.key==='Enter'&&e.target.id==='skuInput'){e.preventDefault();try{addSku()}catch(err){warn(err.message,true)}}
@@ -311,8 +343,8 @@ document.addEventListener('submit',e=>{
   }catch(err){warn(err.message,true)}
  }
 });
-$('branch').addEventListener('change',()=>{branch=$('branch').value;employeeId='';selected=null;selectedWave.clear();notice='';draw()});
-$('employee').addEventListener('change',()=>{employeeId=$('employee').value;selected=null;selectedWave.clear();notice='';draw()});
+$('branch').addEventListener('change',()=>{branch=$('branch').value;employeeId='';selected=null;selectedWave.clear();notice='';draftZone='MAIN';suggestions=[];billProbe=null;selectedBill=null;draw()});
+$('employee').addEventListener('change',()=>{employeeId=$('employee').value;selected=null;selectedWave.clear();notice='';selectedBill=null;draw()});
 $('viewMode').addEventListener('change',()=>{if(person()?.duty!=='admin'){warn('Chỉ admin được đổi góc nhìn.',true);return}
  adminPerspective=$('viewMode').value;selectedWave.clear();notice='';draw()});
 $('statusFilter').addEventListener('change',()=>{list()});
