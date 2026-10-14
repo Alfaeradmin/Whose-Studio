@@ -61,7 +61,7 @@
   if(edit&&draft&&draft.branchId===active()?.id){el('wrSku').value=draft.sku;el('wrQty').value=draft.qty;el('wrNote').value=draft.note}
   hideSuggestions();el('wrNewModal').hidden=false;el('wrSku').focus();
  }
- function closeDraft(){el('wrNewModal').hidden=true;hideSuggestions()}
+ function closeDraft(){const modal=el('wrNewModal');if(modal)modal.hidden=true;hideSuggestions()}
  async function productSearch(query){
   if(searchController)searchController.abort();
   if(query.length<2){hideSuggestions();return}
