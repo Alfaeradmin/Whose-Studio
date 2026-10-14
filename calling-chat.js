@@ -18,21 +18,41 @@ async function api(resource,params={},post){
  const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.error||'Không đọc được dữ liệu Whose');
  return data;
 }
+function activeWarehouse(){return window.whoseWarehouse?.()||null}
 function fillBranches(){
- for(const id of ['wrBranch','wrFrom','wrTo']){
-  const select=el(id),old=select.value;
-  select.replaceChildren(new Option(id==='wrBranch'?'Tất cả chi nhánh':'Chọn chi nhánh',''));
-  for(const b of scope)select.add(new Option(b.name,b.id));
-  if(scope.some(x=>x.id===old))select.value=old;
- }
- if(focusedBranch&&scope.some(x=>x.id===focusedBranch))el('wrBranch').value=focusedBranch;
+ const current=activeWarehouse(),id=current?.id||'';
+ const show=el('wrWarehouseScope');if(show)show.textContent=current?.name||'Chưa chọn kho thao tác';
+ const branchSelect=el('wrBranch');branchSelect.replaceChildren(new Option(current?.name||'Chưa chọn kho',id));branchSelect.value=id;
+ const origin=el('wrFrom');origin.replaceChildren(new Option(current?.name||'Chọn kho thao tác',id));origin.value=id;origin.disabled=true;
+ const destination=el('wrTo'),old=destination.value;
+ destination.replaceChildren(new Option('Chọn kho nhận',''));
+ for(const b of scope.filter(b=>b.id!==id))destination.add(new Option(b.name,b.id));
+ if([...destination.options].some(o=>o.value===old&&old!==id))destination.value=old;
+ else destination.value='';
 }
+function resetThread(){
+ selectedId=null;lastDetailId=null;lastDetailVersion=null;detailSequence++;
+ el('wrThreadName').textContent='Chọn một yêu cầu';
+ el('wrThreadSubtitle').textContent='Lịch sử giao tiếp trong kho đang thao tác';
+ el('wrThreadStatus').textContent='Chưa chọn';
+ el('wrThreadStatus').dataset.state='';
+ el('wrThread').replaceChildren(make('div','wr-empty','Chọn yêu cầu ở hộp thư để xem nội dung.'));
+ el('wrSummary').textContent='Chọn một hội thoại để xem chi tiết.';
+}
+function onWarehouseChange(){
+ if(!initialized)return;
+ closeNew();
+ fillBranches();resetThread();
+ lastInboxSignature='';paintInbox();
+ if(!el('wrPage').hidden)void reload(true);
+}
+
 function paintInbox(){
- const list=el('wrConversations'),scroll=list.scrollTop,q=el('wrFilter').value.trim().toLowerCase(),branchId=el('wrBranch').value;
+ const list=el('wrConversations'),scroll=list.scrollTop,q=el('wrFilter').value.trim().toLowerCase(),branchId=activeWarehouse()?.id||'';
  const signature=JSON.stringify([filter,q,branchId,selectedId,scope.map(b=>[b.id,b.name]),requests.map(r=>[r.id,r.status,r.note,r.created_at,r.updated_at])]);
  if(signature===lastInboxSignature)return;
  lastInboxSignature=signature;
- const rows=requests.filter(r=>(filter==='all'||r.status===filter)&&(!branchId||r.origin_branch_id===branchId||r.destination_branch_id===branchId)&&
+ const rows=requests.filter(r=>branchId&&(filter==='all'||r.status===filter)&&(!branchId||r.origin_branch_id===branchId||r.destination_branch_id===branchId)&&
  (!q||[r.id,r.note,branch(r.origin_branch_id),branch(r.destination_branch_id)].some(v=>String(v||'').toLowerCase().includes(q))));
  list.replaceChildren();el('wrCount').textContent=number(rows.length)+' yêu cầu';
  if(!rows.length){
@@ -55,7 +75,8 @@ function paintInbox(){
  list.append(fragment);list.scrollTop=scroll;
 }
 async function selectRequest(id,{refresh=false}={}){
- const r=requests.find(x=>x.id===id);if(!r)return;
+ const activeId=activeWarehouse()?.id;
+ const r=requests.find(x=>x.id===id&&(x.origin_branch_id===activeId||x.destination_branch_id===activeId));if(!r)return;
  const seq=++detailSequence;
  selectedId=id;
  const newSelection=lastDetailId!==id;
@@ -73,7 +94,7 @@ async function selectRequest(id,{refresh=false}={}){
     api('request_lines',{request_id:id,limit:100}),
     api('request_events',{request_id:id,limit:100})
   ]);
-  if(seq!==detailSequence)return;
+  if(seq!==detailSequence||activeWarehouse()?.id!==activeId)return;
   const lines=linesResult.rows||[],events=eventsResult.rows||[];
   const version=JSON.stringify([r.updated_at||r.status,lines.map(x=>[x.id,x.requested_qty,x.note]),events.map(x=>[x.id,x.event_type,x.created_at])]);
   if(!newSelection&&refresh&&version===lastDetailVersion)return;
@@ -127,7 +148,7 @@ function hideSuggestions(){const panel=el('wrProductResults');if(panel){panel.hi
 function openNew(){
  el('wrForm').reset();productSkuChosen=null;el('wrSelectedProduct').textContent='Tìm theo danh mục sản phẩm đồng bộ từ KiotViet';
  hideSuggestions();el('wrFormStatus').textContent='';
- if(focusedBranch&&scope.some(x=>x.id===focusedBranch))el('wrFrom').value=focusedBranch;
+ const current=activeWarehouse();if(!current){el('wrFormStatus').textContent='Chọn kho thao tác trên sidebar trước.';el('wrSend').disabled=true}else el('wrSend').disabled=false;
  el('wrNewModal').hidden=false;el('wrSku').focus();
 }
 function closeNew(){el('wrNewModal').hidden=true;hideSuggestions()}
@@ -158,7 +179,7 @@ async function productSearch(query){
 }
 async function submit(event){
  event.preventDefault();
- const from=el('wrFrom').value,to=el('wrTo').value,sku=el('wrSku').value.trim(),quantity=Number(el('wrQty').value),note=el('wrNote').value.trim(),status=el('wrFormStatus');
+ const from=activeWarehouse()?.id||'',to=el('wrTo').value,sku=el('wrSku').value.trim(),quantity=Number(el('wrQty').value),note=el('wrNote').value.trim(),status=el('wrFormStatus');
  if(!from||!to||from===to||!sku||!note||!Number.isInteger(quantity)||quantity<1||quantity>1000000){
   status.textContent='Chọn hai chi nhánh khác nhau, SKU, số lượng nguyên và lý do hợp lệ.';return;
  }
@@ -179,7 +200,7 @@ async function init(){
   mount.innerHTML=await r.text();
   el('wrReload').addEventListener('click',()=>void reload());
   el('wrFilter').addEventListener('input',paintInbox);
-  el('wrBranch').addEventListener('change',()=>{focusedBranch=el('wrBranch').value;paintInbox()});
+  window.addEventListener('whose:warehouse-change',onWarehouseChange);
   document.querySelectorAll('.wr-chips button').forEach(button=>button.addEventListener('click',()=>{
    filter=button.dataset.status;
    document.querySelectorAll('.wr-chips button').forEach(x=>{x.classList.toggle('active',x===button);x.setAttribute('aria-pressed',String(x===button))});
@@ -199,6 +220,7 @@ async function init(){
   });
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wrNewModal').hidden)closeNew()});
   initialized=true;
+  fillBranches();
   polling=setInterval(()=>{if(!document.hidden&&window.whoseSession?.()&&!el('wrPage').hidden)void reload(true)},25000);
  })();
  try{await initPromise}catch(error){initialized=false;initPromise=null;throw error}
