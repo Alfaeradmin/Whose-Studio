@@ -28,6 +28,32 @@ ON CONFLICT(branch_id,code) DO NOTHING;
 ALTER TABLE public.whose_ops_calls ADD COLUMN IF NOT EXISTS stock_pool_id uuid REFERENCES public.whose_ops_stock_pools(id);
 CREATE INDEX IF NOT EXISTS whose_ops_pool_queue_idx ON public.whose_ops_calls(stock_pool_id,status,created_at);
 
+-- Resolve physical Whose pool from exact store+zone at creation, never by guesswork.
+-- MAIN/BACK were the initial demo zone names; mapping is explicit for each branch.
+CREATE OR REPLACE FUNCTION public.whose_ops_call_assign_pool()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $
+DECLARE v_code text;v_id uuid;
+BEGIN
+ SELECT CASE
+  WHEN b.name='WHOSE STUDIO LVS' AND NEW.zone='MAIN' THEN 'LVS_SALES'
+  WHEN b.name='WHOSE STUDIO LVS' AND NEW.zone='BACK' THEN 'LVS_STOCK'
+  WHEN b.name='WHOSE STUDIO NVT' AND NEW.zone='MAIN' THEN 'NVT_MAIN'
+  ELSE NULL END INTO v_code
+ FROM public.whose_branches b WHERE b.id=NEW.branch_id AND b.is_active AND b.kind='store';
+ IF v_code IS NULL THEN RAISE EXCEPTION 'UNKNOWN_BRANCH_POOL' USING ERRCODE='22023'; END IF;
+ SELECT id INTO v_id FROM public.whose_ops_stock_pools
+ WHERE branch_id=NEW.branch_id AND code=v_code AND active;
+ IF v_id IS NULL THEN RAISE EXCEPTION 'UNCONFIGURED_STOCK_POOL' USING ERRCODE='22023'; END IF;
+ NEW.stock_pool_id:=v_id;
+ RETURN NEW;
+END; $;
+DROP TRIGGER IF EXISTS whose_ops_call_assign_pool_tg ON public.whose_ops_calls;
+CREATE TRIGGER whose_ops_call_assign_pool_tg BEFORE INSERT ON public.whose_ops_calls
+ FOR EACH ROW EXECUTE FUNCTION public.whose_ops_call_assign_pool();
+REVOKE ALL ON FUNCTION public.whose_ops_call_assign_pool() FROM PUBLIC,anon,authenticated;
+
+
 CREATE TABLE IF NOT EXISTS public.whose_ops_sales_documents (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  branch_id uuid NOT NULL REFERENCES public.whose_branches(id),
@@ -95,7 +121,10 @@ BEGIN
  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'UNAUTHORIZED' USING ERRCODE='42501'; END IF;
  SELECT * INTO c FROM public.whose_ops_calls WHERE id=p_call;
  IF NOT FOUND OR NOT (whose_private.global_admin() OR
-  whose_private.branch_role(c.branch_id,ARRAY['admin','manager','warehouse','store'])) THEN
+  (whose_private.branch_role(c.branch_id,ARRAY['admin','manager','warehouse','store']) AND EXISTS(
+   SELECT 1 FROM public.whose_ops_shifts sh WHERE sh.user_id=auth.uid()
+    AND sh.branch_id=c.branch_id AND sh.is_active AND sh.starts_at<=now() AND sh.ends_at>now()
+    AND (sh.zone=c.zone OR sh.zone='ALL')))) THEN
   RAISE EXCEPTION 'NO_CALL_ACCESS' USING ERRCODE='42501'; END IF;
  -- Requestor/store and warehouse see only source invoice codes, SKU, quantities and status;
  -- no customer personal information is persisted or returned.
