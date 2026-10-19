@@ -209,10 +209,11 @@
    rows=requestType().sortedQueue(response.rows||[]);
    paintInbox();
    const currentRow=rows.find(x=>x.id===currentId);
-   if(syncDetail&&currentRow&&(!detail||detail.thread.updated_at!==currentRow.updated_at))await select(currentId);
-   else if(syncDetail&&!currentRow&&rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
-   else{currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
-   if(!currentId)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
+   if(!syncDetail){ /* list-only refresh: preserve optimistic focus and chat context */ }
+   else if(currentRow&&(!detail||detail.thread.updated_at!==currentRow.updated_at))await select(currentId);
+   else if(!currentRow&&rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
+   else if(!rows.length){currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
+   if(!currentId&&syncDetail)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
   }catch(e){if(epoch!==authEpoch)return;status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
   finally{pulling=false;if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true)}
  }
