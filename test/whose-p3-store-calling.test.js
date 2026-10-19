@@ -45,6 +45,9 @@ test('backend checks membership and SQL RPC before writes',()=>{
  assert.match(browser,/requestType\(\)\.perspectives/);
  assert.match(browser,/searchCache\.clear\(\)/);
  assert.match(browser,/whose:logged-out/);
+ assert.match(browser,/authEpoch\+\+/);
+ assert.match(browser,/epoch!==authEpoch/);
+ assert.match(browser,/response\.result\?\.status/);
 });
 test('mobile operations are one pane per step and forms tag reason explicitly',()=>{
  const html=read('calling-chat-box.html'),css=read('calling-chat-box.css'),js=read('calling-chat-box.js');

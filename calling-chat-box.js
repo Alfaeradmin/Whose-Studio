@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
- let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
+ let busy=false,seq=0,authEpoch=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -180,31 +180,32 @@
  }
  async function select(id,{force=false,focus=false}={}){
   const b=branch();if(!b||!id)return;
-  const request=++seq;const changed=currentId!==id;
+  const request=++seq,epoch=authEpoch;const changed=currentId!==id;
   currentId=id;if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
   if(changed){detail=null;latestSignature='';paintChat();status('Đang mở hội thoại…')}
   try{
-   const data=await http({chat_id:id});if(request!==seq||branch()?.id!==b.id)return;
+   const data=await http({chat_id:id});if(request!==seq||epoch!==authEpoch||branch()?.id!==b.id)return;
    if(data.thread.branch_id!==b.id)return;
    const signature=JSON.stringify([data.thread.status,data.thread.updated_at,data.lines.map(x=>[x.id,x.qty_picked,x.qty_handed,x.qty_received,x.qty_return_requested,x.qty_returned]),data.events.map(e=>e.id)]);
    if(!force&&signature===latestSignature)return;
    latestSignature=signature;detail=data;paintChat();status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
-  }catch(e){if(request!==seq)return;status('Không đọc được hội thoại: '+e.message)}
+  }catch(e){if(request!==seq||epoch!==authEpoch)return;status('Không đọc được hội thoại: '+e.message)}
  }
  async function refresh(quiet=false){
   if(pulling)return;const b=branch();if(!b)return status('Chưa chọn kho thao tác');
+  const epoch=authEpoch;
   pulling=true;if(!quiet)status('Đang đồng bộ…');
   try{
    const response=await http({branch_id:b.id});
-   if(branch()?.id!==b.id)return;
+   if(epoch!==authEpoch||branch()?.id!==b.id)return;
    rows=requestType().sortedQueue(response.rows||[]);
    paintInbox();
    if(currentId&&rows.some(x=>x.id===currentId))await select(currentId);
    else if(rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
    else{currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
    if(!currentId)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
-  }catch(e){status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
-  finally{pulling=false;if(branch()?.id&&branch().id!==b.id)void refresh(true)}
+  }catch(e){if(epoch!==authEpoch)return;status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
+  finally{pulling=false;if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true)}
  }
  async function act(kind,lineId=null,qty=null){
   if(!detail||busy)return;
@@ -215,7 +216,7 @@
   }
   if(kind==='cancel'&&note.length<3){status('Nhập lý do hủy vào ô ghi chú trước khi hủy');el('wcNoteInput').focus();return}
   if(kind==='note'&&!note)return;
-  const before=detail.thread.id,b=branch()?.id;
+  const before=detail.thread.id,b=branch()?.id,actor=session()?.user?.id,epoch=authEpoch;
   // Preserve the same operation token after an uncertain network result. A retry
   // must not record a second pick, handoff, receipt or return in Supabase.
   const signature=JSON.stringify([before,kind,lineId,qty,note]);
@@ -224,17 +225,23 @@
   busy=true;paintActions(detail.thread);el('wcSendNote').disabled=true;status('Đang ghi nhận '+(events[kind]||kind)+'…');
   let committed=false;
   try{
-   await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
-   committed=true;pendingAction=null;
-   if(branch()?.id!==b)return;
+   const response=await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
+   committed=true;
+   if(epoch!==authEpoch||branch()?.id!==b||session()?.user?.id!==actor)return;
+   pendingAction=null;
    el('wcNoteInput').value='';
-   await refresh(true);await select(before,{force:true});
+   // The commit is authoritative. Do not block acknowledgement on a full workspace reload.
+   if(detail?.thread?.id===before&&response.result?.status){
+    detail.thread={...detail.thread,status:response.result.status,updated_at:new Date().toISOString()};paintChat();
+   }
    status('Đã ghi nhận · '+new Date().toLocaleTimeString('vi-VN'));
+   void select(before,{force:true}).then(()=>refresh(true));
   }catch(e){
+   if(epoch!==authEpoch)return;
    if(committed){status('Thao tác đã ghi nhận, nhưng chưa cập nhật giao diện. Hãy làm mới để xem dữ liệu mới.');}
    else status('Chưa xác nhận kết quả: '+e.message+' · Bấm lại sẽ dùng cùng mã thao tác để tránh ghi trùng.');
   }
-  finally{busy=false;if(detail)paintActions(detail.thread);el('wcSendNote').disabled=!detail}
+  finally{busy=false;if(epoch===authEpoch&&detail)paintActions(detail.thread);el('wcSendNote').disabled=!detail}
  }
  function closeNew(){el('wcCreateOverlay').hidden=true;hideSuggestions()}
  function hideSuggestions(){
@@ -353,7 +360,7 @@
  }
  async function create(e){
   e.preventDefault();if(busy)return;
-  const b=branch(),purpose=el('wcPurpose').value.trim(),priority=el('wcPriority').value;
+  const b=branch(),purpose=el('wcPurpose').value.trim(),priority=el('wcPriority').value,actor=session()?.user?.id,epoch=authEpoch;
   if(!b||!roles().includes('store'))return;
   const lines=cart.map(x=>({sku:x.sku,qty:Number(x.qty)}));
   if(!lines.length||lines.some(x=>!Number.isInteger(x.qty)||x.qty<1||x.qty>1000000)||purpose.length<3){el('wcFormError').textContent='Thêm ít nhất một SKU, kiểm tra số lượng và nhập mục đích gọi hàng.';return}
@@ -362,14 +369,16 @@
    if(createMode==='add'){
     if(!currentId)throw Error('Chưa chọn hội thoại');
     const id=currentId;await http({}, {action:'add',chat_id:id,lines,note:purpose,idempotency_key:idempotency});
+    if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
     closeNew();cart=[];await refresh();await select(id,{force:true});
    }else{
     const fullPurpose=requestType().formatPurpose(el('wcPurposeType').value,purpose);
     const out=await http({}, {action:'create',branch_id:b.id,lines,purpose:fullPurpose,priority,idempotency_key:idempotency});
+    if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
     closeNew();cart=[];currentId=out.id;lastListSignature='';await refresh();await select(out.id,{force:true});
    }
-  }catch(error){el('wcFormError').textContent=error.message}
-  finally{busy=false;el('wcSubmitCreate').disabled=false}
+  }catch(error){if(epoch===authEpoch)el('wcFormError').textContent=error.message}
+  finally{busy=false;if(epoch===authEpoch)el('wcSubmitCreate').disabled=false}
  }
  function warehouseChanged(){
   if(!initialized)return;
@@ -424,7 +433,7 @@
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wcCreateOverlay').hidden)closeNew()});
    window.addEventListener('whose:warehouse-change',warehouseChanged);
    window.addEventListener('whose:logged-out',()=>{
-    seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+    authEpoch++;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
     searchCache.clear();closeNew();showPane('inbox');paintInbox(true);paintChat();
    });
    initialized=true;paintRole();paintChat();
