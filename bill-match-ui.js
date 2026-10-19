@@ -13,6 +13,8 @@
   if(results)results.replaceChildren();
   if(state)state.textContent='Nhập mã bill để kiểm tra nguồn bán. Kết quả là đề xuất, chưa ghi nhận đã bán.';
   if(el('wcBillMatchCode'))el('wcBillMatchCode').value='';
+  if(el('wcBillMatchLookup'))el('wcBillMatchLookup').disabled=false;
+  if(el('wcScanRecentBills'))el('wcScanRecentBills').disabled=false;
  }
  async function lookup(e){
   e.preventDefault();
@@ -26,6 +28,7 @@
    el('wcBillMatchState').textContent='Cần chọn đúng chi nhánh, đăng nhập và nhập mã hóa đơn hợp lệ.';return;
   }
   const scope=branch.id;
+  el('wcScanRecentBills').disabled=false;
   const button=el('wcBillMatchLookup');button.disabled=true;
   const state=el('wcBillMatchState'),results=el('wcBillMatchResults');
   state.textContent='Đang đối chiếu chứng từ KiotViet…';results.replaceChildren();
@@ -49,6 +52,8 @@
     insufficient_received_custody:'Số lượng cửa hàng đã nhận không đủ',
     no_received_source:'Chưa xác định yêu cầu đã nhận hàng tương ứng',
     product_identity_unverified:'Cần xác minh mã sản phẩm KiotViet',
+    combo_requires_review:'Hàng combo cần xác minh thành phần bán',
+    invoice_detail_identity_missing:'Bill chưa có ID dòng chi tiết đủ ổn định',
     invoice_line_unverifiable:'Không xác minh được mã và số lượng từ bill',
     invoice_lines_missing:'Chứng từ chưa có dòng sản phẩm',
     manual_review_required:'Có dòng cần xác minh thủ công',
@@ -77,6 +82,7 @@
   const token=await window.whoseAccessToken?.();
   if(!token||request!==ticket||window.whoseCallingCurrentId?.()!==chatId)return;
   const state=el('wcBillMatchState'),results=el('wcBillMatchResults'),button=el('wcScanRecentBills');
+  el('wcBillMatchLookup').disabled=false;
   button.disabled=true;results.replaceChildren();
   state.textContent='Đang xác minh tối đa 8 hóa đơn gần đây từ KiotViet…';
   try{

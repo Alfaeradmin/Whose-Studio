@@ -43,3 +43,13 @@ test('unknown partial status cannot silently become completed',()=>{
  assert.equal(normalizeInvoice({...base,status:null}).valid,false);
  assert.equal(normalizeInvoice({...base,id:null}).valid,false);
 });
+
+test('a detail without stable Kiot detail ID cannot be treated as a unique auto-match',()=>{
+ const candidate={...base,invoiceDetails:[{productId:501,productCode:'TSH-RED-M',quantity:1}]};
+ assert.equal(assess(candidate,[line()],1263919).lines[0].reason,'invoice_detail_identity_missing');
+});
+test('combo sales require component-level verification',()=>{
+ const combo={...base,invoiceDetails:[{id:11,productId:501,productCode:'TSH-RED-M',quantity:1,
+  comboItems:[{productId:999,quantity:1}]}]};
+ assert.equal(assess(combo,[line()],1263919).lines[0].reason,'combo_requires_review');
+});
