@@ -22,10 +22,10 @@ const http=async(req,res)=>{
    if(!item||!scoped(item.branch_id))return res.status(404).json({error:'Chat is not available'});
    const [lines,events]=await Promise.all([
     rest('whose_department_chat_lines?select=id,chat_id,sku,product_name,qty_requested,qty_picked,qty_handed,qty_received,qty_return_requested,qty_returned,product_id,product:product_id(attributes)&chat_id=eq.'+chat+'&order=created_at.asc&limit=100',{bearer}),
-    rest('whose_department_chat_events?select=id,chat_id,actor_id,event_type,body,line_id,qty,created_at&chat_id=eq.'+chat+'&order=id.asc&limit=500',{bearer})
+    rest('whose_department_chat_events?select=id,chat_id,actor_id,event_type,body,line_id,qty,created_at&chat_id=eq.'+chat+'&order=id.desc&limit=501',{bearer})
    ]);
    if(!lines.ok||!events.ok)return res.status(502).json({error:'Could not load chat history'});
-   return res.status(200).json({thread:item,lines:lines.data||[],events:events.data||[]});
+   return res.status(200).json({thread:item,lines:lines.data||[],events:(events.data||[]).slice(0,500).reverse(),historyTruncated:(events.data||[]).length>500});
   }
   if(!isUuid(branch)||!scoped(branch))return res.status(403).json({error:'Warehouse access required'});
   const q='whose_department_chats?select=id,branch_id,requester_id,assignee_id,purpose,priority,status,created_at,updated_at&branch_id=eq.'+branch+'&order=updated_at.desc&limit=100';

@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
- let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map();
+ let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null;
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -126,6 +126,7 @@
   el('wcChatSub').textContent=(branch()?.name||'')+' · '+fmt(r.created_at);
   el('wcChatStatus').textContent=labels[r.status]||r.status;
   host.append(node('div','wc-day-label','LỊCH SỬ YÊU CẦU · '+fmt(r.created_at)));
+  if(d.historyTruncated)host.append(node('div','wc-empty-list','Chỉ hiển thị 500 sự kiện gần nhất; lịch sử cũ hơn chưa được tải. Không dùng màn này để kết luận đã có đủ lịch sử.'));
   for(const e of d.events||[]){
    const isMine=e.actor_id===me,outer=node('div','wc-bubble-wrap'+(isMine?' is-self':'')),bubble=node('div','wc-bubble');
    const head=node('div','wc-bubble-head');head.append(node('strong','',isMine?'Bạn':e.event_type==='created'||e.event_type==='receive'||e.event_type==='request_return'?'Cửa hàng / nhân viên':'Kho / nhân viên'),node('time','',fmt(e.created_at)));
@@ -203,12 +204,24 @@
   if(kind==='cancel'&&note.length<3){status('Nhập lý do hủy vào ô ghi chú trước khi hủy');el('wcNoteInput').focus();return}
   if(kind==='note'&&!note)return;
   const before=detail.thread.id,b=branch()?.id;
+  // Preserve the same operation token after an uncertain network result. A retry
+  // must not record a second pick, handoff, receipt or return in Supabase.
+  const signature=JSON.stringify([before,kind,lineId,qty,note]);
+  if(!pendingAction||pendingAction.signature!==signature)pendingAction={signature,key:crypto.randomUUID()};
+  const token=pendingAction.key;
   busy=true;paintActions(detail.thread);el('wcSendNote').disabled=true;status('Đang ghi nhận '+(events[kind]||kind)+'…');
+  let committed=false;
   try{
-   await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:crypto.randomUUID()});
+   await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
+   committed=true;pendingAction=null;
    if(branch()?.id!==b)return;
-   el('wcNoteInput').value='';await refresh(true);await select(before,{force:true});
-  }catch(e){status('Không thể ghi nhận: '+e.message)}
+   el('wcNoteInput').value='';
+   await refresh(true);await select(before,{force:true});
+   status('Đã ghi nhận · '+new Date().toLocaleTimeString('vi-VN'));
+  }catch(e){
+   if(committed){status('Thao tác đã ghi nhận, nhưng chưa cập nhật giao diện. Hãy làm mới để xem dữ liệu mới.');}
+   else status('Chưa xác nhận kết quả: '+e.message+' · Bấm lại sẽ dùng cùng mã thao tác để tránh ghi trùng.');
+  }
   finally{busy=false;if(detail)paintActions(detail.thread);el('wcSendNote').disabled=!detail}
  }
  function closeNew(){el('wcCreateOverlay').hidden=true;hideSuggestions()}
