@@ -252,3 +252,9 @@
  .wc-detail-close{display:block}
  .wc-chat-toolbar .wc-dept-label{display:none}
 }
+
+/* Clearer call creation: select intent before product picking. */
+.wc-create-guide{padding:10px 13px;background:#eef7f0;border:1px solid #d9e9de;border-radius:9px;font-size:12px;color:#326546;line-height:1.4;margin:0 0 13px;font-weight:660}
+.wc-create-main #wcPurposeTypeLabel{margin-top:0;margin-bottom:14px}
+.wc-create-main #wcPurposeType{min-height:44px;font-size:14px}
+@media(max-width:760px){.wc-create-guide{font-size:12px}.wc-create-main #wcPurposeType{font-size:16px}}

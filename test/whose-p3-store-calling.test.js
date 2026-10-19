@@ -86,3 +86,18 @@ test('simplified form: optional new note, mandatory add reason, tablet SKU drawe
  assert.equal(view.formatPurpose('trial',''),'Khách thử');
  assert.equal(view.classify('Khách thử').kind,'trial');
 });
+
+test('product search newest request wins without blocking new queries on slow requests',()=>{
+ const source=read('products-new.js');
+ assert.match(source,/ui\.controller\?\.abort\(\)/);
+ assert.match(source,/const requestId=\+\+ui\.requestSeq/);
+ assert.match(source,/requestId!==ui\.requestSeq\|\|controller\.signal\.aborted/);
+ assert.match(source,/setTimeout\(\(\)=>\{ui\.page=0;refresh\(\)\},150\)/);
+});
+test('new calling UX asks purpose first and then SKU scan, without hidden duplicate purpose fields',()=>{
+ const html=read('calling-chat-box.html');
+ const type=html.indexOf('id="wcPurposeType"'),search=html.indexOf('id="wcProductSearch"');
+ assert.ok(type>0&&search>0&&type<search,'Purpose selector should precede SKU search');
+ assert.equal((html.match(/id="wcPurposeType"/g)||[]).length,1);
+ assert.match(html,/Chọn loại yêu cầu → Tìm hoặc scan sản phẩm/);
+});
