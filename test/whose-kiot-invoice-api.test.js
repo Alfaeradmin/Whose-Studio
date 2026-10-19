@@ -79,3 +79,13 @@ test('unapproved staff cannot request invoice details',async()=>{
  assert.equal(reply.statusCode,403);
  assert.ok(!paths.some(x=>x.includes('/invoices/code/')));
 });
+
+test('UI isolates invoice proposal responses per current request and never persists them',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const src=fs.readFileSync(path.resolve(__dirname,'../bill-match-ui.js'),'utf8');
+ assert.match(src,/const request=\+\+ticket/);
+ assert.match(src,/window\.whoseCallingCurrentId\?\.\(\)!==chatId/);
+ assert.match(src,/match\.kind==='candidates'/);
+ assert.doesNotMatch(src,/method:\s*['"]POST['"]/);
+ assert.doesNotMatch(src,/localStorage|sessionStorage/);
+});

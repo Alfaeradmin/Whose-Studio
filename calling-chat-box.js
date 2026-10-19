@@ -555,6 +555,7 @@
   })();
   try{await starting}catch(e){starting=null;throw e}
  }
+ window.whoseCallingCurrentId=()=>currentId;
  window.whoseCallingOpen=async()=>{
   try{
    await init();el('wrMount').hidden=false;el('wcPage').hidden=false;

@@ -17,12 +17,15 @@
  async function lookup(e){
   e.preventDefault();
   const code=el('wcBillMatchCode').value.trim();
-  const branch=window.whoseWarehouse?.(),token=await window.whoseAccessToken?.();
-  if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,47}$/.test(code)||!branch?.id||!token){
+  const branch=window.whoseWarehouse?.(),chatId=window.whoseCallingCurrentId?.();
+  const request=++ticket;
+  const user=window.whoseSession?.()?.user?.id;
+  const token=await window.whoseAccessToken?.();
+  if(request!==ticket||window.whoseCallingCurrentId?.()!==chatId)return;
+  if(!/^[A-Za-z0-9][A-Za-z0-9_-]{0,47}$/.test(code)||!branch?.id||!chatId||!token){
    el('wcBillMatchState').textContent='Cần chọn đúng chi nhánh, đăng nhập và nhập mã hóa đơn hợp lệ.';return;
   }
-  const scope=branch.id,user=window.whoseSession?.()?.user?.id;
-  const request=++ticket;
+  const scope=branch.id;
   const button=el('wcBillMatchLookup');button.disabled=true;
   const state=el('wcBillMatchState'),results=el('wcBillMatchResults');
   state.textContent='Đang đối chiếu chứng từ KiotViet…';results.replaceChildren();
@@ -30,7 +33,7 @@
    const qs=new URLSearchParams({branch_id:scope,bill_code:code});
    const response=await fetch('/api/kiot-invoice-match?'+qs,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
    const data=await response.json().catch(()=>({}));
-   if(request!==ticket||window.whoseWarehouse?.()?.id!==scope||window.whoseSession?.()?.user?.id!==user)return;
+   if(request!==ticket||window.whoseWarehouse?.()?.id!==scope||window.whoseSession?.()?.user?.id!==user||window.whoseCallingCurrentId?.()!==chatId)return;
    if(!response.ok)throw Error(data.error||'Không đọc được hóa đơn Kiot');
    const bill=data.bill||{},match=data.result||{};
    const status=match.kind==='candidates'?'Có dòng phù hợp':
