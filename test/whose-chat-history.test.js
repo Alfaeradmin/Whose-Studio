@@ -36,6 +36,8 @@ test('frontend contains ONE accessible, expandable audit log, not one bubble per
  const js=read('calling-chat-box.js'),css=read('calling-chat-box.css'),html=read('index.html');
  assert.match(js,/window\.WhoseChatHistory\.partition\(d\.events\|\|\[\]\)/);
  assert.match(js,/node\('details','wc-history-card'\)/);
+ assert.match(js,/historyPanel\.append\(log\)/);
+ assert.match(read('calling-chat-box.html'),/id="wcHistoryPanel"/);
  assert.match(js,/node\('summary','wc-history-summary'\)/);
  assert.match(js,/for\(const event of \[\.\.\.timeline\.actions\]\.reverse\(\)\)/);
  assert.match(js,/for\(const event of timeline\.messages\)/);
@@ -46,6 +48,7 @@ test('frontend contains ONE accessible, expandable audit log, not one bubble per
  assert.match(js,/event\.line_id\?lineIndex\.get\(event\.line_id\)/);
  assert.doesNotMatch(js,/for\(const e of d\.events\|\|\[\]\)/);
  assert.match(css,/\.wc-history-contents\{[^}]*overflow-y:auto/);
+ assert.match(css,/\.wc-history-panel:empty\{display:none\}/);
  assert.match(css,/@media\(max-width:760px\)/);
  assert.ok(html.indexOf('/calling-history-model.js')<html.indexOf('/calling-chat-box.js'));
 });

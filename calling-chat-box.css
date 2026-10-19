@@ -298,3 +298,10 @@
  .wc-history-item-heading strong{font-size:11.5px}
 }
 @media(prefers-reduced-motion:reduce){.wc-history-chevron{transition:none}}
+
+
+/* Pin one operation card above message scroll, so long conversations never hide it. */
+.wc-history-panel{flex:0 0 auto;padding:12px clamp(14px,2.2vw,30px);background:#f8faf8;border-bottom:1px solid #e6efe8;min-width:0}
+.wc-history-panel:empty{display:none}
+.wc-history-panel .wc-history-card{margin:0}
+@media(max-width:760px){.wc-history-panel{padding:10px 12px}.wc-history-contents{max-height:min(320px,40dvh)}}

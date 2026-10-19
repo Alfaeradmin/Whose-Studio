@@ -124,6 +124,7 @@
   paintRole();
   paintRail();
   const host=el('wcMessages');
+  const historyPanel=el('wcHistoryPanel');historyPanel.replaceChildren();
   const helper=el('wcNextActionHint');
   const atEnd=host.scrollHeight-host.scrollTop-host.clientHeight<110,oldTop=host.scrollTop;
   host.replaceChildren();
@@ -204,7 +205,7 @@
    else contents.replaceChildren();
   });
   log.append(summary,contents);
-  host.append(log);
+  historyPanel.append(log);
 
   // Notes are the only events rendered as separate conversation bubbles.
   // Operational updates, reasons and quantities are readable in the log above.
