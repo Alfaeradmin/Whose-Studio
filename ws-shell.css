@@ -130,3 +130,13 @@
  #appRoot.ws-is-collapsed .ws-warehouse-options:not([hidden]){display:block!important}
 }
 @media(max-width:480px){#appRoot .ws-topbar-path{gap:6px}#appRoot .ws-warehouse-top{max-width:125px}#appRoot .ws-warehouse-top .ws-warehouse-top-chevron{display:none}}
+
+/* P2: verified observations only, no fake realtime green status. */
+#appRoot .ws-health-button{width:100%;padding:9px 10px;background:#eff7f1;color:#245c3b;border:1px solid #c5dacc;border-radius:8px;cursor:pointer;font-size:12px;font-weight:650}
+#appRoot .ws-health-button:disabled{opacity:.6;cursor:default}
+#appRoot .ws-health-grid{display:grid;gap:7px;margin-top:12px;font-size:11px}
+#appRoot .ws-health-grid .ws-health-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #e1e9e2;padding:5px 0}
+#appRoot .ws-health-row span{color:#63766a}
+#appRoot .ws-health-row strong{text-align:right;font-weight:720;color:#22392a;overflow-wrap:anywhere}
+#appRoot .ws-health-warning{color:#90541e;font-weight:650;line-height:1.5}
+#appRoot .ws-health-disclaimer{color:#687b6f;line-height:1.5}
