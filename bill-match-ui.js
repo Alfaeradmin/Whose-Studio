@@ -70,10 +70,47 @@
    if(request===ticket)state.textContent='Không thể đối chiếu: '+err.message;
   }finally{if(request===ticket)button.disabled=false}
  }
+ async function scanRecent(){
+  const branch=window.whoseWarehouse?.(),chatId=window.whoseCallingCurrentId?.();
+  const request=++ticket,user=window.whoseSession?.()?.user?.id;
+  if(!branch?.id||!chatId)return;
+  const token=await window.whoseAccessToken?.();
+  if(!token||request!==ticket||window.whoseCallingCurrentId?.()!==chatId)return;
+  const state=el('wcBillMatchState'),results=el('wcBillMatchResults'),button=el('wcScanRecentBills');
+  button.disabled=true;results.replaceChildren();
+  state.textContent='Đang xác minh tối đa 8 hóa đơn gần đây từ KiotViet…';
+  try{
+   const qs=new URLSearchParams({branch_id:branch.id,recent:'1'});
+   const response=await fetch('/api/kiot-invoice-match?'+qs,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+   const data=await response.json().catch(()=>({}));
+   if(request!==ticket||window.whoseWarehouse?.()?.id!==branch.id||
+     window.whoseCallingCurrentId?.()!==chatId||window.whoseSession?.()?.user?.id!==user)return;
+   if(!response.ok)throw Error(data.error||'Không thể quét bill KiotViet');
+   state.textContent='Đã đọc '+(data.scanned||0)+' bill được Kiot xác minh · chỉ là đề xuất, chưa ghi nhận bán';
+   for(const item of data.results||[]){
+    const relevant=(item.result?.lines||[]).filter(l=>
+     l.chatId===chatId||(l.candidates||[]).some(c=>c.chatId===chatId));
+    if(!relevant.length)continue;
+    const block=text('div','wc-bill-match-line');
+    block.dataset.kind=item.result.kind==='review'?'review':'candidate';
+    block.append(text('strong','',item.bill.code||'Bill'),text('small','',
+     relevant.map(l=>l.code+' × '+l.qty+' · '+(l.kind==='candidate'?'Có nguồn phù hợp':'Cần xác minh')).join(' | ')));
+    results.append(block);
+   }
+   if(!results.childElementCount)results.append(text('p','wc-bill-match-disclaimer',
+    'Chưa có bill nào trong lượt quét có thể liên hệ tới yêu cầu này.'));
+   for(const warning of data.sourceWarnings||[])
+    results.append(text('p','wc-bill-match-warning',warning));
+   results.append(text('p','wc-bill-match-disclaimer',
+    'Chỉ quét tối đa 8 bill mới nhất; không phải lịch sử đồng bộ đầy đủ hay kết quả đã xác nhận bán.'));
+  }catch(err){if(request===ticket)state.textContent='Không quét được bill: '+err.message}
+  finally{if(request===ticket)button.disabled=false}
+ }
  function install(){
   if(installed)return;
   const form=el('wcBillMatchForm');if(!form)return;
   form.addEventListener('submit',lookup);
+  el('wcScanRecentBills').addEventListener('click',()=>void scanRecent());
   installed=true;
  }
  window.WhoseBillMatchUI={install,reset};

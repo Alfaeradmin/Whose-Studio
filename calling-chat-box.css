@@ -337,3 +337,6 @@
 .wc-bill-match-line[data-kind="review"]{border-color:#f1d2a9;background:#fff9ec}
 .wc-bill-match-warning,.wc-bill-match-disclaimer{font-size:11px;color:#91632d;line-height:1.45;margin:3px 0}
 @media(max-width:760px){.wc-bill-match-row input{font-size:16px;min-height:44px}.wc-bill-match-row button{min-height:44px}}
+
+.wc-bill-scan-button{background:#edf6f0;color:#276244;border:1px solid #c9e2d0;border-radius:9px;min-height:44px;padding:9px 12px;text-align:left;cursor:pointer;font-size:12px;font-weight:700}
+.wc-bill-scan-button:disabled{opacity:.6;cursor:default}
