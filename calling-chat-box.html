@@ -17,7 +17,8 @@
     <div class="wc-chat-identity"><div class="wc-chat-avatar"><svg width="21" height="21" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.7"><path d="M4 18v-8l8-5 8 5v8M4 11h16M9 18v-4h6v4"/></svg></div><div><strong id="wcChatTitle">Cửa hàng ↔ Kho</strong><small id="wcChatSub">Chọn một cuộc trao đổi để xem</small></div></div>
     <span class="wc-chat-status" id="wcChatStatus">Chưa chọn</span>
    </div>
-   <div class="wc-chat-toolbar"><span class="wc-dept-label">Góc nhìn</span><div class="wc-role-switch" role="group" aria-label="Góc nhìn bộ phận"><button type="button" id="wcRoleStore" data-role="store">Cửa hàng</button><button type="button" id="wcRoleWarehouse" data-role="warehouse">Kho</button></div><span class="wc-chat-bridge">Một hội thoại chung, hai bộ phận</span></div>
+   <div class="wc-chat-toolbar"><span class="wc-dept-label">Góc nhìn</span><div class="wc-role-switch" role="group" aria-label="Góc nhìn bộ phận"><button type="button" id="wcRoleStore" data-role="store">Cửa hàng</button><button type="button" id="wcRoleWarehouse" data-role="warehouse">Kho</button></div><button type="button" id="wcViewSKU" class="wc-ghost-action wc-view-sku">Xử lý SKU →</button></div>
+   <div id="wcNextActionHint" class="wc-next-action" role="status">Chọn yêu cầu để xem việc cần làm.</div>
    <div class="wc-messages" id="wcMessages" role="log" aria-label="Lịch sử trao đổi" aria-live="polite"><div class="wc-chat-placeholder"><div class="wc-placeholder-icon">↔</div><strong>Trao đổi ngay trong cửa hàng</strong><p>Gọi SKU, nhận việc, cập nhật soạn, bàn giao và trả hàng trong cùng một hộp chat.</p></div></div>
    <div class="wc-composer">
     <div id="wcChatActions" class="wc-chat-actions"></div>
@@ -26,7 +27,7 @@
    </div>
   </section>
   <aside class="wc-detail-rail" aria-label="Chi tiết yêu cầu">
-   <div class="wc-rail-section"><span class="wc-rail-label">CHI TIẾT VÀ THAO TÁC</span><strong id="wcRailTitle">Chưa chọn hội thoại</strong><p id="wcRailNote">Chọn một yêu cầu để xem danh sách SKU, số lượng đã soạn và hàng đang giữ.</p><div id="wcRailMeta" class="wc-rail-meta"></div></div>
+   <div class="wc-rail-section"><button type="button" id="wcDetailClose" class="wc-detail-close">← Về hội thoại</button><span class="wc-rail-label">CHI TIẾT VÀ THAO TÁC</span><strong id="wcRailTitle">Chưa chọn hội thoại</strong><p id="wcRailNote">Chọn một yêu cầu để xem danh sách SKU, số lượng đã soạn và hàng đang giữ.</p><div id="wcRailMeta" class="wc-rail-meta"></div></div>
    <div class="wc-rail-section wc-rail-products"><div class="wc-rail-section-head"><strong>Sản phẩm</strong><span id="wcLineCount">0 SKU</span></div><div id="wcRailLines" class="wc-rail-lines"><div class="wc-rail-empty">Chưa có sản phẩm.</div></div></div>
    <div class="wc-rail-section wc-rail-bottom"><span class="wc-rail-label">LƯU Ý NGHIỆP VỤ</span><p>Soạn ≠ bàn giao. Bàn giao ≠ đã bán. Hoàn trả chỉ kết thúc khi kho xác nhận nhận. Bill phải được đối chiếu với KiotViet.</p></div>
   </aside>

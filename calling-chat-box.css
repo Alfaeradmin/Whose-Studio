@@ -235,3 +235,20 @@
  .wc-suggestion{min-height:68px}
 }
 @media(max-width:390px){.wc-page{padding-left:9px;padding-right:9px}.wc-mobile-nav button{font-size:11px}.wc-chat-identity strong{font-size:12px}.wc-chat-status{font-size:9px}.wc-chat-avatar{width:34px;height:34px;flex-basis:34px}}
+
+
+/* Faster task comprehension: single next-step hint, always reachable SKU actions. */
+.wc-next-action{padding:10px 18px;border-bottom:1px solid #d9eadd;background:#f0f8f2;color:#286244;font-size:12px;font-weight:650;line-height:1.45}
+.wc-view-sku{margin-left:auto;min-height:36px}
+.wc-detail-close{display:none;border:1px solid #d6e6da;background:#f2f8f3;padding:10px 12px;border-radius:8px;margin-bottom:10px;color:#276f47;font-weight:700;cursor:pointer}
+@media(min-width:761px) and (max-width:1250px){
+ .wc-page[data-detail-open="true"] .wc-detail-rail{display:flex!important;position:fixed;z-index:95;top:68px;right:12px;bottom:12px;width:min(400px,calc(100vw - 24px));height:auto;box-shadow:0 10px 60px #0b201744}
+ .wc-detail-close{display:block}
+}
+@media(min-width:1251px){.wc-view-sku{display:none}}
+@media(max-width:760px){
+ .wc-next-action{padding:10px 12px;font-size:12px}
+ .wc-view-sku{min-height:40px;padding:6px 9px;font-size:12px}
+ .wc-detail-close{display:block}
+ .wc-chat-toolbar .wc-dept-label{display:none}
+}
