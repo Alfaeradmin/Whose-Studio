@@ -6,6 +6,8 @@ on:
   pull_request:
     branches:
       - main
+      - 'feat/**'
+      - 'design/**'
 
 permissions:
   contents: read
@@ -19,4 +21,5 @@ jobs:
         with:
           persist-credentials: false
       - run: node --version
+      - run: node --test test/whose-p1-p2-reliability.test.js
       - run: npm run check
