@@ -1,22 +1,30 @@
 'use strict';
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
- let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null;
+ let busy=false,seq=0,authEpoch=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
+ const requestType=()=>window.WhoseRequestType;
  const session=()=>window.whoseSession?.()||null;
  const num=x=>Number(x||0).toLocaleString('vi-VN');
  const fmt=x=>{const d=new Date(x);return Number.isNaN(d.getTime())?'—':d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})};
  const labels={submitted:'Chờ kho nhận',accepted:'Kho đã nhận',picking:'Đang soạn',ready:'Chờ bàn giao',handed_over:'Đã giao · chờ nhận',received:'Cửa hàng đang giữ',return_requested:'Chờ kho nhận trả',completed:'Hoàn tất',cancelled:'Đã hủy'};
  const events={created:'Cửa hàng gọi hàng',added_sku:'Cửa hàng bổ sung sản phẩm',claim:'Kho tiếp nhận',pick:'Kho vừa soạn',ready:'Kho báo soạn xong',handoff:'Kho đã bàn giao',receive:'Cửa hàng xác nhận nhận',request_return:'Cửa hàng gửi trả',receive_return:'Kho đã nhận hàng trả',cancel:'Hủy yêu cầu',note:'Ghi chú'};
  const roles=()=>{
-  const s=session(),b=branch();if(!s||!b)return [];
-  if(s.is_global_admin)return ['store','warehouse'];
-  const matching=(s.memberships||[]).filter(m=>m.branch_id===b.id).map(m=>m.role);
-  if(matching.some(r=>['manager','admin'].includes(r)))return ['store','warehouse'];
-  return ['store','warehouse'].filter(x=>matching.includes(x));
+  const s=session(),b=branch();return s&&b?requestType().perspectives(s,b.id):[];
  };
+ function showPane(next){
+  if(!['inbox','chat','detail'].includes(next))return;
+  mobilePane=next;
+  const page=el('wcPage');if(!page)return;
+  page.dataset.mobilePane=next;
+  el('wcMobileNav')?.querySelectorAll('[data-wc-pane]').forEach(button=>{
+   const current=button.dataset.wcPane===next;
+   if(current)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+   button.disabled=button.dataset.wcPane!=='inbox'&&!currentId;
+  });
+ }
  function setMode(next){
   const available=roles();if(!available.includes(next))return;
   mode=next;paintRole();paintChat();
@@ -61,8 +69,11 @@
    const button=node('button','wc-conversation'+(r.id===currentId?' is-selected':''));button.type='button';button.setAttribute('aria-label','Mở yêu cầu '+r.id.slice(0,8));
    const avatar=node('span','wc-conversation-avatar','↗'),body=node('span','wc-conversation-body');
    body.append(node('strong','','#'+r.id.slice(0,8).toUpperCase()));
+   const classification=requestType().classify(r.purpose);
+   const kind=node('span','wc-request-type',classification.label);kind.dataset.type=classification.kind;body.append(kind);
+   if(r.priority==='urgent')body.append(node('span','wc-priority-tag','Gấp · ưu tiên'));
    const meta=node('span','wc-conversation-meta'),tag=node('span','wc-mini-status',labels[r.status]||r.status);tag.dataset.status=r.status;meta.append(tag,node('small','',fmt(r.updated_at)));body.append(meta,node('p','',r.purpose));
-   button.append(avatar,body);button.onclick=()=>void select(r.id);frag.append(button);
+   button.append(avatar,body);button.onclick=()=>void select(r.id,{focus:true});frag.append(button);
   }
   holder.append(frag);holder.scrollTop=top;
  }
@@ -78,7 +89,8 @@
   if(!d){el('wcRailTitle').textContent='Chưa chọn hội thoại';el('wcRailNote').textContent='Chọn hội thoại để xem số lượng, sản phẩm và các thao tác.';el('wcLineCount').textContent='0 SKU';products.append(node('div','wc-rail-empty','Danh sách sản phẩm sẽ xuất hiện tại đây.'));return}
   const r=d.thread,lines=d.lines||[];
   el('wcRailTitle').textContent='#'+r.id.slice(0,8).toUpperCase();
-  el('wcRailNote').textContent=r.purpose;
+  const typed=requestType().classify(r.purpose);
+  el('wcRailNote').textContent=typed.label+' · '+typed.note;
   el('wcLineCount').textContent=lines.length+' SKU';
   const requested=lines.reduce((sum,x)=>sum+Number(x.qty_requested||0),0),picked=lines.reduce((sum,x)=>sum+Number(x.qty_picked||0),0);
   for(const [name,value] of [['Yêu cầu',num(requested)],['Đã soạn',num(picked)],['Ưu tiên',r.priority==='urgent'?'Gấp':'Bình thường'],['Tạo lúc',fmt(r.created_at)]]){
@@ -166,33 +178,34 @@
   if(['completed','cancelled'].includes(r.status))el('wcNoteInput').placeholder='Cuộc hội thoại đã đóng';
   else el('wcNoteInput').placeholder='Nhắn ghi chú nghiệp vụ cho '+(mode==='store'?'kho':'cửa hàng')+'…';
  }
- async function select(id,{force=false}={}){
+ async function select(id,{force=false,focus=false}={}){
   const b=branch();if(!b||!id)return;
-  const request=++seq;const changed=currentId!==id;
-  currentId=id;paintInbox();
+  const request=++seq,epoch=authEpoch;const changed=currentId!==id;
+  currentId=id;if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
   if(changed){detail=null;latestSignature='';paintChat();status('Đang mở hội thoại…')}
   try{
-   const data=await http({chat_id:id});if(request!==seq||branch()?.id!==b.id)return;
+   const data=await http({chat_id:id});if(request!==seq||epoch!==authEpoch||branch()?.id!==b.id)return;
    if(data.thread.branch_id!==b.id)return;
    const signature=JSON.stringify([data.thread.status,data.thread.updated_at,data.lines.map(x=>[x.id,x.qty_picked,x.qty_handed,x.qty_received,x.qty_return_requested,x.qty_returned]),data.events.map(e=>e.id)]);
    if(!force&&signature===latestSignature)return;
    latestSignature=signature;detail=data;paintChat();status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
-  }catch(e){if(request!==seq)return;status('Không đọc được hội thoại: '+e.message)}
+  }catch(e){if(request!==seq||epoch!==authEpoch)return;status('Không đọc được hội thoại: '+e.message)}
  }
  async function refresh(quiet=false){
   if(pulling)return;const b=branch();if(!b)return status('Chưa chọn kho thao tác');
+  const epoch=authEpoch;
   pulling=true;if(!quiet)status('Đang đồng bộ…');
   try{
    const response=await http({branch_id:b.id});
-   if(branch()?.id!==b.id)return;
-   rows=response.rows||[];
+   if(epoch!==authEpoch||branch()?.id!==b.id)return;
+   rows=requestType().sortedQueue(response.rows||[]);
    paintInbox();
    if(currentId&&rows.some(x=>x.id===currentId))await select(currentId);
    else if(rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
    else{currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
    if(!currentId)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
-  }catch(e){status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
-  finally{pulling=false}
+  }catch(e){if(epoch!==authEpoch)return;status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
+  finally{pulling=false;if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true)}
  }
  async function act(kind,lineId=null,qty=null){
   if(!detail||busy)return;
@@ -203,7 +216,7 @@
   }
   if(kind==='cancel'&&note.length<3){status('Nhập lý do hủy vào ô ghi chú trước khi hủy');el('wcNoteInput').focus();return}
   if(kind==='note'&&!note)return;
-  const before=detail.thread.id,b=branch()?.id;
+  const before=detail.thread.id,b=branch()?.id,actor=session()?.user?.id,epoch=authEpoch;
   // Preserve the same operation token after an uncertain network result. A retry
   // must not record a second pick, handoff, receipt or return in Supabase.
   const signature=JSON.stringify([before,kind,lineId,qty,note]);
@@ -212,17 +225,23 @@
   busy=true;paintActions(detail.thread);el('wcSendNote').disabled=true;status('Đang ghi nhận '+(events[kind]||kind)+'…');
   let committed=false;
   try{
-   await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
-   committed=true;pendingAction=null;
-   if(branch()?.id!==b)return;
+   const response=await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
+   committed=true;
+   if(epoch!==authEpoch||branch()?.id!==b||session()?.user?.id!==actor)return;
+   pendingAction=null;
    el('wcNoteInput').value='';
-   await refresh(true);await select(before,{force:true});
+   // The commit is authoritative. Do not block acknowledgement on a full workspace reload.
+   if(detail?.thread?.id===before&&response.result?.status){
+    detail.thread={...detail.thread,status:response.result.status,updated_at:new Date().toISOString()};paintChat();
+   }
    status('Đã ghi nhận · '+new Date().toLocaleTimeString('vi-VN'));
+   void select(before,{force:true}).then(()=>refresh(true));
   }catch(e){
+   if(epoch!==authEpoch)return;
    if(committed){status('Thao tác đã ghi nhận, nhưng chưa cập nhật giao diện. Hãy làm mới để xem dữ liệu mới.');}
    else status('Chưa xác nhận kết quả: '+e.message+' · Bấm lại sẽ dùng cùng mã thao tác để tránh ghi trùng.');
   }
-  finally{busy=false;if(detail)paintActions(detail.thread);el('wcSendNote').disabled=!detail}
+  finally{busy=false;if(epoch===authEpoch&&detail)paintActions(detail.thread);el('wcSendNote').disabled=!detail}
  }
  function closeNew(){el('wcCreateOverlay').hidden=true;hideSuggestions()}
  function hideSuggestions(){
@@ -303,6 +322,7 @@
   createMode=next;cart=[];idempotency=crypto.randomUUID();el('wcCreateForm').reset();el('wcFormError').textContent='';
   el('wcCreateBranch').textContent=branch().name+' · Cửa hàng → Kho';
   el('wcCreateTitle').textContent=next==='add'?'Bổ sung SKU vào hội thoại':'Gọi hàng mới';
+  el('wcPurposeTypeLabel').hidden=next==='add';
   el('wcSubmitCreate').textContent=next==='add'?'Bổ sung vào chat':'Gửi yêu cầu cho kho';
   const priority=el('wcPriority').closest('label');if(priority)priority.hidden=next==='add';
   paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;searchFeedback('Nhập tên, SKU hoặc quét barcode; dùng Enter để thêm nhanh');el('wcProductSearch').focus();
@@ -340,7 +360,7 @@
  }
  async function create(e){
   e.preventDefault();if(busy)return;
-  const b=branch(),purpose=el('wcPurpose').value.trim(),priority=el('wcPriority').value;
+  const b=branch(),purpose=el('wcPurpose').value.trim(),priority=el('wcPriority').value,actor=session()?.user?.id,epoch=authEpoch;
   if(!b||!roles().includes('store'))return;
   const lines=cart.map(x=>({sku:x.sku,qty:Number(x.qty)}));
   if(!lines.length||lines.some(x=>!Number.isInteger(x.qty)||x.qty<1||x.qty>1000000)||purpose.length<3){el('wcFormError').textContent='Thêm ít nhất một SKU, kiểm tra số lượng và nhập mục đích gọi hàng.';return}
@@ -349,17 +369,20 @@
    if(createMode==='add'){
     if(!currentId)throw Error('Chưa chọn hội thoại');
     const id=currentId;await http({}, {action:'add',chat_id:id,lines,note:purpose,idempotency_key:idempotency});
+    if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
     closeNew();cart=[];await refresh();await select(id,{force:true});
    }else{
-    const out=await http({}, {action:'create',branch_id:b.id,lines,purpose,priority,idempotency_key:idempotency});
+    const fullPurpose=requestType().formatPurpose(el('wcPurposeType').value,purpose);
+    const out=await http({}, {action:'create',branch_id:b.id,lines,purpose:fullPurpose,priority,idempotency_key:idempotency});
+    if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
     closeNew();cart=[];currentId=out.id;lastListSignature='';await refresh();await select(out.id,{force:true});
    }
-  }catch(error){el('wcFormError').textContent=error.message}
-  finally{busy=false;el('wcSubmitCreate').disabled=false}
+  }catch(error){if(epoch===authEpoch)el('wcFormError').textContent=error.message}
+  finally{busy=false;if(epoch===authEpoch)el('wcSubmitCreate').disabled=false}
  }
  function warehouseChanged(){
   if(!initialized)return;
-  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';closeNew();
+  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;closeNew();showPane('inbox');
   el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
   paintInbox(true);paintChat();void refresh();
  }
@@ -371,6 +394,8 @@
    if(!res.ok)throw Error('Không tải được giao diện chat');
    el('wrMount').innerHTML=await res.text();
    el('wcNew').onclick=()=>openNew('new');el('wcRefresh').onclick=()=>void refresh();
+   el('wcMobileNav').querySelectorAll('[data-wc-pane]').forEach(button=>button.onclick=()=>showPane(button.dataset.wcPane));
+   showPane('inbox');
    el('wcCreateForm').addEventListener('submit',e=>void create(e));
    for(const id of ['wcCloseCreate','wcModalBackdrop','wcCancelCreate'])el(id).onclick=closeNew;
    el('wcNoteForm').addEventListener('submit',e=>{e.preventDefault();void act('note')});
@@ -407,6 +432,10 @@
    document.addEventListener('pointerdown',e=>{if(!e.target.closest('.wc-sku-field'))hideSuggestions()});
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wcCreateOverlay').hidden)closeNew()});
    window.addEventListener('whose:warehouse-change',warehouseChanged);
+   window.addEventListener('whose:logged-out',()=>{
+    authEpoch++;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+    searchCache.clear();closeNew();showPane('inbox');paintInbox(true);paintChat();
+   });
    initialized=true;paintRole();paintChat();
    timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},11000);
   })();

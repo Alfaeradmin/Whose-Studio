@@ -182,3 +182,56 @@
 .wc-suggestion-add{margin-left:auto;flex:0 0 auto;border:1px solid #d8e9db;background:#fff;border-radius:6px;color:#287b51;font-size:10px;font-weight:750;padding:6px 8px}
 .wc-cart-row input:focus-visible{outline:2px solid #8fcb9e;outline-offset:2px}
 @media(max-width:760px){.wc-search-shortcuts{display:block}.wc-keyboard-hint{display:none}.wc-suggestions{max-height:40dvh}}
+
+
+/* P3 — one active work pane per mobile viewport. */
+.wc-mobile-nav{display:none}
+.wc-request-type{font-size:10px;color:#276a48;background:#eaf6ee;border:1px solid #d7e9db;padding:3px 7px;border-radius:6px;max-width:max-content;font-weight:720}
+.wc-request-type[data-type="exchange"]{color:#8b5a38;background:#fff2e7;border-color:#f4dbc5}
+.wc-request-type[data-type="display"]{color:#4e6793;background:#edf3ff;border-color:#d4e1f6}
+.wc-request-type[data-type="restock"]{color:#70609c;background:#f4efff;border-color:#e3d9fb}
+.wc-request-type[data-type="other"]{color:#7e8982;background:#f5f7f5;border-color:#e1e8e1}
+.wc-priority-tag{width:max-content;padding:4px 7px;border-radius:5px;background:#fff1e6;color:#b35f24;font-size:10px;font-weight:750}
+.wc-conversation-body{align-items:start}
+@media(max-width:760px){
+ .wc-page{padding:12px 12px max(12px,env(safe-area-inset-bottom));min-height:calc(100dvh - 56px)}
+ .wc-page-heading{gap:9px;margin-bottom:10px}
+ .wc-page-heading h1{font-size:24px}
+ .wc-page-heading-actions{width:100%;justify-content:space-between}
+ .wc-primary-action,.wc-ghost-action{min-height:44px;font-size:13px}
+ .wc-mobile-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:10px;padding:4px;border:1px solid #dce8df;background:#f4f8f5;border-radius:11px}
+ .wc-mobile-nav button{font-size:12px;min-height:44px;border:1px solid transparent;border-radius:8px;background:transparent;color:#6c8272;font-weight:740;cursor:pointer;padding:6px 2px}
+ .wc-mobile-nav button[aria-current="step"]{background:#fff;border-color:#cce2d2;color:#21673f;box-shadow:0 1px 3px #0e32100a}
+ .wc-mobile-nav button:disabled{opacity:.45;cursor:default}
+ .wc-workspace{display:block;height:auto;min-height:0}
+ .wc-page[data-mobile-pane="inbox"] .wc-chat,.wc-page[data-mobile-pane="inbox"] .wc-detail-rail,
+ .wc-page[data-mobile-pane="chat"] .wc-inbox,.wc-page[data-mobile-pane="chat"] .wc-detail-rail,
+ .wc-page[data-mobile-pane="detail"] .wc-inbox,.wc-page[data-mobile-pane="detail"] .wc-chat{display:none!important}
+ .wc-page[data-mobile-pane="inbox"] .wc-inbox{display:flex;height:calc(100dvh - 220px);min-height:390px}
+ .wc-page[data-mobile-pane="chat"] .wc-chat{display:flex;height:calc(100dvh - 220px);min-height:440px}
+ .wc-page[data-mobile-pane="detail"] .wc-detail-rail{display:flex;height:calc(100dvh - 220px);min-height:440px}
+ .wc-chat-header{min-height:60px;padding:10px}
+ .wc-chat-toolbar{padding:8px 10px;gap:6px}
+ .wc-role-switch button{min-height:38px;font-size:12px}
+ .wc-chat-status{max-width:115px;white-space:normal;text-align:center;line-height:1.25}
+ .wc-messages{padding:12px}
+ .wc-bubble{max-width:95%}
+ .wc-composer{padding:10px 10px max(10px,env(safe-area-inset-bottom))}
+ .wc-note-form textarea{font-size:16px}
+ .wc-rail-section{padding:15px}
+ .wc-rail-product-actions input{min-height:44px;font-size:16px;width:78px}
+ .wc-rail-product-actions button{min-height:44px;font-size:12px}
+ .wc-overlay{padding:0;align-items:end}
+ .wc-create-card{max-height:calc(100dvh - env(safe-area-inset-top) - 8px);height:min(95dvh,880px);width:100%;border-radius:16px 16px 0 0}
+ .wc-create-header{padding:14px 16px}
+ .wc-create-header h2{font-size:20px}
+ .wc-create-main{padding:14px 16px}
+ .wc-create-footer{padding:12px 16px max(12px,env(safe-area-inset-bottom))}
+ .wc-create-footer button{flex:1;min-width:0}
+ .wc-product-search-box{height:50px}
+ .wc-product-search-box input,.wc-form-label textarea,.wc-form-label select{font-size:16px}
+ .wc-cart-row input{font-size:16px;min-height:42px}
+ .wc-suggestions{max-height:min(240px,33dvh)}
+ .wc-suggestion{min-height:68px}
+}
+@media(max-width:390px){.wc-page{padding-left:9px;padding-right:9px}.wc-mobile-nav button{font-size:11px}.wc-chat-identity strong{font-size:12px}.wc-chat-status{font-size:9px}.wc-chat-avatar{width:34px;height:34px;flex-basis:34px}}

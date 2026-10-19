@@ -73,20 +73,21 @@ test('sync is admin-only, server-fetch-only and never writes inventory',()=>{
  assert.match(schema,/REVOKE ALL ON FUNCTION public\.whose_sync_kiot_product_page\(jsonb\) FROM PUBLIC,anon/);
  assert.doesNotMatch(schema,/\b(?:INSERT INTO|UPDATE|DELETE FROM)\s+(?:public\.)?whose_inventory_snapshots/i);
 });
-test('product sync UI follows Whose UI Kit and has distinct accessible controls',()=>{
- for(const id of ['productSync','psCards','psShowWhose','psShowKiot','psSearch','psSyncAll',
-   'psProgressBar','psStopSync','psPrev','psNext','psImageFilter','psStatus']){
-   assert.ok(html.includes('id="'+id+'"'),'missing UI '+id);
+test('active catalogue shows source photos and preserves admin-only sync',()=>{
+ for(const id of ['productsGrid','productsSearch','productsSync','productsPrev','productsNext',
+  'productsImage','productsStatus','productsPhotos','productsLastSync','wsSyncStatus']){
+  assert.ok(html.includes('id="'+id+'"'),'missing active UI '+id);
  }
  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
  assert.equal(new Set(ids).size,ids.length);
- assert.match(html,/ui-product-sync\.css/);
- assert.match(html,/product-sync\.js/);
- assert.match(front,/authorizedFetch/);
- assert.match(front,/window\.confirm/);
- assert.match(front,/ui\.stop/);
- assert.match(front,/ui\.resumePage/);
- assert.match(front,/progress\(offset,total/);
- assert.match(front,/createElement\('img'\)|node\('img'\)/);
- assert.ok(front.indexOf("previousNavigate=navigate")>=0);
+ assert.match(html,/products-new\.js/);
+ assert.match(html,/products-new\.css/);
+ const active=read('products-new.js');
+ assert.match(active,/\/api\/kiot-products/);
+ assert.match(active,/window\.whoseAccessToken/);
+ assert.match(active,/!ui\.admin\|\|ui\.syncing/);
+ assert.match(active,/ui\.syncPage/);
+ assert.match(active,/node\('img'/);
+ assert.match(active,/ui\.rows=data\.rows\|\|\[\]/);
+ assert.doesNotMatch(active,/whose_inventory_snapshots.*insert/i);
 });
