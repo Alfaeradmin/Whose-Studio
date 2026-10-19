@@ -52,3 +52,11 @@ test('frontend contains ONE accessible, expandable audit log, not one bubble per
  assert.match(css,/@media\(max-width:760px\)/);
  assert.ok(html.indexOf('/calling-history-model.js')<html.indexOf('/calling-chat-box.js'));
 });
+
+test('mobile expanded history overlays the scroll safely without resizing the composer',()=>{
+ const css=read('calling-chat-box.css');
+ assert.match(css,/\.wc-history-panel\{position:relative;z-index:8\}/);
+ assert.match(css,/\.wc-history-panel \.wc-history-contents\{position:absolute/);
+ assert.match(css,/max-height:min\(260px,44dvh\)/);
+ assert.match(css,/border-radius:0 0 12px 12px/);
+});

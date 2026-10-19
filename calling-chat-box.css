@@ -305,3 +305,12 @@
 .wc-history-panel:empty{display:none}
 .wc-history-panel .wc-history-card{margin:0}
 @media(max-width:760px){.wc-history-panel{padding:10px 12px}.wc-history-contents{max-height:min(320px,40dvh)}}
+
+
+/* Expand audit history as a connected dropdown, never shrink the composer/chat. */
+.wc-history-panel{position:relative;z-index:8}
+.wc-history-panel .wc-history-card[open]{overflow:visible;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.wc-history-panel .wc-history-contents{position:absolute;z-index:9;top:calc(100% - 13px);left:clamp(14px,2.2vw,30px);right:clamp(14px,2.2vw,30px);max-height:min(380px,50dvh);background:#fff;border:1px solid #d8e5dc;border-top:0;border-radius:0 0 12px 12px;box-shadow:0 16px 30px #183b2320}
+@media(max-width:760px){
+ .wc-history-panel .wc-history-contents{left:12px;right:12px;max-height:min(260px,44dvh)}
+}
