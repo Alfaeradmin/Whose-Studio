@@ -314,3 +314,29 @@
 @media(max-width:760px){
  .wc-history-panel .wc-history-contents{left:12px;right:12px;max-height:min(260px,44dvh)}
 }
+
+
+/* Verified Kiot invoice proposal, intentionally separate from chat notes/history. */
+.wc-bill-match-section{background:#fafcf9;border-top:1px solid #e1eae3;display:grid;gap:10px}
+.wc-bill-match-header{display:flex;flex-direction:column;gap:4px}
+.wc-bill-match-header strong{font-size:13px;color:#274b35}
+.wc-bill-match-header small{font-size:11px;color:#74897a}
+.wc-bill-match-form{display:grid;gap:6px}
+.wc-bill-match-form label{font-size:11px;font-weight:680;color:#657d69}
+.wc-bill-match-row{display:flex;gap:7px;min-width:0}
+.wc-bill-match-row input{min-width:0;flex:1;width:100%;border:1px solid #d1dfd4;background:#fff;border-radius:8px;padding:9px;font:inherit;font-size:14px}
+.wc-bill-match-row button{flex:none;background:#286e4b;color:#fff;border:0;border-radius:8px;padding:9px 11px;cursor:pointer;font-weight:720}
+.wc-bill-match-row button:disabled{opacity:.65;cursor:default}
+.wc-bill-match-state{font-size:11px;line-height:1.5;color:#647c6d}
+.wc-bill-match-results{display:grid;gap:6px;min-width:0}
+.wc-bill-match-summary{background:#edf6ef;border:1px solid #d6e6db;border-radius:7px;padding:8px;font-size:11px;color:#286445;font-weight:700}
+.wc-bill-match-line{background:#fff;border:1px solid #dce8df;border-radius:7px;padding:9px;display:grid;gap:4px}
+.wc-bill-match-line strong{font-size:12px;color:#273e2d}
+.wc-bill-match-line small{font-size:11px;color:#76887a;line-height:1.5}
+.wc-bill-match-line[data-kind="candidate"]{border-color:#b0d8bd;background:#f3faf5}
+.wc-bill-match-line[data-kind="review"]{border-color:#f1d2a9;background:#fff9ec}
+.wc-bill-match-warning,.wc-bill-match-disclaimer{font-size:11px;color:#91632d;line-height:1.45;margin:3px 0}
+@media(max-width:760px){.wc-bill-match-row input{font-size:16px;min-height:44px}.wc-bill-match-row button{min-height:44px}}
+
+.wc-bill-scan-button{background:#edf6f0;color:#276244;border:1px solid #c9e2d0;border-radius:9px;min-height:44px;padding:9px 12px;text-align:left;cursor:pointer;font-size:12px;font-weight:700}
+.wc-bill-scan-button:disabled{opacity:.6;cursor:default}

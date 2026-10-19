@@ -248,7 +248,7 @@
  async function select(id,{force=false,focus=false}={}){
   const b=branch();if(!b||!id)return;
   const request=++seq,epoch=authEpoch;const changed=currentId!==id;
-  currentId=id;if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
+  currentId=id;if(changed)window.WhoseBillMatchUI?.reset();if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
   const cached=detailCache.get(cacheKey(id));
   const currentRow=rows.find(row=>row.id===id);
   const cacheValid=!!cached&&(!currentRow||currentRow.updated_at===cached.data.thread.updated_at);
@@ -489,7 +489,7 @@
  function warehouseChanged(){
   if(!initialized)return;
   seq++;refreshTicket++;pulling=false;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
-  inboxScope='';inboxFetchedAt=0;detailCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
+  inboxScope='';inboxFetchedAt=0;detailCache.clear();historyExpanded.clear();window.WhoseBillMatchUI?.reset();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
   el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
   paintInbox(true);paintChat();void refresh();
  }
@@ -500,6 +500,7 @@
    const res=await fetch('/calling-chat-box.html',{cache:'no-store'});
    if(!res.ok)throw Error('Không tải được giao diện chat');
    el('wrMount').innerHTML=await res.text();
+   window.WhoseBillMatchUI?.install();
    el('wcNew').onclick=()=>openNew('new');el('wcRefresh').onclick=()=>void refresh();
    el('wcMobileNav').querySelectorAll('[data-wc-pane]').forEach(button=>button.onclick=()=>showPane(button.dataset.wcPane));
    el('wcViewSKU').onclick=()=>{
@@ -547,13 +548,14 @@
    window.addEventListener('whose:warehouse-change',warehouseChanged);
    window.addEventListener('whose:logged-out',()=>{
     authEpoch++;refreshTicket++;pulling=false;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
-    inboxScope='';inboxFetchedAt=0;detailCache.clear();searchCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
+    inboxScope='';inboxFetchedAt=0;detailCache.clear();searchCache.clear();historyExpanded.clear();window.WhoseBillMatchUI?.reset();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
    });
    initialized=true;paintRole();paintChat();
    timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},20000);
   })();
   try{await starting}catch(e){starting=null;throw e}
  }
+ window.whoseCallingCurrentId=()=>currentId;
  window.whoseCallingOpen=async()=>{
   try{
    await init();el('wrMount').hidden=false;el('wcPage').hidden=false;
