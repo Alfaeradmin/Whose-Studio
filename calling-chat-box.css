@@ -235,3 +235,82 @@
  .wc-suggestion{min-height:68px}
 }
 @media(max-width:390px){.wc-page{padding-left:9px;padding-right:9px}.wc-mobile-nav button{font-size:11px}.wc-chat-identity strong{font-size:12px}.wc-chat-status{font-size:9px}.wc-chat-avatar{width:34px;height:34px;flex-basis:34px}}
+
+
+/* Faster task comprehension: single next-step hint, always reachable SKU actions. */
+.wc-next-action{padding:10px 18px;border-bottom:1px solid #d9eadd;background:#f0f8f2;color:#286244;font-size:12px;font-weight:650;line-height:1.45}
+.wc-view-sku{margin-left:auto;min-height:36px}
+.wc-detail-close{display:none;border:1px solid #d6e6da;background:#f2f8f3;padding:10px 12px;border-radius:8px;margin-bottom:10px;color:#276f47;font-weight:700;cursor:pointer}
+@media(min-width:761px) and (max-width:1250px){
+ .wc-page[data-detail-open="true"] .wc-detail-rail{display:flex!important;position:fixed;z-index:95;top:68px;right:12px;bottom:12px;width:min(400px,calc(100vw - 24px));height:auto;box-shadow:0 10px 60px #0b201744}
+ .wc-detail-close{display:block}
+}
+@media(min-width:1251px){.wc-view-sku{display:none}}
+@media(max-width:760px){
+ .wc-next-action{padding:10px 12px;font-size:12px}
+ .wc-view-sku{min-height:40px;padding:6px 9px;font-size:12px}
+ .wc-detail-close{display:block}
+ .wc-chat-toolbar .wc-dept-label{display:none}
+}
+
+/* Clearer call creation: select intent before product picking. */
+.wc-create-guide{padding:10px 13px;background:#eef7f0;border:1px solid #d9e9de;border-radius:9px;font-size:12px;color:#326546;line-height:1.4;margin:0 0 13px;font-weight:660}
+.wc-create-main #wcPurposeTypeLabel{margin-top:0;margin-bottom:14px}
+.wc-create-main #wcPurposeType{min-height:44px;font-size:14px}
+@media(max-width:760px){.wc-create-guide{font-size:12px}.wc-create-main #wcPurposeType{font-size:16px}}
+
+
+/* Consolidated audit trail: ONE expandable card, independent of staff chat messages. */
+.wc-history-card{margin:0 0 22px;border:1px solid #d8e5dc;border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 9px #18362308}
+.wc-history-summary{display:flex;gap:12px;align-items:center;min-height:70px;cursor:pointer;padding:13px 15px;background:#f1f8f3;list-style:none;user-select:none}
+.wc-history-summary::-webkit-details-marker{display:none}
+.wc-history-summary:focus-visible{outline:2px solid #58aa76;outline-offset:-3px}
+.wc-history-summary-copy{min-width:0;flex:1;display:grid;gap:5px}
+.wc-history-summary-copy strong{font-size:13px;font-weight:780;color:#2d593e}
+.wc-history-summary-copy small{font-size:11px;color:#668773;line-height:1.45;overflow-wrap:anywhere}
+.wc-history-count{flex:none;border-radius:7px;padding:6px 8px;background:#e0f0e5;color:#27734a;font-size:11px;font-weight:740;white-space:nowrap}
+.wc-history-chevron{flex:none;color:#47825b;font-size:20px;transition:transform 120ms ease}
+.wc-history-card[open] .wc-history-chevron{transform:rotate(180deg)}
+.wc-history-contents{max-height:min(420px,53dvh);overflow-y:auto;overscroll-behavior:contain;padding:8px 16px 12px;scrollbar-width:thin}
+.wc-history-order{font-size:10px;letter-spacing:.04em;color:#799183;padding:8px 0 9px;border-bottom:1px solid #e9efeb}
+.wc-history-items{list-style:none;margin:0;padding:9px 0 0}
+.wc-history-item{position:relative;display:flex;gap:11px;padding:9px 0 13px}
+.wc-history-item:not(:last-child)::before{content:"";position:absolute;left:5px;top:23px;bottom:-6px;width:1px;background:#dce7df}
+.wc-history-dot{flex:0 0 11px;width:11px;height:11px;margin-top:3px;border:2px solid #83b696;border-radius:50%;box-sizing:border-box;background:#e3f3e7;z-index:1}
+.wc-history-item-content{flex:1;min-width:0}
+.wc-history-item-heading{display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px 10px}
+.wc-history-item-heading strong{font-size:12px;color:#304b38;font-weight:720}
+.wc-history-item-heading time,.wc-history-actor{font-size:10px;color:#809889}
+.wc-history-actor{display:block;margin-top:4px}
+.wc-history-detail,.wc-history-product{font-size:11px;color:#526b5a;line-height:1.55;margin:5px 0 0;overflow-wrap:anywhere;white-space:pre-wrap}
+.wc-history-product{color:#367654;font-weight:660}
+.wc-history-warning{background:#fff9ea;border:1px solid #efe1b9;border-radius:7px;padding:10px;color:#855c25;font-size:11px;line-height:1.5}
+.wc-history-empty{font-size:12px;color:#82978a;line-height:1.5}
+.wc-message-section-label{font-size:10px;font-weight:750;letter-spacing:.08em;color:#92a498;text-align:center;margin:5px 0 18px}
+.wc-no-notes{font-size:11px;text-align:center;line-height:1.7;color:#93a397;padding:10px 15px 23px}
+@media(max-width:760px){
+ .wc-history-card{margin-bottom:14px}
+ .wc-history-summary{min-height:64px;padding:11px 12px;gap:8px}
+ .wc-history-summary-copy strong{font-size:12px}
+ .wc-history-summary-copy small{font-size:10.5px}
+ .wc-history-count{font-size:10px;padding:5px 6px}
+ .wc-history-contents{padding:6px 12px 10px;max-height:min(360px,45dvh)}
+ .wc-history-item-heading strong{font-size:11.5px}
+}
+@media(prefers-reduced-motion:reduce){.wc-history-chevron{transition:none}}
+
+
+/* Pin one operation card above message scroll, so long conversations never hide it. */
+.wc-history-panel{flex:0 0 auto;padding:12px clamp(14px,2.2vw,30px);background:#f8faf8;border-bottom:1px solid #e6efe8;min-width:0}
+.wc-history-panel:empty{display:none}
+.wc-history-panel .wc-history-card{margin:0}
+@media(max-width:760px){.wc-history-panel{padding:10px 12px}.wc-history-contents{max-height:min(320px,40dvh)}}
+
+
+/* Expand audit history as a connected dropdown, never shrink the composer/chat. */
+.wc-history-panel{position:relative;z-index:8}
+.wc-history-panel .wc-history-card[open]{overflow:visible;border-bottom-left-radius:0;border-bottom-right-radius:0}
+.wc-history-panel .wc-history-contents{position:absolute;z-index:9;top:calc(100% - 13px);left:clamp(14px,2.2vw,30px);right:clamp(14px,2.2vw,30px);max-height:min(380px,50dvh);background:#fff;border:1px solid #d8e5dc;border-top:0;border-radius:0 0 12px 12px;box-shadow:0 16px 30px #183b2320}
+@media(max-width:760px){
+ .wc-history-panel .wc-history-contents{left:12px;right:12px;max-height:min(260px,44dvh)}
+}

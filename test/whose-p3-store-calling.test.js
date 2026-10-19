@@ -58,3 +58,46 @@ test('mobile operations are one pane per step and forms tag reason explicitly',(
  assert.match(css,/data-mobile-pane="detail"/);
  assert.match(html,/maxlength="1000"/);
 });
+
+test('speed: selected chat persists on list-only refresh; opening is nonblocking',()=>{
+ const js=read('calling-chat-box.js'),products=read('products-new.js');
+ assert.match(js,/if\(!syncDetail\)\{ \/\* list-only refresh:/);
+ assert.match(js,/void refresh\(\);return true/);
+ assert.match(js,/currentRow&&\(!detail\|\|detail\.thread\.updated_at!==currentRow\.updated_at\)/);
+ assert.match(js,/void select\(before,\{force:true\}\);void refresh\(true,false\)/);
+ assert.doesNotMatch(products,/if\(ui\.admin\)void autoSync\(\)/);
+ assert.match(products,/visible\(\)&&!ui\.syncing/);
+});
+test('speed: server authorization validates independent Supabase reads concurrently',()=>{
+ const auth=read('lib/whose-auth.js');
+ assert.match(auth,/const \[userResult,membershipResult,adminResult,branchesResult\] = await Promise\.all\(/);
+ assert.match(auth,/if \(!userResult\.ok \|\| !userResult\.data\?\.id\)/);
+ assert.match(auth,/if \(!membershipResult\.ok \|\| !adminResult\.ok\)/);
+ assert.match(auth,/!branchesResult\.ok \|\| !Array\.isArray\(branchesResult\.data\)/);
+});
+test('simplified form: optional new note, mandatory add reason, tablet SKU drawer',()=>{
+ const js=read('calling-chat-box.js'),html=read('calling-chat-box.html'),css=read('calling-chat-box.css');
+ assert.match(js,/el\('wcPurpose'\)\.required=next==='add'/);
+ assert.match(js,/createMode==='add'&&purpose\.length<3/);
+ assert.match(html,/id="wcViewSKU"/);
+ assert.match(html,/id="wcNextActionHint"/);
+ assert.match(css,/min-width:761px\) and \(max-width:1250px/);
+ assert.match(css,/data-detail-open="true"/);
+ assert.equal(view.formatPurpose('trial',''),'Khách thử');
+ assert.equal(view.classify('Khách thử').kind,'trial');
+});
+
+test('product search newest request wins without blocking new queries on slow requests',()=>{
+ const source=read('products-new.js');
+ assert.match(source,/ui\.controller\?\.abort\(\)/);
+ assert.match(source,/const requestId=\+\+ui\.requestSeq/);
+ assert.match(source,/requestId!==ui\.requestSeq\|\|controller\.signal\.aborted/);
+ assert.match(source,/setTimeout\(\(\)=>\{ui\.page=0;refresh\(\)\},150\)/);
+});
+test('new calling UX asks purpose first and then SKU scan, without hidden duplicate purpose fields',()=>{
+ const html=read('calling-chat-box.html');
+ const type=html.indexOf('id="wcPurposeType"'),search=html.indexOf('id="wcProductSearch"');
+ assert.ok(type>0&&search>0&&type<search,'Purpose selector should precede SKU search');
+ assert.equal((html.match(/id="wcPurposeType"/g)||[]).length,1);
+ assert.match(html,/Chọn loại yêu cầu → Tìm hoặc scan sản phẩm/);
+});

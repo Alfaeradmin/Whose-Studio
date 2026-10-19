@@ -2,6 +2,12 @@
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
  let busy=false,seq=0,authEpoch=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
+ const historyExpanded=new Map();
+ const detailCache=new Map();
+ let inboxScope='',inboxFetchedAt=0,refreshTicket=0;
+ const scopeKey=()=>((session()?.user?.id)||'')+':'+(branch()?.id||'');
+ const cacheKey=id=>scopeKey()+':'+id;
+ const CACHE_FRESH_MS=9000;
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -38,6 +44,7 @@
    button.setAttribute('aria-pressed',String(mode===name));
   }
   const store=allowed.includes('store');
+  el('wcRoleStore').hidden=!store;el('wcRoleWarehouse').hidden=!allowed.includes('warehouse');
   el('wcNew').disabled=!store||!branch();
   el('wcNoteInput').disabled=!detail;
   el('wcSendNote').disabled=!detail;
@@ -90,7 +97,7 @@
   const r=d.thread,lines=d.lines||[];
   el('wcRailTitle').textContent='#'+r.id.slice(0,8).toUpperCase();
   const typed=requestType().classify(r.purpose);
-  el('wcRailNote').textContent=typed.label+' · '+typed.note;
+  el('wcRailNote').textContent=typed.note?typed.label+' · '+typed.note:typed.label;
   el('wcLineCount').textContent=lines.length+' SKU';
   const requested=lines.reduce((sum,x)=>sum+Number(x.qty_requested||0),0),picked=lines.reduce((sum,x)=>sum+Number(x.qty_picked||0),0);
   for(const [name,value] of [['Yêu cầu',num(requested)],['Đã soạn',num(picked)],['Ưu tiên',r.priority==='urgent'?'Gấp':'Bình thường'],['Tạo lúc',fmt(r.created_at)]]){
@@ -122,6 +129,8 @@
   paintRole();
   paintRail();
   const host=el('wcMessages');
+  const historyPanel=el('wcHistoryPanel');historyPanel.replaceChildren();
+  const helper=el('wcNextActionHint');
   const atEnd=host.scrollHeight-host.scrollTop-host.clientHeight<110,oldTop=host.scrollTop;
   host.replaceChildren();
   if(!detail){
@@ -131,35 +140,93 @@
    el('wcChatTitle').textContent='Cửa hàng ↔ Kho';el('wcChatSub').textContent=branch()?.name||'Chọn kho thao tác';
    el('wcChatStatus').textContent='Chưa chọn';
    el('wcChatActions').replaceChildren();
+   helper.textContent='Chọn một yêu cầu ở danh sách bên trái để bắt đầu. Trên điện thoại, chọn bước 1 → 2 → 3.';
    return;
   }
   const d=detail,r=d.thread,me=session()?.user?.id;
   el('wcChatTitle').textContent='#'+r.id.slice(0,8).toUpperCase()+' · Cửa hàng ↔ Kho';
   el('wcChatSub').textContent=(branch()?.name||'')+' · '+fmt(r.created_at);
   el('wcChatStatus').textContent=labels[r.status]||r.status;
-  host.append(node('div','wc-day-label','LỊCH SỬ YÊU CẦU · '+fmt(r.created_at)));
-  if(d.historyTruncated)host.append(node('div','wc-empty-list','Chỉ hiển thị 500 sự kiện gần nhất; lịch sử cũ hơn chưa được tải. Không dùng màn này để kết luận đã có đủ lịch sử.'));
-  for(const e of d.events||[]){
-   const isMine=e.actor_id===me,outer=node('div','wc-bubble-wrap'+(isMine?' is-self':'')),bubble=node('div','wc-bubble');
-   const head=node('div','wc-bubble-head');head.append(node('strong','',isMine?'Bạn':e.event_type==='created'||e.event_type==='receive'||e.event_type==='request_return'?'Cửa hàng / nhân viên':'Kho / nhân viên'),node('time','',fmt(e.created_at)));
-   bubble.append(head,node('div','wc-bubble-title',events[e.event_type]||e.event_type));
-   if(e.body)bubble.append(node('p','',e.body));
-   if(e.event_type==='created'){
-    const cards=node('div','wc-bubble-lines');
-    cards.append(node('small','','DANH SÁCH SKU HIỆN TẠI'));
-    for(const line of d.lines||[]){
-     const item=node('div','wc-bubble-line'),label=node('div');label.append(node('strong','',line.sku),node('small','',line.product_name));item.append(label,node('span','','×'+num(line.qty_requested)));cards.append(item);
-    }
-    bubble.append(cards);
+  const nextSteps={
+   warehouse:{submitted:'1. Nhận yêu cầu để bắt đầu soạn hàng.',accepted:'2. Mở Xử lý SKU, ghi nhận số lượng vừa soạn.',picking:'2. Tiếp tục soạn SKU rồi xác nhận Soạn xong.',ready:'3. Giao hàng thật cho cửa hàng, sau đó bấm Xác nhận bàn giao.',return_requested:'Nhận hàng trả thực tế trong Xử lý SKU rồi xác nhận nhập trả.'},
+   store:{submitted:'Đã gửi cho kho. Bạn có thể bổ sung SKU hoặc theo dõi trạng thái.',accepted:'Kho đã nhận việc, đang chuẩn bị sản phẩm.',picking:'Kho đang soạn hàng.',ready:'Kho đã soạn xong; chờ bàn giao thật.',handed_over:'4. Kiểm đếm hàng được giao và xác nhận Đã nhận.',received:'Hàng đang do cửa hàng giữ. Nếu trả, mở Xử lý SKU.',return_requested:'Đã yêu cầu trả; đợi kho nhận hàng thực tế.'}
+  };
+  helper.textContent=(nextSteps[mode]||{})[r.status]||(['completed','cancelled'].includes(r.status)?'Yêu cầu đã kết thúc.':'Xem lịch sử và số lượng trong Xử lý SKU.');
+  // A single expandable audit card for ALL operational events. Chat bubbles
+  // represent actual staff notes only. No database records or event metadata change.
+  const timeline=window.WhoseChatHistory.partition(d.events||[]);
+  const log=node('details','wc-history-card');
+  const historyKey=(branch()?.id||'')+':'+r.id;
+  log.open=historyExpanded.get(historyKey)===true;
+  const summary=node('summary','wc-history-summary');
+  const summaryCopy=node('span','wc-history-summary-copy');
+  summaryCopy.append(node('strong','','Lịch sử thao tác'));
+  const recent=window.WhoseChatHistory.latestAction(timeline.actions);
+  summaryCopy.append(node('small','',recent
+   ?'Gần nhất: '+(events[recent.event_type]||recent.event_type)+' · '+fmt(recent.created_at)
+   :'Chưa có thao tác được ghi nhận'));
+  const counter=node('span','wc-history-count',num(timeline.actions.length)+' thao tác');
+  const chevron=node('span','wc-history-chevron','⌄');chevron.setAttribute('aria-hidden','true');
+  summary.append(summaryCopy,counter,chevron);
+  const contents=node('div','wc-history-contents');
+  const lineIndex=new Map((d.lines||[]).map(line=>[line.id,line]));
+  function renderLog(){
+   contents.replaceChildren();
+   if(d.historyTruncated)contents.append(node('p','wc-history-warning',
+    'Chỉ tải tối đa 500 sự kiện mới nhất. Lịch sử trước đó chưa được hiển thị đầy đủ.'));
+   if(!timeline.actions.length){
+    contents.append(node('p','wc-history-empty','Chưa có thao tác được ghi nhận.'));return;
    }
-   if(e.event_type==='added_sku'&&e.qty)bubble.append(node('p','','Tổng bổ sung: '+num(e.qty)+' sản phẩm'));
-   if(e.line_id){
-    const line=(d.lines||[]).find(x=>x.id===e.line_id);
-    if(line)bubble.append(node('p','','SKU '+line.sku+(e.qty?' · SL '+num(e.qty):'')));
+   const heading=node('div','wc-history-order','Thao tác mới nhất ở trên');
+   contents.append(heading);
+   const list=node('ol','wc-history-items');
+   for(const event of [...timeline.actions].reverse()){
+    const item=node('li','wc-history-item');
+    const dot=node('span','wc-history-dot');dot.setAttribute('aria-hidden','true');
+    const content=node('div','wc-history-item-content');
+    const head=node('div','wc-history-item-heading');
+    head.append(node('strong','',events[event.event_type]||event.event_type||'Thao tác'),
+     node('time','',fmt(event.created_at)));
+    content.append(head);
+    const actor=event.actor_id===me?'Bạn':
+     ['created','receive','request_return','cancel'].includes(event.event_type)?'Nhân viên cửa hàng':'Nhân viên kho';
+    content.append(node('span','wc-history-actor',actor));
+    if(event.body)content.append(node('p','wc-history-detail',event.body));
+    const linked=event.line_id?lineIndex.get(event.line_id):null;
+    if(linked)content.append(node('p','wc-history-product',
+     'SKU '+linked.sku+(event.qty?' · Số lượng '+num(event.qty):'')));
+    else if(event.qty)content.append(node('p','wc-history-product',
+     'Số lượng '+num(event.qty)));
+    if(event.event_type==='created'&&d.lines?.length)content.append(node('p','wc-history-product',
+     'Danh sách '+d.lines.length+' SKU hiện tại: xem tại Xử lý SKU'));
+    item.append(dot,content);list.append(item);
    }
+   contents.append(list);
+  }
+  if(log.open)renderLog();
+  log.addEventListener('toggle',()=>{
+   historyExpanded.set(historyKey,log.open);
+   if(log.open)renderLog();
+   else contents.replaceChildren();
+  });
+  log.append(summary,contents);
+  historyPanel.append(log);
+
+  // Notes are the only events rendered as separate conversation bubbles.
+  // Operational updates, reasons and quantities are readable in the log above.
+  if(timeline.messages.length)host.append(node('div','wc-message-section-label','TIN NHẮN CỬA HÀNG · KHO'));
+  for(const event of timeline.messages){
+   const isMine=event.actor_id===me;
+   const outer=node('div','wc-bubble-wrap'+(isMine?' is-self':''));
+   const bubble=node('div','wc-bubble');
+   const head=node('div','wc-bubble-head');
+   head.append(node('strong','',isMine?'Bạn':'Nhân viên bộ phận khác'),
+    node('time','',fmt(event.created_at)));
+   bubble.append(head,node('p','',event.body||'Ghi chú không có nội dung'));
    outer.append(bubble);host.append(outer);
   }
-  if(!d.events?.length)host.append(node('div','wc-empty-list','Chưa có lịch sử xác minh.'));
+  if(!timeline.messages.length)host.append(node('div','wc-no-notes',
+   'Chưa có tin nhắn trao đổi. Các cập nhật nghiệp vụ nằm trong thẻ Lịch sử thao tác.'));
   paintActions(r);
   host.scrollTop=atEnd||oldTop===0?host.scrollHeight:oldTop;
  }
@@ -182,30 +249,61 @@
   const b=branch();if(!b||!id)return;
   const request=++seq,epoch=authEpoch;const changed=currentId!==id;
   currentId=id;if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
-  if(changed){detail=null;latestSignature='';paintChat();status('Đang mở hội thoại…')}
+  const cached=detailCache.get(cacheKey(id));
+  const currentRow=rows.find(row=>row.id===id);
+  const cacheValid=!!cached&&(!currentRow||currentRow.updated_at===cached.data.thread.updated_at);
+  if(changed){
+   detail=cacheValid?cached.data:null;
+   latestSignature=cacheValid?cached.signature:'';
+   paintChat();
+   status(cacheValid?'Đã hiển thị hội thoại từ phiên hiện tại':'Đang mở hội thoại…');
+  }
+  // Fast repeat access; poll and forced refresh still fetch the authoritative copy.
+  if(!force&&cacheValid&&Date.now()-cached.at<CACHE_FRESH_MS)return;
   try{
    const data=await http({chat_id:id});if(request!==seq||epoch!==authEpoch||branch()?.id!==b.id)return;
    if(data.thread.branch_id!==b.id)return;
    const signature=JSON.stringify([data.thread.status,data.thread.updated_at,data.lines.map(x=>[x.id,x.qty_picked,x.qty_handed,x.qty_received,x.qty_return_requested,x.qty_returned]),data.events.map(e=>e.id)]);
    if(!force&&signature===latestSignature)return;
-   latestSignature=signature;detail=data;paintChat();status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
+   latestSignature=signature;detail=data;
+   detailCache.delete(cacheKey(id));
+   detailCache.set(cacheKey(id),{data,signature,at:Date.now()});
+   if(detailCache.size>10)detailCache.delete(detailCache.keys().next().value);
+   paintChat();status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
   }catch(e){if(request!==seq||epoch!==authEpoch)return;status('Không đọc được hội thoại: '+e.message)}
  }
- async function refresh(quiet=false){
+ async function refresh(quiet=false,syncDetail=true){
   if(pulling)return;const b=branch();if(!b)return status('Chưa chọn kho thao tác');
-  const epoch=authEpoch;
-  pulling=true;if(!quiet)status('Đang đồng bộ…');
+  const epoch=authEpoch,scope=scopeKey();
+  // Opening the same branch again should not block on the identical server list.
+  if(!quiet&&inboxScope===scope&&inboxFetchedAt&&Date.now()-inboxFetchedAt<CACHE_FRESH_MS){
+   paintInbox();status('Danh sách từ phiên hiện tại');return;
+  }
+  const ticket=++refreshTicket;
+  pulling=true;if(!quiet)status('Đang kiểm tra danh sách…');
   try{
    const response=await http({branch_id:b.id});
-   if(epoch!==authEpoch||branch()?.id!==b.id)return;
+   if(ticket!==refreshTicket||epoch!==authEpoch||branch()?.id!==b.id)return;
+   inboxScope=scope;inboxFetchedAt=Date.now();
    rows=requestType().sortedQueue(response.rows||[]);
    paintInbox();
-   if(currentId&&rows.some(x=>x.id===currentId))await select(currentId);
-   else if(rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
-   else{currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
-   if(!currentId)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
-  }catch(e){if(epoch!==authEpoch)return;status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
-  finally{pulling=false;if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true)}
+   const currentRow=rows.find(x=>x.id===currentId);
+   if(!syncDetail){ /* list-only refresh: preserve optimistic focus and chat context */ }
+   else if(currentRow&&(!detail||detail.thread.updated_at!==currentRow.updated_at))await select(currentId);
+   else if(!currentRow&&rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
+   else if(!rows.length){currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
+   if(!currentId&&syncDetail)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
+  }catch(e){
+   if(ticket!==refreshTicket||epoch!==authEpoch)return;
+   status('Lỗi kết nối: '+e.message);
+   // Keep last verified branch-scoped rows visible after a transient network error.
+   if(!quiet&&!rows.length)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message));
+  }finally{
+   if(ticket===refreshTicket){
+    pulling=false;
+    if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true);
+   }
+  }
  }
  async function act(kind,lineId=null,qty=null){
   if(!detail||busy)return;
@@ -227,6 +325,7 @@
   try{
    const response=await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
    committed=true;
+   detailCache.delete(cacheKey(before));inboxFetchedAt=0;
    if(epoch!==authEpoch||branch()?.id!==b||session()?.user?.id!==actor)return;
    pendingAction=null;
    el('wcNoteInput').value='';
@@ -235,7 +334,7 @@
     detail.thread={...detail.thread,status:response.result.status,updated_at:new Date().toISOString()};paintChat();
    }
    status('Đã ghi nhận · '+new Date().toLocaleTimeString('vi-VN'));
-   void select(before,{force:true}).then(()=>refresh(true));
+   void select(before,{force:true});void refresh(true,false);
   }catch(e){
    if(epoch!==authEpoch)return;
    if(committed){status('Thao tác đã ghi nhận, nhưng chưa cập nhật giao diện. Hãy làm mới để xem dữ liệu mới.');}
@@ -325,6 +424,8 @@
   el('wcPurposeTypeLabel').hidden=next==='add';
   el('wcSubmitCreate').textContent=next==='add'?'Bổ sung vào chat':'Gửi yêu cầu cho kho';
   const priority=el('wcPriority').closest('label');if(priority)priority.hidden=next==='add';
+  el('wcPurpose').required=next==='add';
+  el('wcPurpose').placeholder=next==='add'?'Lý do bổ sung SKU (bắt buộc)':'Có thể bỏ trống; loại yêu cầu đã thể hiện mục đích';
   paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;searchFeedback('Nhập tên, SKU hoặc quét barcode; dùng Enter để thêm nhanh');el('wcProductSearch').focus();
  }
  async function suggest(raw){
@@ -363,26 +464,32 @@
   const b=branch(),purpose=el('wcPurpose').value.trim(),priority=el('wcPriority').value,actor=session()?.user?.id,epoch=authEpoch;
   if(!b||!roles().includes('store'))return;
   const lines=cart.map(x=>({sku:x.sku,qty:Number(x.qty)}));
-  if(!lines.length||lines.some(x=>!Number.isInteger(x.qty)||x.qty<1||x.qty>1000000)||purpose.length<3){el('wcFormError').textContent='Thêm ít nhất một SKU, kiểm tra số lượng và nhập mục đích gọi hàng.';return}
+  if(!lines.length||lines.some(x=>!Number.isInteger(x.qty)||x.qty<1||x.qty>1000000)||(createMode==='add'&&purpose.length<3)){el('wcFormError').textContent='Thêm ít nhất một SKU, nhập số lượng hợp lệ và lý do khi bổ sung.';return}
   busy=true;el('wcSubmitCreate').disabled=true;el('wcFormError').textContent='';
   try{
    if(createMode==='add'){
     if(!currentId)throw Error('Chưa chọn hội thoại');
     const id=currentId;await http({}, {action:'add',chat_id:id,lines,note:purpose,idempotency_key:idempotency});
     if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
-    closeNew();cart=[];await refresh();await select(id,{force:true});
+    detailCache.delete(cacheKey(id));inboxFetchedAt=0;
+    closeNew();cart=[];status('Đã bổ sung SKU · đang cập nhật hội thoại');
+    void select(id,{force:true});void refresh(true,false);
    }else{
     const fullPurpose=requestType().formatPurpose(el('wcPurposeType').value,purpose);
     const out=await http({}, {action:'create',branch_id:b.id,lines,purpose:fullPurpose,priority,idempotency_key:idempotency});
     if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
-    closeNew();cart=[];currentId=out.id;lastListSignature='';await refresh();await select(out.id,{force:true});
+    inboxFetchedAt=0;
+    closeNew();cart=[];currentId=out.id;lastListSignature='';detail=null;
+    showPane('chat');paintChat();status('Đã gửi yêu cầu đến kho');
+    void select(out.id,{force:true});void refresh(true,false);
    }
   }catch(error){if(epoch===authEpoch)el('wcFormError').textContent=error.message}
   finally{busy=false;if(epoch===authEpoch)el('wcSubmitCreate').disabled=false}
  }
  function warehouseChanged(){
   if(!initialized)return;
-  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;closeNew();showPane('inbox');
+  seq++;refreshTicket++;pulling=false;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+  inboxScope='';inboxFetchedAt=0;detailCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
   el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
   paintInbox(true);paintChat();void refresh();
  }
@@ -395,6 +502,12 @@
    el('wrMount').innerHTML=await res.text();
    el('wcNew').onclick=()=>openNew('new');el('wcRefresh').onclick=()=>void refresh();
    el('wcMobileNav').querySelectorAll('[data-wc-pane]').forEach(button=>button.onclick=()=>showPane(button.dataset.wcPane));
+   el('wcViewSKU').onclick=()=>{
+    if(!currentId)return;
+    if(window.matchMedia('(max-width:760px)').matches)showPane('detail');
+    else el('wcPage').dataset.detailOpen='true';
+   };
+   el('wcDetailClose').onclick=()=>{el('wcPage').dataset.detailOpen='false';showPane('chat')};
    showPane('inbox');
    el('wcCreateForm').addEventListener('submit',e=>void create(e));
    for(const id of ['wcCloseCreate','wcModalBackdrop','wcCancelCreate'])el(id).onclick=closeNew;
@@ -433,11 +546,11 @@
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wcCreateOverlay').hidden)closeNew()});
    window.addEventListener('whose:warehouse-change',warehouseChanged);
    window.addEventListener('whose:logged-out',()=>{
-    authEpoch++;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
-    searchCache.clear();closeNew();showPane('inbox');paintInbox(true);paintChat();
+    authEpoch++;refreshTicket++;pulling=false;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+    inboxScope='';inboxFetchedAt=0;detailCache.clear();searchCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
    });
    initialized=true;paintRole();paintChat();
-   timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},11000);
+   timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},20000);
   })();
   try{await starting}catch(e){starting=null;throw e}
  }
@@ -446,9 +559,12 @@
    await init();el('wrMount').hidden=false;el('wcPage').hidden=false;
    const products=document.querySelector('.products-page');if(products)products.hidden=true;
    el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
-   paintRole();await refresh();return true;
+   paintRole();
+   // Show the workspace immediately. Network reads do not block navigation.
+   void refresh();return true;
   }catch(e){console.error('[Whose/chat] failed',e);return false}
  };
+ window.addEventListener('whose:authenticated',()=>{void init().catch(()=>{})});
  window.whoseCallingClose=()=>{
   const page=el('wcPage');if(page)page.hidden=true;
   const modal=el('wcCreateOverlay');if(modal)modal.hidden=true;

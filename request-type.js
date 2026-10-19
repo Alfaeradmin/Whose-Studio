@@ -9,12 +9,13 @@
  function formatPurpose(kind,note){
   if(!labels[kind])throw Error('Unsupported purpose category');
   const details=String(note||'').normalize('NFC').trim();
-  if(details.length<3||details.length>950)throw Error('Purpose note must be 3–950 characters');
-  return labels[kind]+' · '+details;
+  if(details.length>950||(details.length>0&&details.length<3))throw Error('Purpose note must be empty or 3–950 characters');
+  return details?labels[kind]+' · '+details:labels[kind];
  }
  function classify(value){
   const purpose=String(value||'').trim();
   for(const [kind,label] of Object.entries(labels)){
+   if(purpose===label)return {kind,label,note:''};
    if(purpose.startsWith(label+' · '))return {kind,label,note:purpose.slice(label.length+3)};
   }
   return {kind:'other',label:'Chưa phân loại',note:purpose};

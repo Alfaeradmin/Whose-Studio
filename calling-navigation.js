@@ -42,6 +42,7 @@
  }
  async function navigate(page,updateUrl=true){
   if(busy||!['products','calling'].includes(page))return;
+  if(page===active&&document.getElementById('wcPage')?.hidden===false)return;
   busy=true;
   try{
    if(page==='calling'){

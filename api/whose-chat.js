@@ -3,11 +3,15 @@ const {accessToken,isUuid,rest}=require('../lib/whose-backend');
 const {validateStaffBearer,verifyOrigin}=require('../lib/whose-auth');
 const limits=String;
 const responseCode=(status)=>status===401?401:status===403?403:status===400?400:status===404?404:502;
+const elapsedMs=from=>Math.max(0,Math.round((performance.now()-from)*10)/10);
+const serverTiming=(res,authMs,readMs)=>res.setHeader('Server-Timing',`auth;dur=${authMs.toFixed(1)},read;dur=${readMs.toFixed(1)}`);
 const http=async(req,res)=>{
  res.setHeader('Cache-Control','private, no-store');
  if(!['GET','POST'].includes(req.method))return res.status(405).json({error:'Method not allowed'});
  const bearer=accessToken(req);
+ const start=performance.now();
  const user=await validateStaffBearer(bearer);
+ const authMs=elapsedMs(start);
  if(!user.ok)return res.status(user.status||401).json({error:'Staff login required'});
  const scoped=id=>(user.branches||[]).some(b=>b.id===id&&b.is_active===true)&&
   (user.is_global_admin||(user.memberships||[]).some(m=>m.branch_id===id));
@@ -15,22 +19,28 @@ const http=async(req,res)=>{
   const branch=String(req.query?.branch_id||''),chat=String(req.query?.chat_id||'');
   if(chat){
    if(!isUuid(chat))return res.status(400).json({error:'Invalid chat'});
+   const readStart=performance.now();
    const q='whose_department_chats?select=id,branch_id,requester_id,assignee_id,purpose,priority,status,created_at,updated_at&id=eq.'+chat+'&limit=1';
-   const thread=await rest(q,{bearer});
-   if(!thread.ok)return res.status(responseCode(thread.status)).json({error:'Cannot read chat'});
-   const item=Array.isArray(thread.data)?thread.data[0]:null;
-   if(!item||!scoped(item.branch_id))return res.status(404).json({error:'Chat is not available'});
-   const [lines,events]=await Promise.all([
+   // Parallelize independent RLS-enforced reads. Never disclose lines/events until
+   // the selected chat has been verified in the staff member's branch.
+   const [thread,lines,events]=await Promise.all([
+    rest(q,{bearer}),
     rest('whose_department_chat_lines?select=id,chat_id,sku,product_name,qty_requested,qty_picked,qty_handed,qty_received,qty_return_requested,qty_returned,product_id,product:product_id(attributes)&chat_id=eq.'+chat+'&order=created_at.asc&limit=100',{bearer}),
     rest('whose_department_chat_events?select=id,chat_id,actor_id,event_type,body,line_id,qty,created_at&chat_id=eq.'+chat+'&order=id.desc&limit=501',{bearer})
    ]);
+   if(!thread.ok)return res.status(responseCode(thread.status)).json({error:'Cannot read chat'});
+   const item=Array.isArray(thread.data)?thread.data[0]:null;
+   if(!item||!scoped(item.branch_id))return res.status(404).json({error:'Chat is not available'});
    if(!lines.ok||!events.ok)return res.status(502).json({error:'Could not load chat history'});
+   serverTiming(res,authMs,elapsedMs(readStart));
    return res.status(200).json({thread:item,lines:lines.data||[],events:(events.data||[]).slice(0,500).reverse(),historyTruncated:(events.data||[]).length>500});
   }
   if(!isUuid(branch)||!scoped(branch))return res.status(403).json({error:'Warehouse access required'});
   const q='whose_department_chats?select=id,branch_id,requester_id,assignee_id,purpose,priority,status,created_at,updated_at&branch_id=eq.'+branch+'&order=updated_at.desc&limit=100';
+  const readStart=performance.now();
   const result=await rest(q,{bearer});
   if(!result.ok)return res.status(responseCode(result.status)).json({error:'Could not load conversations'});
+  serverTiming(res,authMs,elapsedMs(readStart));
   return res.status(200).json({rows:result.data||[]});
  }
  if(!verifyOrigin(req))return res.status(403).json({error:'Invalid origin'});

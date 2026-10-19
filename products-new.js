@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
 const $=id=>document.getElementById(id);
-const ui={page:0,rows:[],hasMore:false,q:'',image:'all',category:'all',stats:null,source:'catalog',admin:false,loading:false,syncing:false,total:0,syncPage:0};
+const ui={page:0,rows:[],hasMore:false,q:'',image:'all',category:'all',stats:null,source:'catalog',admin:false,loading:false,syncing:false,total:0,syncPage:0,requestSeq:0,controller:null};
 const clean=x=>String(x??'').toLocaleLowerCase('vi-VN');
 const money=n=>typeof n==='number'&&Number.isFinite(n)?n.toLocaleString('vi-VN')+' ₫':'—';
 const number=n=>Number.isFinite(Number(n))?Number(n).toLocaleString('vi-VN'):'—';
@@ -63,19 +63,28 @@ function render(){
  $('productsLastSync').textContent=ui.stats?.lastSyncedAt?new Date(ui.stats.lastSyncedAt).toLocaleDateString('vi-VN'):'—';
 }
 async function load(){
- if(ui.loading||ui.syncing)return;
- ui.loading=true;render();status('Đang đọc danh mục sản phẩm…');
+ if(ui.syncing)return;
+ const requestId=++ui.requestSeq;
+ ui.controller?.abort();
+ const controller=new AbortController();ui.controller=controller;
+ ui.loading=true;render();status('Đang cập nhật danh mục…');
  try{
   const qs=new URLSearchParams({view:ui.source==='kiot'?'preview':'catalog',page:String(ui.page)});
   if(ui.source==='catalog'){if(ui.q)qs.set('q',ui.q);if(ui.image!=='all')qs.set('images',ui.image)}
-  const data=await request('/api/kiot-products?'+qs);
+  const data=await request('/api/kiot-products?'+qs,{signal:controller.signal});
+  if(requestId!==ui.requestSeq||controller.signal.aborted)return;
   ui.rows=data.rows||[];ui.hasMore=!!data.hasMore;
   if(data.stats)ui.stats=data.stats;
   if(ui.source==='kiot')ui.total=data.total;
   status('Đã tải '+number(ui.rows.length)+' sản phẩm · '+(ui.source==='catalog'?'Danh mục Whose':'KiotViet trực tiếp'));
   const syncStatus=$('wsSyncStatus');if(syncStatus)syncStatus.textContent='Đã đọc dữ liệu '+(ui.source==='catalog'?'Whose':'KiotViet')+' thành công.';
- }catch(e){ui.rows=[];ui.hasMore=false;status(e.message,true);const syncStatus=$('wsSyncStatus');if(syncStatus)syncStatus.textContent='Không thể xác minh: '+e.message}
- finally{ui.loading=false;render()}
+ }catch(e){
+  if(requestId!==ui.requestSeq||controller.signal.aborted)return;
+  ui.hasMore=false;status(e.message,true);
+  const syncStatus=$('wsSyncStatus');if(syncStatus)syncStatus.textContent='Không thể xác minh: '+e.message;
+ }finally{
+  if(requestId===ui.requestSeq){ui.loading=false;ui.controller=null;render()}
+ }
 }
 function categories(){
  const select=$('productsCategory'),current=select.value,values=[...new Set(ui.rows.map(p=>p.category||p.metadata?.category||'Chưa phân loại'))].sort((a,b)=>a.localeCompare(b,'vi'));
@@ -103,7 +112,7 @@ async function syncAll(){
  finally{ui.syncing=false;ui.source='catalog';ui.page=0;await load();categories();render()}
 }
 let timer;
-$('productsSearch').addEventListener('input',e=>{ui.q=e.target.value.trim();clearTimeout(timer);timer=setTimeout(()=>{ui.page=0;refresh()},280)});
+$('productsSearch').addEventListener('input',e=>{ui.q=e.target.value.trim();clearTimeout(timer);timer=setTimeout(()=>{ui.page=0;refresh()},150)});
 $('productsImage').onchange=e=>{ui.image=e.target.value;ui.page=0;refresh()};
 $('productsCategory').onchange=e=>{ui.category=e.target.value;render()};
 $('productsPrev').onclick=()=>{ui.page=Math.max(0,ui.page-1);refresh()};
@@ -112,33 +121,17 @@ $('productsRefresh').onclick=refresh;
 $('productsSync').onclick=syncAll;
 $('productsSource').onchange=e=>{if(e.target.value==='kiot'&&!ui.admin){e.target.value='catalog';return}ui.source=e.target.value;ui.page=0;refresh()};
 let autoRefreshStarted=false;
-let lastAutomaticSync=0;
-async function autoSync(){
- if(!ui.admin||ui.syncing||ui.loading||document.hidden||!window.whoseSession?.())return;
- if(Date.now()-lastAutomaticSync<15*60*1000)return;
- lastAutomaticSync=Date.now();
- ui.syncing=true;
- let page=0,saved=0;
- try{
-  for(;page<5000;page++){
-   if(document.hidden||!window.whoseSession?.())break;
-   const item=await request('/api/kiot-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page})});
-   saved+=Number(item.stored)||0;
-   if(!item.hasMore){status('Đồng bộ KiotViet tự động hoàn tất · '+number(saved)+' sản phẩm');break}
-  }
- }catch(e){lastAutomaticSync=0;status('Đồng bộ tự động gián đoạn tại trang '+(page+1)+': '+e.message,true)}
- finally{ui.syncing=false;if(ui.source==='catalog'){await load();categories();render()} }
-}
 window.whoseProductsInit=async data=>{
  ui.admin=data?.is_global_admin===true;
  $('productsSource').querySelector('[value=kiot]').disabled=!ui.admin;
  await refresh();
  if(!autoRefreshStarted){
   autoRefreshStarted=true;
-  setInterval(()=>{if(!document.hidden&&!ui.syncing&&!ui.loading&&window.whoseSession?.())refresh()},30000);
-  setInterval(()=>{void autoSync()},60000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&window.whoseSession?.())void refresh()});
+  // Never run a browser-driven full Kiot import in the background on login.
+  // Refresh the visible catalogue only; authenticated paging remains available.
+  const visible=()=>!document.hidden&&!document.querySelector('.products-page')?.hidden;
+  setInterval(()=>{if(visible()&&!ui.syncing&&!ui.loading&&window.whoseSession?.())refresh()},90000);
+  document.addEventListener('visibilitychange',()=>{if(visible()&&window.whoseSession?.())void refresh()});
  }
- if(ui.admin)void autoSync();
 };
 })();
