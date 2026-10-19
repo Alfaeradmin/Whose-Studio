@@ -112,33 +112,17 @@ $('productsRefresh').onclick=refresh;
 $('productsSync').onclick=syncAll;
 $('productsSource').onchange=e=>{if(e.target.value==='kiot'&&!ui.admin){e.target.value='catalog';return}ui.source=e.target.value;ui.page=0;refresh()};
 let autoRefreshStarted=false;
-let lastAutomaticSync=0;
-async function autoSync(){
- if(!ui.admin||ui.syncing||ui.loading||document.hidden||!window.whoseSession?.())return;
- if(Date.now()-lastAutomaticSync<15*60*1000)return;
- lastAutomaticSync=Date.now();
- ui.syncing=true;
- let page=0,saved=0;
- try{
-  for(;page<5000;page++){
-   if(document.hidden||!window.whoseSession?.())break;
-   const item=await request('/api/kiot-products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page})});
-   saved+=Number(item.stored)||0;
-   if(!item.hasMore){status('Đồng bộ KiotViet tự động hoàn tất · '+number(saved)+' sản phẩm');break}
-  }
- }catch(e){lastAutomaticSync=0;status('Đồng bộ tự động gián đoạn tại trang '+(page+1)+': '+e.message,true)}
- finally{ui.syncing=false;if(ui.source==='catalog'){await load();categories();render()} }
-}
 window.whoseProductsInit=async data=>{
  ui.admin=data?.is_global_admin===true;
  $('productsSource').querySelector('[value=kiot]').disabled=!ui.admin;
  await refresh();
  if(!autoRefreshStarted){
   autoRefreshStarted=true;
-  setInterval(()=>{if(!document.hidden&&!ui.syncing&&!ui.loading&&window.whoseSession?.())refresh()},30000);
-  setInterval(()=>{void autoSync()},60000);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&window.whoseSession?.())void refresh()});
+  // Never run a browser-driven full Kiot import in the background on login.
+  // Refresh the visible catalogue only; authenticated paging remains available.
+  const visible=()=>!document.hidden&&!document.querySelector('.products-page')?.hidden;
+  setInterval(()=>{if(visible()&&!ui.syncing&&!ui.loading&&window.whoseSession?.())refresh()},90000);
+  document.addEventListener('visibilitychange',()=>{if(visible()&&window.whoseSession?.())void refresh()});
  }
- if(ui.admin)void autoSync();
 };
 })();
