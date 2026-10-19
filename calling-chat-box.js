@@ -1,22 +1,30 @@
 'use strict';
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
- let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null;
+ let busy=false,seq=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
+ const requestType=()=>window.WhoseRequestType;
  const session=()=>window.whoseSession?.()||null;
  const num=x=>Number(x||0).toLocaleString('vi-VN');
  const fmt=x=>{const d=new Date(x);return Number.isNaN(d.getTime())?'—':d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})};
  const labels={submitted:'Chờ kho nhận',accepted:'Kho đã nhận',picking:'Đang soạn',ready:'Chờ bàn giao',handed_over:'Đã giao · chờ nhận',received:'Cửa hàng đang giữ',return_requested:'Chờ kho nhận trả',completed:'Hoàn tất',cancelled:'Đã hủy'};
  const events={created:'Cửa hàng gọi hàng',added_sku:'Cửa hàng bổ sung sản phẩm',claim:'Kho tiếp nhận',pick:'Kho vừa soạn',ready:'Kho báo soạn xong',handoff:'Kho đã bàn giao',receive:'Cửa hàng xác nhận nhận',request_return:'Cửa hàng gửi trả',receive_return:'Kho đã nhận hàng trả',cancel:'Hủy yêu cầu',note:'Ghi chú'};
  const roles=()=>{
-  const s=session(),b=branch();if(!s||!b)return [];
-  if(s.is_global_admin)return ['store','warehouse'];
-  const matching=(s.memberships||[]).filter(m=>m.branch_id===b.id).map(m=>m.role);
-  if(matching.some(r=>['manager','admin'].includes(r)))return ['store','warehouse'];
-  return ['store','warehouse'].filter(x=>matching.includes(x));
+  const s=session(),b=branch();return s&&b?requestType().perspectives(s,b.id):[];
  };
+ function showPane(next){
+  if(!['inbox','chat','detail'].includes(next))return;
+  mobilePane=next;
+  const page=el('wcPage');if(!page)return;
+  page.dataset.mobilePane=next;
+  el('wcMobileNav')?.querySelectorAll('[data-wc-pane]').forEach(button=>{
+   const current=button.dataset.wcPane===next;
+   if(current)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+   button.disabled=button.dataset.wcPane!=='inbox'&&!currentId;
+  });
+ }
  function setMode(next){
   const available=roles();if(!available.includes(next))return;
   mode=next;paintRole();paintChat();
@@ -61,8 +69,11 @@
    const button=node('button','wc-conversation'+(r.id===currentId?' is-selected':''));button.type='button';button.setAttribute('aria-label','Mở yêu cầu '+r.id.slice(0,8));
    const avatar=node('span','wc-conversation-avatar','↗'),body=node('span','wc-conversation-body');
    body.append(node('strong','','#'+r.id.slice(0,8).toUpperCase()));
+   const classification=requestType().classify(r.purpose);
+   const kind=node('span','wc-request-type',classification.label);kind.dataset.type=classification.kind;body.append(kind);
+   if(r.priority==='urgent')body.append(node('span','wc-priority-tag','Gấp · ưu tiên'));
    const meta=node('span','wc-conversation-meta'),tag=node('span','wc-mini-status',labels[r.status]||r.status);tag.dataset.status=r.status;meta.append(tag,node('small','',fmt(r.updated_at)));body.append(meta,node('p','',r.purpose));
-   button.append(avatar,body);button.onclick=()=>void select(r.id);frag.append(button);
+   button.append(avatar,body);button.onclick=()=>void select(r.id,{focus:true});frag.append(button);
   }
   holder.append(frag);holder.scrollTop=top;
  }
@@ -78,7 +89,8 @@
   if(!d){el('wcRailTitle').textContent='Chưa chọn hội thoại';el('wcRailNote').textContent='Chọn hội thoại để xem số lượng, sản phẩm và các thao tác.';el('wcLineCount').textContent='0 SKU';products.append(node('div','wc-rail-empty','Danh sách sản phẩm sẽ xuất hiện tại đây.'));return}
   const r=d.thread,lines=d.lines||[];
   el('wcRailTitle').textContent='#'+r.id.slice(0,8).toUpperCase();
-  el('wcRailNote').textContent=r.purpose;
+  const typed=requestType().classify(r.purpose);
+  el('wcRailNote').textContent=typed.label+' · '+typed.note;
   el('wcLineCount').textContent=lines.length+' SKU';
   const requested=lines.reduce((sum,x)=>sum+Number(x.qty_requested||0),0),picked=lines.reduce((sum,x)=>sum+Number(x.qty_picked||0),0);
   for(const [name,value] of [['Yêu cầu',num(requested)],['Đã soạn',num(picked)],['Ưu tiên',r.priority==='urgent'?'Gấp':'Bình thường'],['Tạo lúc',fmt(r.created_at)]]){
@@ -166,10 +178,10 @@
   if(['completed','cancelled'].includes(r.status))el('wcNoteInput').placeholder='Cuộc hội thoại đã đóng';
   else el('wcNoteInput').placeholder='Nhắn ghi chú nghiệp vụ cho '+(mode==='store'?'kho':'cửa hàng')+'…';
  }
- async function select(id,{force=false}={}){
+ async function select(id,{force=false,focus=false}={}){
   const b=branch();if(!b||!id)return;
   const request=++seq;const changed=currentId!==id;
-  currentId=id;paintInbox();
+  currentId=id;if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
   if(changed){detail=null;latestSignature='';paintChat();status('Đang mở hội thoại…')}
   try{
    const data=await http({chat_id:id});if(request!==seq||branch()?.id!==b.id)return;
@@ -185,14 +197,14 @@
   try{
    const response=await http({branch_id:b.id});
    if(branch()?.id!==b.id)return;
-   rows=response.rows||[];
+   rows=requestType().sortedQueue(response.rows||[]);
    paintInbox();
    if(currentId&&rows.some(x=>x.id===currentId))await select(currentId);
    else if(rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
    else{currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
    if(!currentId)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
   }catch(e){status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
-  finally{pulling=false}
+  finally{pulling=false;if(branch()?.id&&branch().id!==b.id)void refresh(true)}
  }
  async function act(kind,lineId=null,qty=null){
   if(!detail||busy)return;
@@ -303,6 +315,7 @@
   createMode=next;cart=[];idempotency=crypto.randomUUID();el('wcCreateForm').reset();el('wcFormError').textContent='';
   el('wcCreateBranch').textContent=branch().name+' · Cửa hàng → Kho';
   el('wcCreateTitle').textContent=next==='add'?'Bổ sung SKU vào hội thoại':'Gọi hàng mới';
+  el('wcPurposeTypeLabel').hidden=next==='add';
   el('wcSubmitCreate').textContent=next==='add'?'Bổ sung vào chat':'Gửi yêu cầu cho kho';
   const priority=el('wcPriority').closest('label');if(priority)priority.hidden=next==='add';
   paintCart();hideSuggestions();el('wcCreateOverlay').hidden=false;searchFeedback('Nhập tên, SKU hoặc quét barcode; dùng Enter để thêm nhanh');el('wcProductSearch').focus();
@@ -351,7 +364,8 @@
     const id=currentId;await http({}, {action:'add',chat_id:id,lines,note:purpose,idempotency_key:idempotency});
     closeNew();cart=[];await refresh();await select(id,{force:true});
    }else{
-    const out=await http({}, {action:'create',branch_id:b.id,lines,purpose,priority,idempotency_key:idempotency});
+    const fullPurpose=requestType().formatPurpose(el('wcPurposeType').value,purpose);
+    const out=await http({}, {action:'create',branch_id:b.id,lines,purpose:fullPurpose,priority,idempotency_key:idempotency});
     closeNew();cart=[];currentId=out.id;lastListSignature='';await refresh();await select(out.id,{force:true});
    }
   }catch(error){el('wcFormError').textContent=error.message}
@@ -359,7 +373,7 @@
  }
  function warehouseChanged(){
   if(!initialized)return;
-  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';closeNew();
+  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;closeNew();showPane('inbox');
   el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
   paintInbox(true);paintChat();void refresh();
  }
@@ -371,6 +385,8 @@
    if(!res.ok)throw Error('Không tải được giao diện chat');
    el('wrMount').innerHTML=await res.text();
    el('wcNew').onclick=()=>openNew('new');el('wcRefresh').onclick=()=>void refresh();
+   el('wcMobileNav').querySelectorAll('[data-wc-pane]').forEach(button=>button.onclick=()=>showPane(button.dataset.wcPane));
+   showPane('inbox');
    el('wcCreateForm').addEventListener('submit',e=>void create(e));
    for(const id of ['wcCloseCreate','wcModalBackdrop','wcCancelCreate'])el(id).onclick=closeNew;
    el('wcNoteForm').addEventListener('submit',e=>{e.preventDefault();void act('note')});
@@ -407,6 +423,10 @@
    document.addEventListener('pointerdown',e=>{if(!e.target.closest('.wc-sku-field'))hideSuggestions()});
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wcCreateOverlay').hidden)closeNew()});
    window.addEventListener('whose:warehouse-change',warehouseChanged);
+   window.addEventListener('whose:logged-out',()=>{
+    seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+    searchCache.clear();closeNew();showPane('inbox');paintInbox(true);paintChat();
+   });
    initialized=true;paintRole();paintChat();
    timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},11000);
   })();
