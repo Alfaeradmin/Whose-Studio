@@ -29,6 +29,15 @@
   </section>
   <aside class="wc-detail-rail" aria-label="Chi tiết yêu cầu">
    <div class="wc-rail-section"><button type="button" id="wcDetailClose" class="wc-detail-close">← Về hội thoại</button><span class="wc-rail-label">CHI TIẾT VÀ THAO TÁC</span><strong id="wcRailTitle">Chưa chọn hội thoại</strong><p id="wcRailNote">Chọn một yêu cầu để xem danh sách SKU, số lượng đã soạn và hàng đang giữ.</p><div id="wcRailMeta" class="wc-rail-meta"></div></div>
+   <div class="wc-rail-section wc-bill-match-section">
+    <div class="wc-bill-match-header"><strong>Đối chiếu bill KiotViet</strong><small>Tra cứu chứng từ gốc</small></div>
+    <form id="wcBillMatchForm" class="wc-bill-match-form">
+     <label for="wcBillMatchCode">Mã hóa đơn</label>
+     <div class="wc-bill-match-row"><input id="wcBillMatchCode" type="search" inputmode="text" autocomplete="off" placeholder="VD: HD012345" maxlength="48" required pattern="[A-Za-z0-9][A-Za-z0-9_-]*"><button id="wcBillMatchLookup" type="submit">Kiểm tra</button></div>
+    </form>
+    <div id="wcBillMatchState" class="wc-bill-match-state" role="status">Nhập mã bill để kiểm tra nguồn bán và SKU. Chưa ghi nhận bán tự động.</div>
+    <div id="wcBillMatchResults" class="wc-bill-match-results" aria-live="polite"></div>
+   </div>
    <div class="wc-rail-section wc-rail-products"><div class="wc-rail-section-head"><strong>Sản phẩm</strong><span id="wcLineCount">0 SKU</span></div><div id="wcRailLines" class="wc-rail-lines"><div class="wc-rail-empty">Chưa có sản phẩm.</div></div></div>
    <div class="wc-rail-section wc-rail-bottom"><span class="wc-rail-label">LƯU Ý NGHIỆP VỤ</span><p>Soạn ≠ bàn giao. Bàn giao ≠ đã bán. Hoàn trả chỉ kết thúc khi kho xác nhận nhận. Bill phải được đối chiếu với KiotViet.</p></div>
   </aside>
