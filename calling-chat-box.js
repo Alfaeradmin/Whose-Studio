@@ -2,6 +2,7 @@
 (()=>{
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
  let busy=false,seq=0,authEpoch=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
+ const historyExpanded=new Map();
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -145,29 +146,81 @@
    store:{submitted:'Đã gửi cho kho. Bạn có thể bổ sung SKU hoặc theo dõi trạng thái.',accepted:'Kho đã nhận việc, đang chuẩn bị sản phẩm.',picking:'Kho đang soạn hàng.',ready:'Kho đã soạn xong; chờ bàn giao thật.',handed_over:'4. Kiểm đếm hàng được giao và xác nhận Đã nhận.',received:'Hàng đang do cửa hàng giữ. Nếu trả, mở Xử lý SKU.',return_requested:'Đã yêu cầu trả; đợi kho nhận hàng thực tế.'}
   };
   helper.textContent=(nextSteps[mode]||{})[r.status]||(['completed','cancelled'].includes(r.status)?'Yêu cầu đã kết thúc.':'Xem lịch sử và số lượng trong Xử lý SKU.');
-  host.append(node('div','wc-day-label','LỊCH SỬ YÊU CẦU · '+fmt(r.created_at)));
-  if(d.historyTruncated)host.append(node('div','wc-empty-list','Chỉ hiển thị 500 sự kiện gần nhất; lịch sử cũ hơn chưa được tải. Không dùng màn này để kết luận đã có đủ lịch sử.'));
-  for(const e of d.events||[]){
-   const isMine=e.actor_id===me,outer=node('div','wc-bubble-wrap'+(isMine?' is-self':'')),bubble=node('div','wc-bubble');
-   const head=node('div','wc-bubble-head');head.append(node('strong','',isMine?'Bạn':e.event_type==='created'||e.event_type==='receive'||e.event_type==='request_return'?'Cửa hàng / nhân viên':'Kho / nhân viên'),node('time','',fmt(e.created_at)));
-   bubble.append(head,node('div','wc-bubble-title',events[e.event_type]||e.event_type));
-   if(e.body)bubble.append(node('p','',e.body));
-   if(e.event_type==='created'){
-    const cards=node('div','wc-bubble-lines');
-    cards.append(node('small','','DANH SÁCH SKU HIỆN TẠI'));
-    for(const line of d.lines||[]){
-     const item=node('div','wc-bubble-line'),label=node('div');label.append(node('strong','',line.sku),node('small','',line.product_name));item.append(label,node('span','','×'+num(line.qty_requested)));cards.append(item);
-    }
-    bubble.append(cards);
+  // A single expandable audit card for ALL operational events. Chat bubbles
+  // represent actual staff notes only. No database records or event metadata change.
+  const timeline=window.WhoseChatHistory.partition(d.events||[]);
+  const log=node('details','wc-history-card');
+  const historyKey=(branch()?.id||'')+':'+r.id;
+  log.open=historyExpanded.get(historyKey)===true;
+  const summary=node('summary','wc-history-summary');
+  const summaryCopy=node('span','wc-history-summary-copy');
+  summaryCopy.append(node('strong','','Lịch sử thao tác'));
+  const recent=window.WhoseChatHistory.latestAction(timeline.actions);
+  summaryCopy.append(node('small','',recent
+   ?'Gần nhất: '+(events[recent.event_type]||recent.event_type)+' · '+fmt(recent.created_at)
+   :'Chưa có thao tác được ghi nhận'));
+  const counter=node('span','wc-history-count',num(timeline.actions.length)+' thao tác');
+  const chevron=node('span','wc-history-chevron','⌄');chevron.setAttribute('aria-hidden','true');
+  summary.append(summaryCopy,counter,chevron);
+  const contents=node('div','wc-history-contents');
+  const lineIndex=new Map((d.lines||[]).map(line=>[line.id,line]));
+  function renderLog(){
+   contents.replaceChildren();
+   if(d.historyTruncated)contents.append(node('p','wc-history-warning',
+    'Chỉ tải tối đa 500 sự kiện mới nhất. Lịch sử trước đó chưa được hiển thị đầy đủ.'));
+   if(!timeline.actions.length){
+    contents.append(node('p','wc-history-empty','Chưa có thao tác được ghi nhận.'));return;
    }
-   if(e.event_type==='added_sku'&&e.qty)bubble.append(node('p','','Tổng bổ sung: '+num(e.qty)+' sản phẩm'));
-   if(e.line_id){
-    const line=(d.lines||[]).find(x=>x.id===e.line_id);
-    if(line)bubble.append(node('p','','SKU '+line.sku+(e.qty?' · SL '+num(e.qty):'')));
+   const heading=node('div','wc-history-order','Thao tác mới nhất ở trên');
+   contents.append(heading);
+   const list=node('ol','wc-history-items');
+   for(const event of [...timeline.actions].reverse()){
+    const item=node('li','wc-history-item');
+    const dot=node('span','wc-history-dot');dot.setAttribute('aria-hidden','true');
+    const content=node('div','wc-history-item-content');
+    const head=node('div','wc-history-item-heading');
+    head.append(node('strong','',events[event.event_type]||event.event_type||'Thao tác'),
+     node('time','',fmt(event.created_at)));
+    content.append(head);
+    const actor=event.actor_id===me?'Bạn':
+     ['created','receive','request_return','cancel'].includes(event.event_type)?'Nhân viên cửa hàng':'Nhân viên kho';
+    content.append(node('span','wc-history-actor',actor));
+    if(event.body)content.append(node('p','wc-history-detail',event.body));
+    const linked=event.line_id?lineIndex.get(event.line_id):null;
+    if(linked)content.append(node('p','wc-history-product',
+     'SKU '+linked.sku+(event.qty?' · Số lượng '+num(event.qty):'')));
+    else if(event.qty)content.append(node('p','wc-history-product',
+     'Số lượng '+num(event.qty)));
+    if(event.event_type==='created'&&d.lines?.length)content.append(node('p','wc-history-product',
+     'Danh sách '+d.lines.length+' SKU hiện tại: xem tại Xử lý SKU'));
+    item.append(dot,content);list.append(item);
    }
+   contents.append(list);
+  }
+  if(log.open)renderLog();
+  log.addEventListener('toggle',()=>{
+   historyExpanded.set(historyKey,log.open);
+   if(log.open)renderLog();
+   else contents.replaceChildren();
+  });
+  log.append(summary,contents);
+  host.append(log);
+
+  // Notes are the only events rendered as separate conversation bubbles.
+  // Operational updates, reasons and quantities are readable in the log above.
+  if(timeline.messages.length)host.append(node('div','wc-message-section-label','TIN NHẮN CỬA HÀNG · KHO'));
+  for(const event of timeline.messages){
+   const isMine=event.actor_id===me;
+   const outer=node('div','wc-bubble-wrap'+(isMine?' is-self':''));
+   const bubble=node('div','wc-bubble');
+   const head=node('div','wc-bubble-head');
+   head.append(node('strong','',isMine?'Bạn':'Nhân viên bộ phận khác'),
+    node('time','',fmt(event.created_at)));
+   bubble.append(head,node('p','',event.body||'Ghi chú không có nội dung'));
    outer.append(bubble);host.append(outer);
   }
-  if(!d.events?.length)host.append(node('div','wc-empty-list','Chưa có lịch sử xác minh.'));
+  if(!timeline.messages.length)host.append(node('div','wc-no-notes',
+   'Chưa có tin nhắn trao đổi. Các cập nhật nghiệp vụ nằm trong thẻ Lịch sử thao tác.'));
   paintActions(r);
   host.scrollTop=atEnd||oldTop===0?host.scrollHeight:oldTop;
  }
@@ -397,7 +450,7 @@
  }
  function warehouseChanged(){
   if(!initialized)return;
-  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
+  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
   el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
   paintInbox(true);paintChat();void refresh();
  }
@@ -455,7 +508,7 @@
    window.addEventListener('whose:warehouse-change',warehouseChanged);
    window.addEventListener('whose:logged-out',()=>{
     authEpoch++;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
-    searchCache.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
+    searchCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
    });
    initialized=true;paintRole();paintChat();
    timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},20000);
