@@ -15,6 +15,7 @@
   const staff=window.whoseSession?.();
   const ticket=++request;
   host.hidden=!staff?.is_global_admin;
+  button.hidden=!staff?.is_global_admin;
   if(!staff?.is_global_admin)return;
   button.disabled=true;
   host.replaceChildren(pair('Trạng thái','Đang đọc dữ liệu Whose…'));
@@ -50,6 +51,6 @@
  }
  button.addEventListener('click',()=>void refresh());
  window.addEventListener('whose:authenticated',()=>void refresh());
- window.addEventListener('whose:logged-out',()=>{request++;host.hidden=true;host.replaceChildren()});
+ window.addEventListener('whose:logged-out',()=>{request++;host.hidden=true;button.hidden=true;host.replaceChildren()});
  if(window.whoseSession?.())void refresh();
 })();
