@@ -3,6 +3,11 @@
  let initialized=false,starting=null,mode='store',filter='open',rows=[],currentId=null,detail=null,pulling=false,working=false;
  let busy=false,seq=0,authEpoch=0,latestSignature='',lastListSignature='',timer=null,searchTimer=null,searchAbort=null,cart=[],idempotency=null,createMode='new',suggestions=[],suggestionIndex=0,searchGeneration=0,searchCache=new Map(),pendingAction=null,mobilePane='inbox';
  const historyExpanded=new Map();
+ const detailCache=new Map();
+ let inboxScope='',inboxFetchedAt=0,refreshTicket=0;
+ const scopeKey=()=>((session()?.user?.id)||'')+':'+(branch()?.id||'');
+ const cacheKey=id=>scopeKey()+':'+id;
+ const CACHE_FRESH_MS=9000;
  const el=id=>document.getElementById(id);
  const node=(tag,cls,t)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(t!==undefined)x.textContent=String(t);return x};
  const branch=()=>window.whoseWarehouse?.()||null;
@@ -244,22 +249,42 @@
   const b=branch();if(!b||!id)return;
   const request=++seq,epoch=authEpoch;const changed=currentId!==id;
   currentId=id;if(focus)showPane('chat');else showPane(mobilePane);paintInbox();
-  if(changed){detail=null;latestSignature='';paintChat();status('Đang mở hội thoại…')}
+  const cached=detailCache.get(cacheKey(id));
+  const currentRow=rows.find(row=>row.id===id);
+  const cacheValid=!!cached&&(!currentRow||currentRow.updated_at===cached.data.thread.updated_at);
+  if(changed){
+   detail=cacheValid?cached.data:null;
+   latestSignature=cacheValid?cached.signature:'';
+   paintChat();
+   status(cacheValid?'Đã hiển thị hội thoại từ phiên hiện tại':'Đang mở hội thoại…');
+  }
+  // Fast repeat access; poll and forced refresh still fetch the authoritative copy.
+  if(!force&&cacheValid&&Date.now()-cached.at<CACHE_FRESH_MS)return;
   try{
    const data=await http({chat_id:id});if(request!==seq||epoch!==authEpoch||branch()?.id!==b.id)return;
    if(data.thread.branch_id!==b.id)return;
    const signature=JSON.stringify([data.thread.status,data.thread.updated_at,data.lines.map(x=>[x.id,x.qty_picked,x.qty_handed,x.qty_received,x.qty_return_requested,x.qty_returned]),data.events.map(e=>e.id)]);
    if(!force&&signature===latestSignature)return;
-   latestSignature=signature;detail=data;paintChat();status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
+   latestSignature=signature;detail=data;
+   detailCache.delete(cacheKey(id));
+   detailCache.set(cacheKey(id),{data,signature,at:Date.now()});
+   if(detailCache.size>10)detailCache.delete(detailCache.keys().next().value);
+   paintChat();status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
   }catch(e){if(request!==seq||epoch!==authEpoch)return;status('Không đọc được hội thoại: '+e.message)}
  }
  async function refresh(quiet=false,syncDetail=true){
   if(pulling)return;const b=branch();if(!b)return status('Chưa chọn kho thao tác');
-  const epoch=authEpoch;
-  pulling=true;if(!quiet)status('Đang đồng bộ…');
+  const epoch=authEpoch,scope=scopeKey();
+  // Opening the same branch again should not block on the identical server list.
+  if(!quiet&&inboxScope===scope&&inboxFetchedAt&&Date.now()-inboxFetchedAt<CACHE_FRESH_MS){
+   paintInbox();status('Danh sách từ phiên hiện tại');return;
+  }
+  const ticket=++refreshTicket;
+  pulling=true;if(!quiet)status('Đang kiểm tra danh sách…');
   try{
    const response=await http({branch_id:b.id});
-   if(epoch!==authEpoch||branch()?.id!==b.id)return;
+   if(ticket!==refreshTicket||epoch!==authEpoch||branch()?.id!==b.id)return;
+   inboxScope=scope;inboxFetchedAt=Date.now();
    rows=requestType().sortedQueue(response.rows||[]);
    paintInbox();
    const currentRow=rows.find(x=>x.id===currentId);
@@ -268,8 +293,17 @@
    else if(!currentRow&&rows.length){const first=rows.find(x=>!['completed','cancelled'].includes(x.status))||rows[0];await select(first.id)}
    else if(!rows.length){currentId=null;detail=null;latestSignature='';paintChat();status('Chưa có yêu cầu nội bộ')}
    if(!currentId&&syncDetail)status('Đã cập nhật · '+new Date().toLocaleTimeString('vi-VN'));
-  }catch(e){if(epoch!==authEpoch)return;status('Lỗi kết nối: '+e.message);if(!quiet)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message))}
-  finally{pulling=false;if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true)}
+  }catch(e){
+   if(ticket!==refreshTicket||epoch!==authEpoch)return;
+   status('Lỗi kết nối: '+e.message);
+   // Keep last verified branch-scoped rows visible after a transient network error.
+   if(!quiet&&!rows.length)el('wcInboxList').replaceChildren(node('div','wc-empty-list','Không tải được yêu cầu. '+e.message));
+  }finally{
+   if(ticket===refreshTicket){
+    pulling=false;
+    if(epoch===authEpoch&&branch()?.id&&branch().id!==b.id)void refresh(true);
+   }
+  }
  }
  async function act(kind,lineId=null,qty=null){
   if(!detail||busy)return;
@@ -291,6 +325,7 @@
   try{
    const response=await http({}, {action:'act',chat_id:before,kind,line_id:lineId,qty,note:note||null,idempotency_key:token});
    committed=true;
+   detailCache.delete(cacheKey(before));inboxFetchedAt=0;
    if(epoch!==authEpoch||branch()?.id!==b||session()?.user?.id!==actor)return;
    pendingAction=null;
    el('wcNoteInput').value='';
@@ -436,12 +471,14 @@
     if(!currentId)throw Error('Chưa chọn hội thoại');
     const id=currentId;await http({}, {action:'add',chat_id:id,lines,note:purpose,idempotency_key:idempotency});
     if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
+    detailCache.delete(cacheKey(id));inboxFetchedAt=0;
     closeNew();cart=[];status('Đã bổ sung SKU · đang cập nhật hội thoại');
     void select(id,{force:true});void refresh(true,false);
    }else{
     const fullPurpose=requestType().formatPurpose(el('wcPurposeType').value,purpose);
     const out=await http({}, {action:'create',branch_id:b.id,lines,purpose:fullPurpose,priority,idempotency_key:idempotency});
     if(epoch!==authEpoch||session()?.user?.id!==actor||branch()?.id!==b.id)return;
+    inboxFetchedAt=0;
     closeNew();cart=[];currentId=out.id;lastListSignature='';detail=null;
     showPane('chat');paintChat();status('Đã gửi yêu cầu đến kho');
     void select(out.id,{force:true});void refresh(true,false);
@@ -451,7 +488,8 @@
  }
  function warehouseChanged(){
   if(!initialized)return;
-  seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
+  seq++;refreshTicket++;pulling=false;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+  inboxScope='';inboxFetchedAt=0;detailCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';
   el('wcBranchName').textContent=(branch()?.name||'Chưa chọn kho thao tác')+' · Cửa hàng ↔ Kho';
   paintInbox(true);paintChat();void refresh();
  }
@@ -508,8 +546,8 @@
    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('wcCreateOverlay').hidden)closeNew()});
    window.addEventListener('whose:warehouse-change',warehouseChanged);
    window.addEventListener('whose:logged-out',()=>{
-    authEpoch++;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
-    searchCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
+    authEpoch++;refreshTicket++;pulling=false;busy=false;seq++;rows=[];currentId=null;detail=null;latestSignature='';lastListSignature='';pendingAction=null;
+    inboxScope='';inboxFetchedAt=0;detailCache.clear();searchCache.clear();historyExpanded.clear();closeNew();showPane('inbox');el('wcPage').dataset.detailOpen='false';paintInbox(true);paintChat();
    });
    initialized=true;paintRole();paintChat();
    timer=setInterval(()=>{if(!document.hidden&&!el('wcPage').hidden&&!busy)void refresh(true)},20000);
