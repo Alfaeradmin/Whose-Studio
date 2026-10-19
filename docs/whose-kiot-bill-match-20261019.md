@@ -23,3 +23,6 @@
 5. Active staff memberships and end-to-end tests with LVS and NVT, duplicated SKUs, stock movements and confirmed invoice status semantics.
 
 Preview functionality is explicitly advisory and read-only. Do not claim that a bill was matched to a request in the database.
+
+
+**Recent bill discovery added**: explicit user button "Quét 8 bill Kiot gần đây" calls provider's latest 8 invoice list and independently re-fetches each bill by code. No polling on opening the chat (performance safety); results are filtered to the selected request in UI, with server-side branch authorization across all requests to identify multiple plausible custody sources. Multiple invoices competing for the same on-hand received quantity in a single scan are downgraded to review. This is a limited read-only scan; it does not replace full webhook ingestion, modifiedDate cursor or transactional match ledger.
